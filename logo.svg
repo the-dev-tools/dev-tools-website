@@ -11,8 +11,8 @@
 	<!ENTITY ns_adobe_xpath "http://ns.adobe.com/XPath/1.0/">
 ]>
 <svg version="1.1" id="Layer_1" xmlns:x="&ns_extend;" xmlns:i="&ns_ai;" xmlns:graph="&ns_graphs;"
-	 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 1190.55 644.56"
-	 style="enable-background:new 0 0 1190.55 644.56;" xml:space="preserve">
+	 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="235 250 750 150"
+	 >
 <style type="text/css">
 	.Drop_x0020_Shadow{fill:none;}
 	.Round_x0020_Corners_x0020_2_x0020_pt{fill:#FFFFFF;stroke:#231F20;stroke-miterlimit:10;}
@@ -41,7 +41,6 @@
 			<stop  offset="0.9181" style="stop-color:#787D7E"/>
 			<stop  offset="1" style="stop-color:#656B6C"/>
 		</linearGradient>
-		<rect class="st0" width="1190.55" height="644.56"/>
 		<g>
 			<g>
 				<path class="st1" d="M468.87,278.07h34.54c6.98,0.06,12.96,0.75,17.93,2.08s9.19,3.46,12.65,6.35
