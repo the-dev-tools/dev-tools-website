@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DevTools – The API toolkit for modern dev teams</title>
+    <meta
+      name="description"
+      content="DevTools is a fast, secure API client that keeps your team in sync without trading privacy for productivity."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      window.tailwindcss = window.tailwindcss || {};
+      window.tailwindcss.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+              mono: ['JetBrains Mono', 'ui-monospace']
+            },
+            colors: {
+              ink: {
+                900: '#090510',
+                700: '#1f1633',
+                500: '#5c4d91',
+                400: '#8f7dfa'
+              },
+              neon: '#4de1ff'
+            }
+          }
+        }
+      };
+    </script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <style>
+      body {
+        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }
+    </style>
+  </head>
+  <body class="min-h-full bg-[radial-gradient(circle_at_20%_20%,rgba(77,225,255,0.18),transparent_50%),radial-gradient(circle_at_80%_0%,rgba(143,125,250,0.22),transparent_45%),#07040f]">
+    <header class="relative border-b border-white/10">
+      <div class="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-white/60 to-transparent"></div>
+      <div class="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-5 sm:px-8">
+        <a href="#" class="flex items-center gap-3">
+          <span class="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-tr from-ink-500 to-neon text-xl font-bold text-slate-950 shadow-[0_0_40px_rgba(77,225,255,0.35)]">F</span>
+          <span class="text-lg font-semibold tracking-tight">DevTools</span>
+        </a>
+        <nav class="hidden items-center gap-8 text-sm font-medium md:flex">
+          <a class="transition hover:text-neon" href="#features">Features</a>
+          <a class="transition hover:text-neon" href="#workflows">Workflows</a>
+          <a class="transition hover:text-neon" href="#testimonials">Stories</a>
+          <a class="transition hover:text-neon" href="#pricing">Pricing</a>
+        </nav>
+        <div class="hidden items-center gap-3 md:flex">
+          <button class="rounded-md border border-white/10 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-white/20 hover:text-white">Docs</button>
+          <button class="rounded-md bg-gradient-to-r from-neon via-sky-500 to-ink-400 px-4 py-2 text-sm font-semibold text-slate-950 shadow-[0_12px_35px_-15px_rgba(77,225,255,0.8)] transition hover:brightness-110">Download</button>
+        </div>
+        <button class="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-md border border-white/10 text-white hover:border-white/25">
+          <span class="sr-only">Toggle menu</span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="relative">
+      <section class="relative mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 pb-24 pt-14 sm:px-8 md:flex-row md:items-center">
+        <div class="relative flex-1">
+          <div class="mb-6 flex justify-center md:justify-start">
+            <span class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs uppercase tracking-wide text-slate-200 shadow-[0_10px_40px_rgba(77,225,255,0.15)]">
+              <span class="h-2 w-2 rounded-full bg-neon"></span>
+              New: Workspace variables sync with git remotes
+            </span>
+          </div>
+          <h1 class="text-center text-4xl font-extrabold leading-tight text-white sm:text-5xl md:text-left md:text-6xl">
+            The <span class="bg-gradient-to-r from-neon via-sky-300 to-ink-400 bg-clip-text">API toolkit</span> your team actually loves to use.
+          </h1>
+          <p class="mt-6 max-w-xl text-center text-lg text-slate-300 md:text-left">
+            DevTools gives modern teams a privacy-first workflow for REST, GraphQL, gRPC, and WebSocket APIs—without giving up the features that keep releases moving.
+          </p>
+          <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <a
+              href="#"
+              class="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-sky-300 via-neon to-ink-400 px-6 py-3 text-base font-semibold text-slate-950 shadow-[0_18px_45px_-20px_rgba(77,225,255,0.9)] transition hover:scale-[1.02]"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4" />
+              </svg>
+              Download DevTools
+            </a>
+            <a
+              href="#features"
+              class="inline-flex items-center justify-center gap-2 rounded-lg border border-white/10 px-6 py-3 text-base font-semibold text-white transition hover:border-white/25"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m9 5 7 7-7 7" />
+              </svg>
+              Explore features
+            </a>
+          </div>
+          <dl class="mt-10 grid grid-cols-3 gap-6 text-center md:max-w-md md:text-left">
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-slate-400">Teams shipped</dt>
+              <dd class="mt-1 text-2xl font-semibold text-white">8,200+</dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-slate-400">Average response</dt>
+              <dd class="mt-1 text-2xl font-semibold text-white">230ms</dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-slate-400">Git synced workspaces</dt>
+              <dd class="mt-1 text-2xl font-semibold text-white">56k</dd>
+            </div>
+          </dl>
+        </div>
+        <div class="relative flex-1">
+          <div class="relative rounded-3xl border border-white/10 bg-gradient-to-br from-ink-700/80 via-slate-900/40 to-slate-900/80 p-6 shadow-[0_35px_60px_-25px_rgba(17,26,56,0.65)] backdrop-blur">
+            <div class="flex items-center justify-between text-xs text-slate-400">
+              <span class="inline-flex items-center gap-2">
+                <span class="flex items-center gap-1">
+                  <span class="h-2.5 w-2.5 rounded-full bg-rose-400"></span>
+                  <span class="h-2.5 w-2.5 rounded-full bg-amber-300"></span>
+                  <span class="h-2.5 w-2.5 rounded-full bg-emerald-400"></span>
+                </span>
+                DevTools://workspace/launches.graphql
+              </span>
+              <span class="rounded-full border border-white/10 bg-white/5 px-3 py-1 font-medium text-white">Live</span>
+            </div>
+            <div class="mt-6 grid gap-4 rounded-2xl border border-white/5 bg-black/40 p-5">
+              <div>
+                <p class="text-sm uppercase tracking-wide text-slate-400">Request</p>
+                <div class="mt-2 rounded-lg border border-white/5 bg-black/30 p-4">
+                  <code class="block font-mono text-sm text-slate-200">POST https://api.launchpad.dev/graphql</code>
+                  <code class="mt-2 block font-mono text-[13px] text-slate-400">Header • Authorization: Bearer {{workspace.token}}</code>
+                </div>
+              </div>
+              <div>
+                <p class="text-sm uppercase tracking-wide text-slate-400">Body</p>
+                <pre class="mt-2 overflow-hidden rounded-lg border border-white/5 bg-black/40 p-4 text-left font-mono text-sm leading-relaxed text-sky-200">
+query Launches($limit: Int!) {
+  launches(limit: $limit) {
+    id
+    mission
+    windowStart
+  }
+}
+                </pre>
+              </div>
+              <div>
+                <p class="text-sm uppercase tracking-wide text-slate-400">Response</p>
+                <pre class="mt-2 overflow-hidden rounded-lg border border-white/5 bg-black/40 p-4 text-left font-mono text-sm leading-relaxed text-emerald-200">
+{
+  "data": {
+    "launches": [
+      { "mission": "Aurora", "windowStart": "2025-07-12" },
+      { "mission": "Velocity", "windowStart": "2025-09-03" }
+    ]
+  }
+}
+                </pre>
+              </div>
+            </div>
+            <div class="mt-5 flex items-center justify-between text-xs text-slate-400">
+              <span>Encrypted workspace · synced to Git</span>
+              <span>Auto-templated using secrets</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="features" class="relative border-t border-white/5 bg-white/5/5 py-16">
+        <div class="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
+        <div class="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 sm:px-8">
+          <div class="mx-auto max-w-3xl text-center">
+            <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs uppercase tracking-wide text-slate-300">Workflows</span>
+            <h2 class="mt-5 text-3xl font-bold text-white sm:text-4xl">A mission control for every API discipline</h2>
+            <p class="mt-4 text-lg text-slate-300">
+              With DevTools your entire team can model, debug, and ship requests across protocols without leaving a single workspace.
+            </p>
+          </div>
+          <div class="grid gap-6 md:grid-cols-3">
+            <article class="group flex flex-col gap-4 rounded-2xl border border-white/10 bg-gradient-to-br from-white/8 via-white/5 to-transparent p-6 transition hover:border-neon/60">
+              <div class="flex items-center gap-3 text-sm font-semibold text-white">
+                <span class="flex h-10 w-10 items-center justify-center rounded-full bg-neon/20 text-neon">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 13a3 3 0 0 1 3-3h9m-3-3 3 3-3 3" />
+                  </svg>
+                </span>
+                REST, GraphQL & gRPC harmony
+              </div>
+              <p class="text-sm leading-relaxed text-slate-300">
+                Split-pane editors, collection folders, and native schema explorer keep complex APIs tidy while identities and environments inherit automatically.
+              </p>
+              <ul class="mt-auto space-y-2 text-sm text-slate-400">
+                <li class="flex items-center gap-2">
+                  <span class="h-1.5 w-1.5 rounded-full bg-neon"></span>
+                  Smart diff for request history
+                </li>
+                <li class="flex items-center gap-2">
+                  <span class="h-1.5 w-1.5 rounded-full bg-neon"></span>
+                  Async streaming previews
+                </li>
+              </ul>
+            </article>
+            <article class="group flex flex-col gap-4 rounded-2xl border border-white/10 bg-gradient-to-br from-white/8 via-white/5 to-transparent p-6 transition hover:border-neon/60">
+              <div class="flex items-center gap-3 text-sm font-semibold text-white">
+                <span class="flex h-10 w-10 items-center justify-center rounded-full bg-sky-400/15 text-sky-200">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                  </svg>
+                </span>
+                Git-native collaboration
+              </div>
+              <p class="text-sm leading-relaxed text-slate-300">
+                DevTools stores everything as human readable files so you can branch, review, and deploy with the tools you already use.
+              </p>
+              <ul class="mt-auto space-y-2 text-sm text-slate-400">
+                <li class="flex items-center gap-2">
+                  <span class="h-1.5 w-1.5 rounded-full bg-sky-300"></span>
+                  Encrypted secrets checked-in safely
+                </li>
+                <li class="flex items-center gap-2">
+                  <span class="h-1.5 w-1.5 rounded-full bg-sky-300"></span>
+                  Commit previews and conflict aide
+                </li>
+              </ul>
+            </article>
+            <article class="group flex flex-col gap-4 rounded-2xl border border-white/10 bg-gradient-to-br from-white/8 via-white/5 to-transparent p-6 transition hover:border-neon/60">
+              <div class="flex items-center gap-3 text-sm font-semibold text-white">
+                <span class="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-400/15 text-emerald-200">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m4 7 4-4 4 4m-4-4v14" />
+                  </svg>
+                </span>
+                Automate the busy work
+              </div>
+              <p class="text-sm leading-relaxed text-slate-300">
+                Create dynamic variables, generate curl snippets, and run batches without juggling scripts or half-working extensions.
+              </p>
+              <ul class="mt-auto space-y-2 text-sm text-slate-400">
+                <li class="flex items-center gap-2">
+                  <span class="h-1.5 w-1.5 rounded-full bg-emerald-300"></span>
+                  Folder-scoped secrets & overrides
+                </li>
+                <li class="flex items-center gap-2">
+                  <span class="h-1.5 w-1.5 rounded-full bg-emerald-300"></span>
+                  Request chaining templates
+                </li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="workflows" class="relative py-18 border-t border-white/5 py-20">
+        <div class="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 sm:px-8 lg:flex-row lg:items-center">
+          <div class="flex-1 space-y-6">
+            <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs uppercase tracking-wide text-slate-300">Preview</span>
+            <h2 class="text-3xl font-bold text-white sm:text-4xl">Command the entire lifecycle from one screen</h2>
+            <p class="text-lg text-slate-300">
+              Orchestrate design reviews, smoke tests, and production debugs without switching tools. DevTools streamlines the workflow so you can focus on the problem in front of you.
+            </p>
+            <div class="grid gap-4">
+              <div class="flex items-start gap-4 rounded-xl border border-white/10 bg-white/5 p-4">
+                <div class="mt-1 flex h-10 w-10 items-center justify-center rounded-full bg-neon/15 text-neon">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="m5 13 4 4L19 7" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="text-base font-semibold text-white">Live schema explorer</h3>
+                  <p class="mt-1 text-sm text-slate-300">Introspect and document GraphQL and OpenAPI endpoints with zero setup.</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-4 rounded-xl border border-white/10 bg-white/5 p-4">
+                <div class="mt-1 flex h-10 w-10 items-center justify-center rounded-full bg-sky-400/10 text-sky-200">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M15 5v2a2 2 0 0 0 2 2h2M4 12h16M4 18h16M4 6h7" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="text-base font-semibold text-white">Replay with context</h3>
+                  <p class="mt-1 text-sm text-slate-300">Link directly to request history with environment diffing to speed up code reviews.</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-4 rounded-xl border border-white/10 bg-white/5 p-4">
+                <div class="mt-1 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-400/15 text-emerald-200">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="m3 7 5-5 5 5M8 2v20" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="text-base font-semibold text-white">Scripts without scripting</h3>
+                  <p class="mt-1 text-sm text-slate-300">Batch requests, schedule monitors, and trigger webhooks using the same request definitions.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="flex-1">
+            <div class="relative rounded-[28px] border border-white/10 bg-gradient-to-br from-ink-700/70 via-slate-900/60 to-slate-950 p-8 shadow-[0_45px_85px_-40px_rgba(16,23,56,0.8)]">
+              <div class="flex items-center justify-between text-xs text-slate-400">
+                <span class="font-semibold text-white">DevTools Monitor</span>
+                <span class="rounded-full border border-white/10 bg-white/5 px-3 py-1">Quality Gate</span>
+              </div>
+              <div class="mt-6 grid gap-4">
+                <div class="flex items-center justify-between rounded-xl border border-white/10 bg-black/40 p-4">
+                  <div class="text-sm text-slate-300">
+                    <p class="text-xs uppercase tracking-wide text-slate-500">Environment</p>
+                    <p class="font-semibold text-white">Production</p>
+                  </div>
+                  <div class="flex items-center gap-2 text-emerald-300">
+                    <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+                    Passing
+                  </div>
+                </div>
+                <div class="rounded-xl border border-white/10 bg-black/40 p-4">
+                  <div class="flex items-center justify-between text-xs uppercase tracking-wide text-slate-400">
+                    <span>Recent runs</span>
+                    <span>Latency (ms)</span>
+                  </div>
+                  <div class="mt-4 grid gap-3 text-sm text-slate-200">
+                    <div class="flex items-center justify-between gap-4">
+                      <div class="flex items-center gap-3">
+                        <span class="h-2.5 w-2.5 rounded-full bg-emerald-400"></span>
+                        <span class="font-medium">Create Invoice</span>
+                      </div>
+                      <span class="font-mono text-xs text-slate-300">187</span>
+                    </div>
+                    <div class="flex items-center justify-between gap-4">
+                      <div class="flex items-center gap-3">
+                        <span class="h-2.5 w-2.5 rounded-full bg-emerald-400"></span>
+                        <span class="font-medium">List Customers</span>
+                      </div>
+                      <span class="font-mono text-xs text-slate-300">209</span>
+                    </div>
+                    <div class="flex items-center justify-between gap-4">
+                      <div class="flex items-center gap-3">
+                        <span class="h-2.5 w-2.5 rounded-full bg-amber-400"></span>
+                        <span class="font-medium">Webhook Retry</span>
+                      </div>
+                      <span class="font-mono text-xs text-slate-300">344</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="rounded-xl border border-white/10 bg-black/40 p-4">
+                  <p class="text-xs uppercase tracking-wide text-slate-500">Next run</p>
+                  <p class="mt-1 text-sm font-medium text-white">In 6 minutes · on release branch</p>
+                </div>
+              </div>
+              <div class="mt-6 flex items-center justify-between text-xs text-slate-400">
+                <span>Exports as Terraform · GitHub Action ready</span>
+                <span class="text-white">↗</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="testimonials" class="relative border-t border-white/5 bg-white/5/5 py-20">
+        <div class="mx-auto w-full max-w-6xl px-4 sm:px-8">
+          <div class="mx-auto max-w-2xl text-center">
+            <h2 class="text-3xl font-bold text-white sm:text-4xl">Loved by developers building the future</h2>
+            <p class="mt-4 text-lg text-slate-300">Teams from indie studios to Fortune 500s rely on DevTools to keep their API workflows fast and reliable.</p>
+          </div>
+          <div class="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <figure class="flex h-full flex-col gap-5 rounded-2xl border border-white/10 bg-gradient-to-br from-white/8 via-white/5 to-transparent p-6">
+              <div class="flex items-center gap-3">
+                <img src="https://i.pravatar.cc/80?img=13" alt="Avery" class="h-12 w-12 rounded-full border border-white/10" />
+                <div>
+                  <figcaption class="font-semibold text-white">Avery Chen</figcaption>
+                  <p class="text-sm text-slate-400">Staff Engineer · Nebula Systems</p>
+                </div>
+              </div>
+              <blockquote class="text-sm leading-relaxed text-slate-300">
+                “DevTools replaced three tools for us. Request history tied to git commits is the missing link between ops and product.”
+              </blockquote>
+              <div class="mt-auto text-xs uppercase tracking-wide text-slate-500">Migrated from Postman in 3 days</div>
+            </figure>
+            <figure class="flex h-full flex-col gap-5 rounded-2xl border border-white/10 bg-gradient-to-br from-ink-700/40 via-slate-900/60 to-transparent p-6">
+              <div class="flex items-center gap-3">
+                <img src="https://i.pravatar.cc/80?img=21" alt="Diego" class="h-12 w-12 rounded-full border border-white/10" />
+                <div>
+                  <figcaption class="font-semibold text-white">Diego Morales</figcaption>
+                  <p class="text-sm text-slate-400">Head of Platform · Shiftr</p>
+                </div>
+              </div>
+              <blockquote class="text-sm leading-relaxed text-slate-300">
+                “No more guessing which environment someone used. Secrets are encrypted, diffs make sense, and our audits got faster.”
+              </blockquote>
+              <div class="mt-auto text-xs uppercase tracking-wide text-slate-500">Security review in one afternoon</div>
+            </figure>
+            <figure class="flex h-full flex-col gap-5 rounded-2xl border border-white/10 bg-gradient-to-br from-white/8 via-white/5 to-transparent p-6">
+              <div class="flex items-center gap-3">
+                <img src="https://i.pravatar.cc/80?img=36" alt="Maya" class="h-12 w-12 rounded-full border border-white/10" />
+                <div>
+                  <figcaption class="font-semibold text-white">Maya Patel</figcaption>
+                  <p class="text-sm text-slate-400">Founder · Orbit Labs</p>
+                </div>
+              </div>
+              <blockquote class="text-sm leading-relaxed text-slate-300">
+                “From idea to production in the same workspace. The command palette plus autocomplete is a dream for prototyping.”
+              </blockquote>
+              <div class="mt-auto text-xs uppercase tracking-wide text-slate-500">2x faster prototype cycles</div>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <section id="pricing" class="relative border-t border-white/5 py-20">
+        <div class="mx-auto max-w-5xl px-4 sm:px-8">
+          <div class="mb-12 text-center">
+            <h2 class="text-3xl font-bold text-white sm:text-4xl">Flexible plans for every stage</h2>
+            <p class="mt-4 text-lg text-slate-300">Start for free, scale with your team, and keep mission-critical work grounded in security.</p>
+          </div>
+          <div class="grid gap-6 md:grid-cols-3">
+            <div class="flex flex-col gap-6 rounded-2xl border border-white/10 bg-white/5 p-6">
+              <div>
+                <p class="text-xs uppercase tracking-wide text-slate-400">Starter</p>
+                <p class="mt-2 text-3xl font-bold text-white">$0</p>
+                <p class="text-sm text-slate-400">For individuals exploring new APIs.</p>
+              </div>
+              <ul class="space-y-2 text-sm text-slate-300">
+                <li>Unlimited local workspaces</li>
+                <li>REST & GraphQL tools</li>
+                <li>Paste/import from curl & Postman</li>
+              </ul>
+              <button class="mt-auto rounded-md border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/25">Get started</button>
+            </div>
+            <div class="relative flex flex-col gap-6 rounded-2xl border border-neon/50 bg-gradient-to-br from-black/40 via-neon/10 to-ink-700/40 p-6 shadow-[0_40px_80px_-45px_rgba(77,225,255,0.8)]">
+              <span class="absolute -top-3 right-6 rounded-full bg-neon px-3 py-1 text-xs font-semibold text-slate-950">Popular</span>
+              <div>
+                <p class="text-xs uppercase tracking-wide text-neon">Team</p>
+                <p class="mt-2 text-3xl font-bold text-white">$14<span class="text-base text-slate-400">/seat</span></p>
+                <p class="text-sm text-slate-300">Secure collaboration built for product teams.</p>
+              </div>
+              <ul class="space-y-2 text-sm text-slate-200">
+                <li>Git-native sync with encrypted secrets</li>
+                <li>Runtime monitors & batch jobs</li>
+                <li>Command palette & autocomplete</li>
+                <li>Priority workspace support</li>
+              </ul>
+              <button class="mt-auto rounded-md bg-neon px-4 py-2 text-sm font-semibold text-slate-950 transition hover:scale-[1.01]">Start free trial</button>
+            </div>
+            <div class="flex flex-col gap-6 rounded-2xl border border-white/10 bg-white/5 p-6">
+              <div>
+                <p class="text-xs uppercase tracking-wide text-slate-400">Enterprise</p>
+                <p class="mt-2 text-3xl font-bold text-white">Let’s talk</p>
+                <p class="text-sm text-slate-400">For regulated industries and global teams.</p>
+              </div>
+              <ul class="space-y-2 text-sm text-slate-300">
+                <li>SAML SSO & SCIM provisioning</li>
+                <li>Private plugin registries</li>
+                <li>Dedicated onboarding & SLA</li>
+              </ul>
+              <button class="mt-auto rounded-md border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/25">Book a demo</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="relative border-t border-white/10 bg-black/40 py-12">
+      <div class="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
+      <div class="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 sm:px-8 lg:flex-row lg:justify-between">
+        <div class="max-w-sm space-y-4">
+          <a href="#" class="flex items-center gap-3">
+            <span class="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-tr from-ink-500 to-neon text-lg font-bold text-slate-950">F</span>
+            <span class="text-lg font-semibold tracking-tight text-white">DevTools</span>
+          </a>
+          <p class="text-sm text-slate-400">
+            DevTools is crafted by a remote team of developer tooling obsessives. We believe great API experiences begin with trustworthy, sustainable workflows.
+          </p>
+          <div class="flex gap-3 text-slate-400">
+            <a href="#" class="transition hover:text-neon">Twitter</a>
+            <a href="#" class="transition hover:text-neon">GitHub</a>
+            <a href="#" class="transition hover:text-neon">Docs</a>
+          </div>
+        </div>
+        <div class="grid flex-1 gap-8 text-sm text-slate-300 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <h3 class="text-xs uppercase tracking-wide text-slate-400">Product</h3>
+            <ul class="mt-3 space-y-2">
+              <li><a href="#features" class="transition hover:text-neon">Features</a></li>
+              <li><a href="#workflows" class="transition hover:text-neon">Workflows</a></li>
+              <li><a href="#pricing" class="transition hover:text-neon">Pricing</a></li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="text-xs uppercase tracking-wide text-slate-400">Resources</h3>
+            <ul class="mt-3 space-y-2">
+              <li><a href="#" class="transition hover:text-neon">Docs</a></li>
+              <li><a href="#" class="transition hover:text-neon">API status</a></li>
+              <li><a href="#" class="transition hover:text-neon">Release notes</a></li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="text-xs uppercase tracking-wide text-slate-400">Company</h3>
+            <ul class="mt-3 space-y-2">
+              <li><a href="#" class="transition hover:text-neon">About</a></li>
+              <li><a href="#" class="transition hover:text-neon">Careers</a></li>
+              <li><a href="#" class="transition hover:text-neon">Contact</a></li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="text-xs uppercase tracking-wide text-slate-400">Legal</h3>
+            <ul class="mt-3 space-y-2">
+              <li><a href="#" class="transition hover:text-neon">Privacy</a></li>
+              <li><a href="#" class="transition hover:text-neon">Terms</a></li>
+              <li><a href="#" class="transition hover:text-neon">Security</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="mt-12 border-t border-white/5 pt-6 text-center text-xs text-slate-500">
+        © <span id="year"></span> DevTools Labs. All rights reserved.
+      </div>
+    </footer>
+
+    <script>
+      document.getElementById('year').textContent = new Date().getFullYear();
+    </script>
+  </body>
+</html>
