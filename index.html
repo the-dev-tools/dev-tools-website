@@ -52,13 +52,13 @@
           <img src="logo.svg" alt="DevTools" class="h-9 w-auto" />
           <span class="sr-only">DevTools</span>
         </a>
-        <nav class="hidden items-center gap-8 text-sm font-medium md:flex">
+        <nav class="hidden items-center gap-8 text-sm font-medium min-[900px]:flex">
           <a class="transition hover:text-neon" href="#features">Features</a>
           <a class="transition hover:text-neon" href="#workflows">Workflows</a>
           <a class="transition hover:text-neon" href="#testimonials">Stories</a>
           <a class="transition hover:text-neon" href="#pricing">Pricing</a>
         </nav>
-        <div class="hidden items-center gap-3 md:flex">
+        <div class="hidden items-center gap-3 min-[900px]:flex">
           <a
             href="https://github.com/the-dev-tools/dev-tools"
             target="_blank"
@@ -101,12 +101,92 @@
             </span>
           </button>
         </div>
-        <button class="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-md border border-white/10 text-white hover:border-white/25">
-          <span class="sr-only">Toggle menu</span>
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16" />
+        <button
+          type="button"
+          class="inline-flex items-center justify-center rounded-md border border-white/15 bg-white/5 p-2 text-slate-200 transition hover:border-neon/60 hover:bg-white/10 hover:text-white min-[900px]:hidden"
+          data-mobile-nav-toggle
+          aria-expanded="false"
+          aria-controls="mobile-nav-panel"
+        >
+          <span class="sr-only">Toggle navigation</span>
+          <svg data-icon="open" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+          <svg data-icon="close" xmlns="http://www.w3.org/2000/svg" class="hidden h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6l-12 12" />
           </svg>
         </button>
+      </div>
+      <div
+        id="mobile-nav-backdrop"
+        class="fixed inset-0 z-40 hidden bg-slate-950/70 backdrop-blur-sm min-[900px]:hidden"
+        aria-hidden="true"
+      ></div>
+      <div
+        id="mobile-nav-panel"
+        class="fixed inset-x-4 top-24 z-50 hidden max-h-[85vh] overflow-y-auto rounded-2xl border border-white/10 bg-slate-950/95 p-6 shadow-[0_40px_90px_-45px_rgba(6,12,32,0.95)] min-[900px]:hidden"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Mobile navigation"
+      >
+        <nav class="space-y-4 text-base font-semibold text-white">
+          <a href="#features" class="block rounded-lg bg-white/5 px-4 py-3 text-slate-200 transition hover:bg-white/10">Features</a>
+          <a href="#workflows" class="block rounded-lg bg-white/5 px-4 py-3 text-slate-200 transition hover:bg-white/10">Workflows</a>
+          <a href="#testimonials" class="block rounded-lg bg-white/5 px-4 py-3 text-slate-200 transition hover:bg-white/10">Stories</a>
+          <a href="#pricing" class="block rounded-lg bg-white/5 px-4 py-3 text-slate-200 transition hover:bg-white/10">Pricing</a>
+        </nav>
+        <div class="mt-6 grid gap-3">
+          <button
+            type="button"
+            class="group inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#58D7FF]/60 bg-transparent px-5 py-3 text-sm font-semibold text-[#58D7FF] transition hover:bg-[#58D7FF]/10 hover:text-white"
+          >
+            <span>Download</span>
+            <span class="flex items-center gap-1 text-xs font-medium transition">
+              <svg
+                data-os-icon="mac"
+                class="os-icon h-4 w-4 opacity-80 transition group-hover:opacity-100"
+                viewBox="0 0 1920 1920"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M972.669 550.592c74.37 0 213.815-103.393 360.63-88.315 61.446 2.608 233.881 25.282 344.644 190.462-8.843 5.895-205.88 122.78-203.5 366.184 2.495 290.908 249.982 387.499 252.816 388.973-2.268 6.575-39.566 137.857-130.489 273.448-78.565 117.111-159.965 233.655-288.3 236.036-126.18 2.494-166.767-76.298-311.087-76.298-144.206 0-189.214 73.917-308.706 78.792-123.913 4.762-218.237-126.52-297.37-243.178-161.892-238.87-285.578-674.665-119.491-968.86 82.42-146.133 229.8-238.643 389.879-241.024 121.646-2.267 236.603 83.78 310.974 83.78ZM1367.75 0c13.038 110.536-34.69 221.525-105.093 301.45-70.743 79.813-186.494 141.94-299.977 133.55-15.305-108.495 41.947-221.184 107.248-292.154C1142.939 63.034 1266.172 3.855 1367.75 0Z" />
+              </svg>
+              <svg
+                data-os-icon="windows"
+                class="os-icon h-4 w-4 opacity-80 transition group-hover:opacity-100"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M13.146 10.434v7.035c3.614.488 7.228.992 10.836 1.53V11.713c-3.617 0-7.233-.279-10.852-.279ZM4 10.435v6.786c2.726.368 5.452.72 8.173 1.121-.005-2.626-.012-5.252-.012-7.878-2.724.005-5.447-.039-8.161-.029ZM4 2.843v6.767c2.726.007 5.452-.034 8.178-.031 0-2.62 0-5.236-.003-7.856C9.447 1.064 6.717 1.425 4 1.843ZM24 9.472c-3.612.014-7.224.069-10.838.08 0-2.663 0-5.322.002-7.983C17.77.018 21.385-.5 25 0c0 3.158-.002 6.313 0 9.472Z" transform="translate(-4 -0.002)"/>
+              </svg>
+              <svg
+                data-os-icon="linux"
+                class="os-icon h-4 w-4 opacity-80 transition group-hover:opacity-100"
+                viewBox="0 0 512 512"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M255.834 65.938c-63.862 0-115.847 65.487-107.8 129.349 4.882 38.98-11.567 72.573-30.355 102.899-18.293 29.42-38.069 59.403-37.974 100.122.19 81.333 66.293 146.26 147.74 146.13 5.528-.01 11.114-.32 16.748-.88 2.877-.285 6.746-1.24 10.01-1.24 3.264 0 7.133.955 10.01 1.24 5.634.56 11.22.87 16.748.88 81.447.13 147.55-64.797 147.74-146.13.095-40.719-19.68-70.702-37.974-100.122-18.788-30.326-35.237-63.919-30.355-102.899 8.047-63.862-43.938-129.349-107.8-129.349ZM150.88 153.6c12.102 0 21.913 9.811 21.913 21.913 0 12.101-9.811 21.913-21.913 21.913s-21.913-9.812-21.913-21.913c0-12.102 9.811-21.913 21.913-21.913Zm210.01 0c12.102 0 21.913 9.811 21.913 21.913 0 12.101-9.811 21.913-21.913 21.913s-21.913-9.812-21.913-21.913c0-12.102 9.811-21.913 21.913-21.913ZM201.1 209.9c18.104 0 32.77 14.666 32.77 32.77S219.204 275.44 201.1 275.44c-18.104 0-32.77-14.666-32.77-32.77S182.996 209.9 201.1 209.9Zm110.192 0c18.104 0 32.77 14.666 32.77 32.77s-14.666 32.77-32.77 32.77c-18.104 0-32.77-14.666-32.77-32.77s14.666-32.77 32.77-32.77Z" />
+              </svg>
+            </span>
+          </button>
+          <a
+            href="#features"
+            class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-slate-100 transition hover:border-neon/60 hover:bg-white/10 hover:text-white"
+          >
+            Docs
+          </a>
+          <a
+            href="https://github.com/the-dev-tools/dev-tools"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-slate-100 transition hover:border-neon/60 hover:bg-white/10 hover:text-white"
+          >
+            <img src="assets/github.svg" alt="GitHub" class="h-4 w-4 filter invert" />
+            Star on GitHub
+          </a>
+        </div>
       </div>
     </header>
 
@@ -631,6 +711,75 @@
 
     <script>
       document.getElementById('year').textContent = new Date().getFullYear();
+
+      (function () {
+        const toggle = document.querySelector('[data-mobile-nav-toggle]');
+        const panel = document.getElementById('mobile-nav-panel');
+        const backdrop = document.getElementById('mobile-nav-backdrop');
+        if (!toggle || !panel || !backdrop) {
+          return;
+        }
+
+        const openIcon = toggle.querySelector('[data-icon="open"]');
+        const closeIcon = toggle.querySelector('[data-icon="close"]');
+
+        const setExpanded = (expanded) => {
+          toggle.setAttribute('aria-expanded', String(expanded));
+          if (openIcon && closeIcon) {
+            openIcon.classList.toggle('hidden', expanded);
+            closeIcon.classList.toggle('hidden', !expanded);
+          }
+        };
+
+        const isOpen = () => toggle.getAttribute('aria-expanded') === 'true';
+
+        const modal = document.getElementById('demo-modal');
+
+        const open = () => {
+          if (isOpen()) return;
+          panel.classList.remove('hidden');
+          backdrop.classList.remove('hidden');
+          document.body.classList.add('overflow-hidden');
+          setExpanded(true);
+        };
+
+        const close = () => {
+          if (!isOpen()) return;
+          panel.classList.add('hidden');
+          backdrop.classList.add('hidden');
+          const modalActive = modal && !modal.classList.contains('hidden');
+          if (!modalActive) {
+            document.body.classList.remove('overflow-hidden');
+          }
+          setExpanded(false);
+        };
+
+        toggle.addEventListener('click', () => {
+          if (isOpen()) {
+            close();
+          } else {
+            open();
+          }
+        });
+
+        backdrop.addEventListener('click', close);
+
+        panel.querySelectorAll('a, button').forEach((el) => {
+          el.addEventListener('click', close);
+        });
+
+        window.addEventListener('resize', () => {
+          if (window.innerWidth >= 900) {
+            close();
+          }
+        });
+
+        document.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape') {
+            close();
+          }
+        });
+      })();
 
       (function () {
         const ua = navigator.userAgent || navigator.platform || '';
