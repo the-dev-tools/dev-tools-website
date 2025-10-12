@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DevTools – The API toolkit for modern dev teams</title>
+    <meta
+      name="description"
+      content="DevTools is a fast, secure API client that keeps your team in sync without trading privacy for productivity."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      window.tailwindcss = window.tailwindcss || {};
+      window.tailwindcss.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+              mono: ['JetBrains Mono', 'ui-monospace']
+            },
+            colors: {
+              ink: {
+                900: '#090510',
+                700: '#1f1633',
+                500: '#5c4d91',
+                400: '#8f7dfa'
+              },
+              neon: '#4de1ff'
+            }
+          }
+        }
+      };
+    </script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <style>
+      body {
+        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }
+    </style>
+  </head>
+  <body class="min-h-full bg-[radial-gradient(circle_at_20%_20%,rgba(77,225,255,0.18),transparent_50%),radial-gradient(circle_at_80%_0%,rgba(143,125,250,0.22),transparent_45%),#07040f]">
+    <header class="relative border-b border-white/10">
+      <div class="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-white/60 to-transparent"></div>
+      <div class="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-5 sm:px-8">
+        <a href="#" class="flex items-center gap-3">
+          <img src="logo.svg" alt="DevTools" class="h-9 w-auto" />
+          <span class="sr-only">DevTools</span>
+        </a>
+        <nav class="hidden items-center gap-8 text-sm font-medium md:flex">
+          <a class="transition hover:text-neon" href="#features">Features</a>
+          <a class="transition hover:text-neon" href="#workflows">Workflows</a>
+          <a class="transition hover:text-neon" href="#testimonials">Stories</a>
+          <a class="transition hover:text-neon" href="#pricing">Pricing</a>
+        </nav>
+        <div class="hidden items-center gap-3 md:flex">
+          <button class="rounded-md border border-white/10 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-white/20 hover:text-white">Docs</button>
+          <button class="rounded-md bg-gradient-to-r from-neon via-sky-500 to-ink-400 px-4 py-2 text-sm font-semibold text-slate-950 shadow-[0_12px_35px_-15px_rgba(77,225,255,0.8)] transition hover:brightness-110">Download</button>
+        </div>
+        <button class="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-md border border-white/10 text-white hover:border-white/25">
+          <span class="sr-only">Toggle menu</span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="relative space-y-24">
+      <section class="relative mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 pb-24 pt-14 sm:px-8 lg:flex-row lg:items-center">
+        <div class="flex-1 space-y-6">
+          <div class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1 text-xs uppercase tracking-wide text-slate-200">Local-first</div>
+          <h1 class="text-4xl font-extrabold leading-tight text-white sm:text-5xl lg:text-6xl">DevTools — Local-First API Flow Testing</h1>
+          <p class="text-lg text-slate-300">
+            A free, open-source API client and flow runner. Record browser traffic, turn it into a flow tree with auto-mapped variables, export to YAML, and run at multithreaded Go speed locally or in CI.
+          </p>
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <a href="#download" class="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-neon via-sky-400 to-ink-400 px-6 py-3 text-base font-semibold text-slate-950 shadow-[0_20px_45px_-20px_rgba(77,225,255,0.9)] transition hover:scale-[1.02]">Download Desktop</a>
+            <button type="button" data-cli-toggle class="inline-flex items-center justify-center rounded-lg border border-white/10 px-6 py-3 text-base font-semibold text-white transition hover:border-white/30">Install CLI</button>
+            <a href="#docs" class="inline-flex items-center justify-center rounded-lg border border-white/10 px-6 py-3 text-base font-semibold text-white transition hover:border-white/30">Read Docs</a>
+          </div>
+          <div id="cli-panel" class="hidden w-full max-w-xl rounded-lg border border-white/10 bg-black/40 p-4 text-sm text-slate-200">
+            <div class="flex items-start justify-between gap-4">
+              <code class="font-mono text-sm">curl -fsSL https://sh.dev.tools/install.sh | bash</code>
+              <button type="button" data-cli-copy class="rounded border border-white/10 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-white transition hover:border-white/30">Copy</button>
+            </div>
+            <p class="mt-3 text-xs text-slate-400">Runs locally. No root required. Adds <code class="font-mono">devtools</code> to your PATH.</p>
+          </div>
+        </div>
+        <div class="flex-1 rounded-3xl border border-white/10 bg-gradient-to-br from-ink-700/70 via-slate-900/60 to-slate-950 p-8 shadow-[0_40px_90px_-40px_rgba(17,24,56,0.85)]">
+          <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-300">What you get</h2>
+          <ul class="mt-4 space-y-4 text-sm text-slate-300">
+            <li class="flex items-start gap-3">
+              <span class="mt-1 h-2.5 w-2.5 rounded-full bg-neon"></span>
+              <span>Record real HAR traffic and instantly see a flow tree with variables auto-mapped.</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="mt-1 h-2.5 w-2.5 rounded-full bg-sky-300"></span>
+              <span>Export flows as YAML so requests become reviewable artifacts in Git.</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="mt-1 h-2.5 w-2.5 rounded-full bg-emerald-300"></span>
+              <span>Run locally or in CI with a Go-based runner that executes steps in parallel.</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="mt-1 h-2.5 w-2.5 rounded-full bg-amber-300"></span>
+              <span>No accounts, no telemetry. Everything stays on your machine.</span>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="why" class="relative mx-auto w-full max-w-6xl px-4 sm:px-8">
+        <div class="rounded-3xl border border-white/10 bg-white/5/10 p-8 backdrop-blur">
+          <h2 class="text-3xl font-bold text-white sm:text-4xl">Why DevTools</h2>
+          <p class="mt-4 text-lg text-slate-300">
+            Unlike modern API tools, DevTools helps you ship reliable APIs with exportable YAML and a local-first workflow that respects your team’s velocity.
+          </p>
+          <div class="mt-6 grid gap-6 lg:grid-cols-2">
+            <div class="space-y-3 text-sm text-slate-200">
+              <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-300">The flow from traffic to tests in minutes</h3>
+              <ul class="space-y-2 text-slate-300">
+                <li><span class="font-semibold text-neon">HAR → Flow Tree:</span> import a HAR from your browser and instantly get a visual flow graph.</li>
+                <li><span class="font-semibold text-neon">Auto Variable Mapping:</span> tokens/IDs are extracted and addressable by node, e.g. <code class="font-mono text-xs">{{ login.response.body.token }}</code>.</li>
+                <li><span class="font-semibold text-neon">Flows as YAML:</span> exportable text files so you can reuse a saved request and override headers/body/params/assertions per node—no duplication.</li>
+              </ul>
+            </div>
+            <div class="space-y-3 text-sm text-slate-200">
+              <ul class="space-y-2 text-slate-300">
+                <li><span class="font-semibold text-neon">Go-Fast Runner:</span> execute flows in parallel with a lean, multithreaded Go engine.</li>
+                <li><span class="font-semibold text-neon">Local-First:</span> no accounts, no cloud sync, telemetry off by default.</li>
+              </ul>
+              <p class="pt-2 text-slate-300">
+                <strong class="text-white">Result:</strong> record real traffic, model behavior, and run thousands of API checks in seconds—locally and in CI.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="core" class="relative mx-auto w-full max-w-6xl px-4 sm:px-8">
+        <h2 class="text-3xl font-bold text-white sm:text-4xl">Core Capabilities</h2>
+        <div class="mt-8 grid gap-6 md:grid-cols-3">
+          <article class="rounded-2xl border border-white/10 bg-white/5/5 p-6">
+            <h3 class="text-xl font-semibold text-white">Build</h3>
+            <ul class="mt-4 space-y-2 text-sm text-slate-300">
+              <li>Postman-style Request Editor (Params • Headers • Body • Assertions).</li>
+              <li>HAR import → auto-generated flow tree.</li>
+            </ul>
+          </article>
+          <article class="rounded-2xl border border-white/10 bg-white/5/5 p-6">
+            <h3 class="text-xl font-semibold text-white">Automate</h3>
+            <ul class="mt-4 space-y-2 text-sm text-slate-300">
+              <li>Visual Flow Builder: requests, conditions, loops, data nodes.</li>
+              <li>Variable infrastructure with deterministic references via JSON-path style accessors.</li>
+              <li>Per-node overrides so you reuse saved requests without duplication.</li>
+            </ul>
+          </article>
+          <article class="rounded-2xl border border-white/10 bg-white/5/5 p-6">
+            <h3 class="text-xl font-semibold text-white">Run &amp; Integrate</h3>
+            <ul class="mt-4 space-y-2 text-sm text-slate-300">
+              <li>YAML export you can diff and review in Git.</li>
+              <li>CLI runner with console/JUnit outputs and deterministic exit codes.</li>
+              <li>Parallel execution by default with environments and variables built-in.</li>
+              <li>Protocols: HTTP/REST today. Roadmap: GraphQL, gRPC, WebSockets.</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section id="hello-api" class="relative mx-auto w-full max-w-6xl px-4 sm:px-8">
+        <div class="grid gap-8 lg:grid-cols-2">
+          <div class="space-y-4">
+            <h2 class="text-3xl font-bold text-white sm:text-4xl">Hello API (2 minutes)</h2>
+            <ol class="list-decimal space-y-3 pl-6 text-sm text-slate-300">
+              <li>Install the CLI or download the desktop app.</li>
+              <li>Create a request to <code class="font-mono text-xs text-slate-200">https://jsonplaceholder.typicode.com/todos/1</code>.</li>
+              <li>Add assertion: <code class="font-mono text-xs text-slate-200">response.status == 200</code>.</li>
+              <li>Send. Inspect JSON, status, time, size.</li>
+              <li>Add a login request, capture the token, and use <code class="font-mono text-xs text-slate-200">Authorization: Bearer {{ login.response.body.token }}</code>.</li>
+            </ol>
+          </div>
+          <div class="rounded-2xl border border-white/10 bg-black/40 p-6">
+            <h3 class="text-base font-semibold text-white">Example: YAML Flow</h3>
+            <p class="mt-2 text-sm text-slate-300">Exported or hand-authored flows are plain text.</p>
+            <pre class="mt-4 overflow-auto rounded-lg border border-white/5 bg-black/60 p-4 text-left text-xs leading-relaxed text-sky-200">flows:
+  - name: ecommerce_smoke
+    steps:
+      - request:
+          name: login
+          use_request: login
+          overrides:
+            body:
+              email: admin@example.com
+              password: secret
+      - request:
+          name: list_categories
+          use_request: get_categories
+          overrides:
+            headers:
+              authorization: "Bearer {{ login.response.body.token }}"
+            assertions:
+              - "response.status == 200"
+      - request:
+          name: create_product
+          use_request: post_products
+          overrides:
+            headers:
+              authorization: "Bearer {{ login.response.body.token }}"
+            body:
+              name: "macbook pro"
+              price: 123
+              category_id: "{{ list_categories.response.body[0].id }}"
+            assertions:
+              - "json.body.id != null"</pre>
+            <p class="mt-4 text-xs text-slate-400">Run in CI: <code class="font-mono">devtools run ./flows/ecommerce_smoke.yaml --report console --env Dev</code></p>
+          </div>
+        </div>
+      </section>
+
+      <section class="relative mx-auto grid w-full max-w-6xl gap-6 px-4 sm:px-8 lg:grid-cols-2">
+        <article class="rounded-2xl border border-white/10 bg-white/5/10 p-6">
+          <h2 class="text-2xl font-semibold text-white">Performance &amp; Parallelism</h2>
+          <ul class="mt-4 space-y-2 text-sm text-slate-300">
+            <li>Go-based, multithreaded runner executes nodes in parallel where possible.</li>
+            <li>Close to the metal: lean runtime, not Electron/Node at execution time.</li>
+            <li>Designed to scale to thousands of API tests; pipelines become network-bound, not tool-bound.</li>
+          </ul>
+        </article>
+        <article class="rounded-2xl border border-white/10 bg-white/5/10 p-6">
+          <h2 class="text-2xl font-semibold text-white">Developer Experience</h2>
+          <ul class="mt-4 space-y-2 text-sm text-slate-300">
+            <li>Hybrid UX: desktop GUI for authoring plus CLI for automation.</li>
+            <li>Collections &amp; flows are plain files—version with Git and review in PRs.</li>
+            <li>Environments &amp; variables for Dev/Prod with instant switching.</li>
+            <li>Works with GitHub, GitLab, Jenkins—no proprietary cloud needed.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section id="compare" class="relative mx-auto w-full max-w-6xl px-4 sm:px-8">
+        <h2 class="text-3xl font-bold text-white sm:text-4xl">Compare</h2>
+        <div class="mt-8 grid gap-6 md:grid-cols-2">
+          <article class="rounded-2xl border border-white/10 bg-black/40 p-6">
+            <h3 class="text-xl font-semibold text-white">DevTools vs Postman/Insomnia</h3>
+            <ul class="mt-4 space-y-2 text-sm text-slate-300">
+              <li>Flows as YAML—exportable, reviewable; Postman Flows aren’t exportable.</li>
+              <li>Recorder → flow tree with strong variable addressing.</li>
+              <li>Go-fast, parallel execution vs. JS-heavy pipelines.</li>
+              <li>Local-first by design; no sign-ups.</li>
+            </ul>
+          </article>
+          <article class="rounded-2xl border border-white/10 bg-black/40 p-6">
+            <h3 class="text-xl font-semibold text-white">DevTools vs Script-Only (curl)</h3>
+            <ul class="mt-4 space-y-2 text-sm text-slate-300">
+              <li>Visual modeling plus reusable requests and assertions.</li>
+              <li>Flows reduce glue code while keeping everything executable as YAML.</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section id="manifesto" class="relative mx-auto w-full max-w-6xl px-4 sm:px-8">
+        <div class="rounded-3xl border border-white/10 bg-white/5/10 p-8">
+          <h2 class="text-3xl font-bold text-white sm:text-4xl">Testing Philosophy — The DevTools Manifesto</h2>
+          <ol class="mt-6 space-y-4 text-sm text-slate-300">
+            <li><strong class="text-white">Make API flows the backbone.</strong> UI test sprawl is brittle and slow. Keep end-to-end UI to 3–5 happy paths; move the rest into API flow tests and component tests.</li>
+            <li><strong class="text-white">Visual when you want it, code when you need it.</strong> Author in a visual builder, then export to YAML so the exact behavior is diff-able and gateable in CI.</li>
+            <li><strong class="text-white">Real traffic is truth.</strong> Start from recorded HARs to reflect what users actually do; turn that into executable flows with auto-mapped variables.</li>
+            <li><strong class="text-white">Speed unlocks discipline.</strong> A parallel Go runner makes it practical to run thousands of checks on every PR. Fast feedback creates better habits.</li>
+            <li><strong class="text-white">Local-first earns trust.</strong> Your requests, data, and credentials stay on your machine. No third-party servers needed to test your APIs.</li>
+          </ol>
+          <p class="mt-6 text-sm text-slate-300">This is the pragmatic, scalable path we’ve learned building and operating large test systems.</p>
+        </div>
+      </section>
+
+      <section id="security" class="relative mx-auto w-full max-w-6xl px-4 sm:px-8">
+        <h2 class="text-3xl font-bold text-white sm:text-4xl">Security, Privacy &amp; Licensing</h2>
+        <ul class="mt-6 space-y-2 text-sm text-slate-300">
+          <li>Local-first execution; nothing leaves your machine unless you choose.</li>
+          <li>Telemetry off by default.</li>
+          <li>Open source (MIT/Apache-2.0 recommended); commercial use allowed.</li>
+          <li>Secrets managed via environments and your OS keychain/CI vaults.</li>
+        </ul>
+      </section>
+
+      <section id="roadmap" class="relative mx-auto w-full max-w-6xl px-4 sm:px-8">
+        <h2 class="text-3xl font-bold text-white sm:text-4xl">Roadmap</h2>
+        <ul class="mt-6 space-y-2 text-sm text-slate-300">
+          <li>Protocols: GraphQL, gRPC, WebSockets.</li>
+          <li>Enhanced dataset management, richer assertions, and generated flow docs.</li>
+          <li>Optional team features (SSO, policies) without compromising local-first workflows.</li>
+        </ul>
+      </section>
+
+      <section id="faq" class="relative mx-auto w-full max-w-6xl px-4 pb-24 sm:px-8">
+        <h2 class="text-3xl font-bold text-white sm:text-4xl">FAQ</h2>
+        <div class="mt-6 space-y-4">
+          <details class="rounded-2xl border border-white/10 bg-black/40 p-4 text-sm text-slate-300">
+            <summary class="cursor-pointer text-base font-semibold text-white">Can I import Postman collections?</summary>
+            <p class="mt-3">Yes—import/export supported.</p>
+          </details>
+          <details class="rounded-2xl border border-white/10 bg-black/40 p-4 text-sm text-slate-300">
+            <summary class="cursor-pointer text-base font-semibold text-white">Can I export flows?</summary>
+            <p class="mt-3">Yes—flows export as YAML. Reuse requests with per-node overrides.</p>
+          </details>
+          <details class="rounded-2xl border border-white/10 bg-black/40 p-4 text-sm text-slate-300">
+            <summary class="cursor-pointer text-base font-semibold text-white">Do you support CI?</summary>
+            <p class="mt-3">Yes—headless CLI, console/JUnit reports, and deterministic exit codes.</p>
+          </details>
+          <details class="rounded-2xl border border-white/10 bg-black/40 p-4 text-sm text-slate-300">
+            <summary class="cursor-pointer text-base font-semibold text-white">Who is it for?</summary>
+            <p class="mt-3">Backend engineers, SRE/Platform, QA, and frontend devs integrating against APIs.</p>
+          </details>
+          <details class="rounded-2xl border border-white/10 bg-black/40 p-4 text-sm text-slate-300">
+            <summary class="cursor-pointer text-base font-semibold text-white">What about GraphQL/gRPC?</summary>
+            <p class="mt-3">On the roadmap. HTTP/REST is first-class today.</p>
+          </details>
+        </div>
+      </section>
+    </main></main>
+
+    <footer class="relative border-t border-white/10 bg-black/40 py-12">
+      <div class="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
+      <div class="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 sm:px-8 lg:flex-row lg:justify-between">
+        <div class="max-w-sm space-y-4">
+          <a href="#" class="flex items-center gap-3">
+            <img src="logo.svg" alt="DevTools" class="h-8 w-auto" />
+            <span class="sr-only">DevTools</span>
+          </a>
+          <p class="text-sm text-slate-400">
+            DevTools is crafted by a remote team of developer tooling obsessives. We believe great API experiences begin with trustworthy, sustainable workflows.
+          </p>
+          <div class="flex gap-3 text-slate-400">
+            <a href="#" class="transition hover:text-neon">Twitter</a>
+            <a href="#" class="transition hover:text-neon">GitHub</a>
+            <a href="#" class="transition hover:text-neon">Docs</a>
+          </div>
+        </div>
+        <div class="grid flex-1 gap-8 text-sm text-slate-300 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <h3 class="text-xs uppercase tracking-wide text-slate-400">Product</h3>
+            <ul class="mt-3 space-y-2">
+              <li><a href="#features" class="transition hover:text-neon">Features</a></li>
+              <li><a href="#workflows" class="transition hover:text-neon">Workflows</a></li>
+              <li><a href="#pricing" class="transition hover:text-neon">Pricing</a></li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="text-xs uppercase tracking-wide text-slate-400">Resources</h3>
+            <ul class="mt-3 space-y-2">
+              <li><a href="#" class="transition hover:text-neon">Docs</a></li>
+              <li><a href="#" class="transition hover:text-neon">API status</a></li>
+              <li><a href="#" class="transition hover:text-neon">Release notes</a></li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="text-xs uppercase tracking-wide text-slate-400">Company</h3>
+            <ul class="mt-3 space-y-2">
+              <li><a href="#" class="transition hover:text-neon">About</a></li>
+              <li><a href="#" class="transition hover:text-neon">Careers</a></li>
+              <li><a href="#" class="transition hover:text-neon">Contact</a></li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="text-xs uppercase tracking-wide text-slate-400">Legal</h3>
+            <ul class="mt-3 space-y-2">
+              <li><a href="#" class="transition hover:text-neon">Privacy</a></li>
+              <li><a href="#" class="transition hover:text-neon">Terms</a></li>
+              <li><a href="#" class="transition hover:text-neon">Security</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="mt-12 border-t border-white/5 pt-6 text-center text-xs text-slate-500">
+        © <span id="year"></span> DevTools Labs. All rights reserved.
+      </div>
+    </footer>
+
+    <script>
+      const yearEl = document.getElementById('year');
+      if (yearEl) {
+        yearEl.textContent = new Date().getFullYear();
+      }
+
+      const cliToggle = document.querySelector('[data-cli-toggle]');
+      const cliPanel = document.getElementById('cli-panel');
+      const cliCopy = document.querySelector('[data-cli-copy]');
+      const cliCommand = 'curl -fsSL https://sh.dev.tools/install.sh | bash';
+
+      if (cliToggle && cliPanel) {
+        cliToggle.addEventListener('click', () => {
+          cliPanel.classList.toggle('hidden');
+        });
+      }
+
+      if (cliCopy && navigator.clipboard) {
+        cliCopy.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(cliCommand);
+            cliCopy.textContent = 'Copied';
+            setTimeout(() => (cliCopy.textContent = 'Copy'), 2000);
+          } catch (err) {
+            console.error('Copy failed', err);
+          }
+        });
+      }
+    </script>
+  </body>
+</html>

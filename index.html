@@ -44,7 +44,7 @@
       }
     </style>
   </head>
-  <body class="min-h-full bg-[radial-gradient(circle_at_20%_20%,rgba(77,225,255,0.18),transparent_50%),radial-gradient(circle_at_80%_0%,rgba(143,125,250,0.22),transparent_45%),#07040f]">
+  <body class="min-h-full bg-[radial-gradient(circle_at_15%_15%,rgba(77,225,255,0.18),transparent_55%),radial-gradient(circle_at_85%_0%,rgba(143,125,250,0.18),transparent_45%),linear-gradient(120deg,#0C1633_0%,#2A1B4E_100%)]">
     <header class="relative border-b border-white/10">
       <div class="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-white/60 to-transparent"></div>
       <div class="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-5 sm:px-8">
@@ -59,8 +59,23 @@
           <a class="transition hover:text-neon" href="#pricing">Pricing</a>
         </nav>
         <div class="hidden items-center gap-3 md:flex">
-          <button class="rounded-md border border-white/10 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-white/20 hover:text-white">Docs</button>
-          <button class="rounded-md bg-gradient-to-r from-neon via-sky-500 to-ink-400 px-4 py-2 text-sm font-semibold text-slate-950 shadow-[0_12px_35px_-15px_rgba(77,225,255,0.8)] transition hover:brightness-110">Download</button>
+          <a
+            href="https://github.com/the-dev-tools/dev-tools"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="group inline-flex items-center gap-2 rounded-md border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:border-neon/60 hover:bg-white/10 hover:text-white"
+          >
+            <img src="assets/github.svg" alt="GitHub" class="h-4 w-4 opacity-90 transition group-hover:opacity-100 filter invert" />
+            Star on GitHub
+          </a>
+          <button class="group inline-flex items-center gap-2 rounded-md border border-[#58D7FF]/60 bg-transparent px-4 py-2 text-sm font-semibold text-[#58D7FF] transition hover:bg-[#58D7FF]/10 hover:text-white">
+            <span>Download</span>
+            <span class="flex items-center gap-1 text-xs font-medium text-slate-300 group-hover:text-white">
+              <img src="assets/apple.svg" alt="macOS" class="h-4 w-4 opacity-80 group-hover:opacity-100 filter invert" />
+              <img src="assets/windows.svg" alt="Windows" class="h-4 w-4 opacity-80 group-hover:opacity-100 filter invert" />
+              <img src="assets/linux.svg" alt="Linux" class="h-4 w-4 opacity-80 group-hover:opacity-100 filter invert" />
+            </span>
+          </button>
         </div>
         <button class="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-md border border-white/10 text-white hover:border-white/25">
           <span class="sr-only">Toggle menu</span>
@@ -76,48 +91,46 @@
         <div class="relative flex-1">
           <div class="mb-6 flex justify-center md:justify-start">
             <span class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs uppercase tracking-wide text-slate-200 shadow-[0_10px_40px_rgba(77,225,255,0.15)]">
-              <span class="h-2 w-2 rounded-full bg-neon"></span>
-              New: Workspace variables sync with git remotes
+              We are live! 
             </span>
           </div>
           <h1 class="text-center text-4xl font-extrabold leading-tight text-white sm:text-5xl md:text-left md:text-6xl">
-            The <span class="bg-gradient-to-r from-neon via-sky-300 to-ink-400 bg-clip-text">API toolkit</span> your team actually loves to use.
+            <span class="text-[#58D7FF] drop-shadow-[0_0_18px_rgba(88,215,255,0.55)]">Request</span> <span class="text-[#C97DFF] drop-shadow-[0_0_18px_rgba(201,125,255,0.45)]">Chaining</span> has never been this easy.
           </h1>
           <p class="mt-6 max-w-xl text-center text-lg text-slate-300 md:text-left">
-            DevTools gives modern teams a privacy-first workflow for REST, GraphQL, gRPC, and WebSocket APIs—without giving up the features that keep releases moving.
+            Lightning Fast Go-Based Api Client, Lets you import har files into a flow with Variable mapping
           </p>
-          <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div class="mt-8 flex items-center gap-3">
             <a
               href="#"
-              class="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-sky-300 via-neon to-ink-400 px-6 py-3 text-base font-semibold text-slate-950 shadow-[0_18px_45px_-20px_rgba(77,225,255,0.9)] transition hover:scale-[1.02]"
+              class="group inline-flex items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-[#5AF2FF] via-[#9A7DFF] to-[#FF8CE7] px-7 py-3 text-base font-semibold text-slate-900 shadow-[0_22px_55px_-20px_rgba(129,102,255,0.85)] ring-1 ring-white/20 transition duration-200 hover:scale-[1.03] hover:shadow-[0_30px_70px_-20px_rgba(129,102,255,0.95)]"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4" />
-              </svg>
-              Download DevTools
+              <span>Download</span>
+              <span class="flex items-center gap-1 text-xs font-medium text-slate-800 transition group-hover:text-slate-900">
+                <img src="assets/apple.svg" alt="macOS" class="h-4 w-4 opacity-80 transition group-hover:opacity-100" />
+                <img src="assets/windows.svg" alt="Windows" class="h-4 w-4 opacity-80 transition group-hover:opacity-100" />
+                <img src="assets/linux.svg" alt="Linux" class="h-4 w-4 opacity-80 transition group-hover:opacity-100" />
+              </span>
             </a>
             <a
               href="#features"
-              class="inline-flex items-center justify-center gap-2 rounded-lg border border-white/10 px-6 py-3 text-base font-semibold text-white transition hover:border-white/25"
+              class="group inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-6 py-3 text-base font-semibold text-slate-100 shadow-[0_18px_40px_-28px_rgba(77,225,255,0.8)] transition duration-200 hover:border-neon/60 hover:bg-white/10 hover:text-white"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m9 5 7 7-7 7" />
-              </svg>
-              Explore features
+              Docs
             </a>
           </div>
           <dl class="mt-10 grid grid-cols-3 gap-6 text-center md:max-w-md md:text-left">
             <div>
-              <dt class="text-xs uppercase tracking-wide text-slate-400">Teams shipped</dt>
-              <dd class="mt-1 text-2xl font-semibold text-white">8,200+</dd>
+              <dt class="text-xs uppercase tracking-wide text-slate-400">2× faster than Postman</dt>
+              <dd class="mt-2 text-2xl font-semibold text-white">Speed</dd>
             </div>
             <div>
-              <dt class="text-xs uppercase tracking-wide text-slate-400">Average response</dt>
-              <dd class="mt-1 text-2xl font-semibold text-white">230ms</dd>
+              <dt class="text-xs uppercase tracking-wide text-slate-400">5× faster than Bruno</dt>
+              <dd class="mt-2 text-2xl font-semibold text-white">Throughput</dd>
             </div>
             <div>
               <dt class="text-xs uppercase tracking-wide text-slate-400">Git synced workspaces</dt>
-              <dd class="mt-1 text-2xl font-semibold text-white">56k</dd>
+              <dd class="mt-2 text-2xl font-semibold text-white">56k</dd>
             </div>
           </dl>
         </div>
@@ -134,7 +147,7 @@
               </span>
               <span class="rounded-full border border-white/10 bg-white/5 px-3 py-1 font-medium text-white">Live</span>
             </div>
-            <div class="mt-6 grid gap-4 rounded-2xl border border-white/5 bg-black/40 p-5">
+            <div class="mt-6 grid gap-4 rounded-2xl border border-white/5 bg-[linear-gradient(160deg,rgba(12,22,51,0.75),rgba(42,27,78,0.55))] p-5">
               <div>
                 <p class="text-sm uppercase tracking-wide text-slate-400">Request</p>
                 <div class="mt-2 rounded-lg border border-white/5 bg-black/30 p-4">
@@ -144,7 +157,7 @@
               </div>
               <div>
                 <p class="text-sm uppercase tracking-wide text-slate-400">Body</p>
-                <pre class="mt-2 overflow-hidden rounded-lg border border-white/5 bg-black/40 p-4 text-left font-mono text-sm leading-relaxed text-sky-200">
+                <pre class="mt-2 overflow-hidden rounded-lg border border-white/5 bg-[linear-gradient(160deg,rgba(12,22,51,0.75),rgba(42,27,78,0.55))] p-4 text-left font-mono text-sm leading-relaxed text-sky-200">
 query Launches($limit: Int!) {
   launches(limit: $limit) {
     id
@@ -156,7 +169,7 @@ query Launches($limit: Int!) {
               </div>
               <div>
                 <p class="text-sm uppercase tracking-wide text-slate-400">Response</p>
-                <pre class="mt-2 overflow-hidden rounded-lg border border-white/5 bg-black/40 p-4 text-left font-mono text-sm leading-relaxed text-emerald-200">
+                <pre class="mt-2 overflow-hidden rounded-lg border border-white/5 bg-[linear-gradient(160deg,rgba(12,22,51,0.75),rgba(42,27,78,0.55))] p-4 text-left font-mono text-sm leading-relaxed text-emerald-200">
 {
   "data": {
     "launches": [
@@ -176,7 +189,7 @@ query Launches($limit: Int!) {
         </div>
       </section>
 
-      <section id="features" class="relative border-t border-white/5 bg-white/5/5 py-16">
+      <section id="features" class="relative border-t border-white/5 bg-[linear-gradient(160deg,rgba(12,22,51,0.55),rgba(42,27,78,0.4))] py-16">
         <div class="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
         <div class="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 sm:px-8">
           <div class="mx-auto max-w-3xl text-center">
@@ -311,7 +324,7 @@ query Launches($limit: Int!) {
                 <span class="rounded-full border border-white/10 bg-white/5 px-3 py-1">Quality Gate</span>
               </div>
               <div class="mt-6 grid gap-4">
-                <div class="flex items-center justify-between rounded-xl border border-white/10 bg-black/40 p-4">
+                <div class="flex items-center justify-between rounded-xl border border-white/10 bg-[linear-gradient(160deg,rgba(12,22,51,0.75),rgba(42,27,78,0.55))] p-4">
                   <div class="text-sm text-slate-300">
                     <p class="text-xs uppercase tracking-wide text-slate-500">Environment</p>
                     <p class="font-semibold text-white">Production</p>
@@ -321,7 +334,7 @@ query Launches($limit: Int!) {
                     Passing
                   </div>
                 </div>
-                <div class="rounded-xl border border-white/10 bg-black/40 p-4">
+                <div class="rounded-xl border border-white/10 bg-[linear-gradient(160deg,rgba(12,22,51,0.75),rgba(42,27,78,0.55))] p-4">
                   <div class="flex items-center justify-between text-xs uppercase tracking-wide text-slate-400">
                     <span>Recent runs</span>
                     <span>Latency (ms)</span>
@@ -350,7 +363,7 @@ query Launches($limit: Int!) {
                     </div>
                   </div>
                 </div>
-                <div class="rounded-xl border border-white/10 bg-black/40 p-4">
+                <div class="rounded-xl border border-white/10 bg-[linear-gradient(160deg,rgba(12,22,51,0.75),rgba(42,27,78,0.55))] p-4">
                   <p class="text-xs uppercase tracking-wide text-slate-500">Next run</p>
                   <p class="mt-1 text-sm font-medium text-white">In 6 minutes · on release branch</p>
                 </div>
@@ -364,7 +377,7 @@ query Launches($limit: Int!) {
         </div>
       </section>
 
-      <section id="testimonials" class="relative border-t border-white/5 bg-white/5/5 py-20">
+      <section id="testimonials" class="relative border-t border-white/5 bg-[linear-gradient(160deg,rgba(12,22,51,0.55),rgba(42,27,78,0.4))] py-20">
         <div class="mx-auto w-full max-w-6xl px-4 sm:px-8">
           <div class="mx-auto max-w-2xl text-center">
             <h2 class="text-3xl font-bold text-white sm:text-4xl">Loved by developers building the future</h2>
@@ -467,7 +480,7 @@ query Launches($limit: Int!) {
       </section>
     </main>
 
-    <footer class="relative border-t border-white/10 bg-black/40 py-12">
+    <footer class="relative border-t border-white/10 bg-[linear-gradient(160deg,rgba(12,22,51,0.75),rgba(42,27,78,0.55))] py-12">
       <div class="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
       <div class="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 sm:px-8 lg:flex-row lg:justify-between">
         <div class="max-w-sm space-y-4">
