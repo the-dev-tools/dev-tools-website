@@ -70,10 +70,34 @@
           </a>
           <button class="group inline-flex items-center gap-2 rounded-md border border-[#58D7FF]/60 bg-transparent px-4 py-2 text-sm font-semibold text-[#58D7FF] transition hover:bg-[#58D7FF]/10 hover:text-white">
             <span>Download</span>
-            <span class="flex items-center gap-1 text-xs font-medium text-slate-300 group-hover:text-white">
-              <img src="assets/apple.svg" alt="macOS" class="h-4 w-4 opacity-80 group-hover:opacity-100 filter invert" />
-              <img src="assets/windows.svg" alt="Windows" class="h-4 w-4 opacity-80 group-hover:opacity-100 filter invert" />
-              <img src="assets/linux.svg" alt="Linux" class="h-4 w-4 opacity-80 group-hover:opacity-100 filter invert" />
+            <span class="flex items-center gap-1 text-xs font-medium transition">
+              <svg
+                data-os-icon="mac"
+                class="os-icon h-4 w-4 opacity-80 transition group-hover:opacity-100"
+                viewBox="0 0 1920 1920"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M972.669 550.592c74.37 0 213.815-103.393 360.63-88.315 61.446 2.608 233.881 25.282 344.644 190.462-8.843 5.895-205.88 122.78-203.5 366.184 2.495 290.908 249.982 387.499 252.816 388.973-2.268 6.575-39.566 137.857-130.489 273.448-78.565 117.111-159.965 233.655-288.3 236.036-126.18 2.494-166.767-76.298-311.087-76.298-144.206 0-189.214 73.917-308.706 78.792-123.913 4.762-218.237-126.52-297.37-243.178-161.892-238.87-285.578-674.665-119.491-968.86 82.42-146.133 229.8-238.643 389.879-241.024 121.646-2.267 236.603 83.78 310.974 83.78ZM1367.75 0c13.038 110.536-34.69 221.525-105.093 301.45-70.743 79.813-186.494 141.94-299.977 133.55-15.305-108.495 41.947-221.184 107.248-292.154C1142.939 63.034 1266.172 3.855 1367.75 0Z"/>
+              </svg>
+              <svg
+                data-os-icon="windows"
+                class="os-icon h-4 w-4 opacity-80 transition group-hover:opacity-100"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M13.146 10.434v7.035c3.614.488 7.228.992 10.836 1.53V11.713c-3.617 0-7.233-.279-10.852-.279ZM4 10.435v6.786c2.726.368 5.452.72 8.173 1.121-.005-2.626-.012-5.252-.012-7.878-2.724.005-5.447-.039-8.161-.029ZM4 2.843v6.767c2.726.007 5.452-.034 8.178-.031 0-2.62 0-5.236-.003-7.856C9.447 1.064 6.717 1.425 4 1.843ZM24 9.472c-3.612.014-7.224.069-10.838.08 0-2.663 0-5.322.002-7.983C17.77.018 21.385-.5 25 0c0 3.158-.002 6.313 0 9.472Z" transform="translate(-4 -0.002)"/>
+              </svg>
+              <svg
+                data-os-icon="linux"
+                class="os-icon h-4 w-4 opacity-80 transition group-hover:opacity-100"
+                viewBox="0 0 305 305"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M274.659 244.888c-8.944-3.663-12.77-8.524-12.4-15.777.381-8.466-4.422-14.667-6.703-17.117 1.378-5.264 5.405-23.474.004-39.291-5.804-16.93-23.524-42.787-41.808-68.204-7.485-10.438-7.839-21.784-8.248-34.922-.392-12.531-.834-26.735-7.822-42.525C190.084 9.859 174.838 0 155.851 0c-11.295 0-22.889 3.53-31.811 9.684-18.27 12.609-15.855 40.1-14.257 58.291.219 2.491.425 4.844.545 6.853 1.064 17.816.096 27.206-1.17 30.06-.819 1.865-4.851 7.173-9.118 12.793-4.413 5.812-9.416 12.4-13.517 18.539-4.893 7.387-8.843 18.678-12.663 29.597-2.795 7.99-5.435 15.537-8.005 20.047-4.871 8.676-3.659 16.766-2.647 20.505-1.844 1.281-4.508 3.803-6.757 8.557-2.718 5.8-8.233 8.917-19.701 11.122-5.27 1.078-8.904 3.294-10.804 6.586-2.765 4.791-1.259 10.811.115 14.925 2.03 6.048.765 9.876-1.535 16.826-.53 1.604-1.131 3.42-1.74 5.423-.959 3.161-.613 6.035 1.026 8.542 4.331 6.621 16.969 8.956 29.979 10.492 7.768.922 16.27 4.029 24.493 7.035 8.057 2.944 16.388 5.989 23.961 6.913 1.151.145 2.291.218 3.39.218 11.434 0 16.6-7.587 18.238-10.704 4.107-.838 18.272-3.522 32.871-3.882 14.576-.416 28.679 2.462 32.674 3.357 1.256 2.404 4.567 7.895 9.845 10.724 2.901 1.586 6.938 2.495 11.073 2.495 4.416 0 12.817-1.044 19.466-8.039 6.632-7.028 23.202-16 35.302-22.551 2.7-1.462 5.226-2.83 7.441-4.065 6.797-3.768 10.506-9.152 10.175-14.771-.146-2.382-3.235-6.476-7.932-8.399ZM124.189 243.535c-.846-5.96-8.513-11.871-17.392-18.715-7.26-5.597-15.489-11.94-17.756-17.312-4.685-11.082-.992-30.568 5.447-40.602 3.182-5.024 5.781-12.643 8.295-20.011 2.714-7.956 5.521-16.182 8.66-19.783 4.971-5.622 9.565-16.561 10.379-25.182 4.655 4.444 11.876 10.083 18.547 10.083 1.027 0 2.024-.134 2.977-.403 4.564-1.318 11.277-5.197 17.769-8.947 5.597-3.234 12.499-7.222 15.096-7.585 4.453 6.394 30.328 63.655 32.972 82.044 2.092 14.55-.118 26.578-1.229 31.289-.894-.122-1.96-.221-3.08-.221-7.207 0-9.115 3.934-9.612 6.283-1.278 6.103-1.413 25.618-1.427 30.003-2.606 3.311-15.785 18.903-34.706 21.706-7.707 1.12-14.904 1.688-21.39 1.688-5.544 0-9.082-.428-10.551-.651l-9.508-10.879c1.775-1.772 5.523-5.678 4.535-12.726Zm80.839 27.915c2.257-10.181 4.857-24.031 4.436-32.196-.097-1.855-.261-3.874-.42-5.826-.297-3.65-.738-9.075-.283-10.684.09-.042.19-.078.301-.109.019 4.668 1.033 13.979 8.479 17.226 2.219.968 4.755 1.458 7.537 1.458 7.459 0 15.735-3.659 19.125-7.049 1.996-1.996 3.675-4.438 4.851-6.372.257.753.415 1.737.332 3.005-.443 6.885 2.903 16.019 9.271 19.385l.927.487c2.268 1.19 8.292 4.353 8.389 5.853-.001 0-.051.177-.387.489-1.509 1.379-6.82 4.091-11.956 6.714-9.111 4.652-19.438 9.925-24.076 14.803-6.53 6.872-13.916 11.488-18.376 11.488-.537 0-1.026-.068-1.461-.206-4.881-1.664-8.868-8.653-6.726-18.62ZM39.917 245.477c-.494-2.312-.884-4.137-.465-5.905.304-1.31 6.771-2.714 9.533-3.313 3.883-.843 7.899-1.714 10.525-3.308 3.551-2.151 5.474-6.118 7.17-9.618 1.228-2.531 2.496-5.148 4.005-6.007.085-.05.215-.108.463-.108 2.827 0 8.759 5.943 12.177 11.262.867 1.341 2.473 4.028 4.331 7.139 5.557 9.298 13.166 22.033 17.14 26.301 3.581 3.837 9.378 11.214 7.952 17.541-1.044 4.909-6.602 8.901-7.913 9.784-.476.108-1.065.163-1.758.163-7.606 0-22.662-6.328-30.751-9.728l-1.197-.503c-4.517-1.894-11.891-3.087-19.022-4.241-5.674-.919-13.444-2.176-14.732-3.312-1.044-1.171.167-4.978 1.235-8.337.769-2.414 1.563-4.91 1.998-7.523.539-3.134-.187-6.527-.769-9.253Z"/>
+              </svg>
             </span>
           </button>
         </div>
@@ -107,9 +131,33 @@
             >
               <span>Download</span>
               <span class="flex items-center gap-1 text-xs font-medium text-slate-800 transition group-hover:text-slate-900">
-                <img src="assets/apple.svg" alt="macOS" class="h-4 w-4 opacity-80 transition group-hover:opacity-100" />
-                <img src="assets/windows.svg" alt="Windows" class="h-4 w-4 opacity-80 transition group-hover:opacity-100" />
-                <img src="assets/linux.svg" alt="Linux" class="h-4 w-4 opacity-80 transition group-hover:opacity-100" />
+                <svg
+                  data-os-icon="mac"
+                  class="os-icon h-4 w-4 opacity-80 transition group-hover:opacity-100"
+                  viewBox="0 0 1920 1920"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M972.669 550.592c74.37 0 213.815-103.393 360.63-88.315 61.446 2.608 233.881 25.282 344.644 190.462-8.843 5.895-205.88 122.78-203.5 366.184 2.495 290.908 249.982 387.499 252.816 388.973-2.268 6.575-39.566 137.857-130.489 273.448-78.565 117.111-159.965 233.655-288.3 236.036-126.18 2.494-166.767-76.298-311.087-76.298-144.206 0-189.214 73.917-308.706 78.792-123.913 4.762-218.237-126.52-297.37-243.178-161.892-238.87-285.578-674.665-119.491-968.86 82.42-146.133 229.8-238.643 389.879-241.024 121.646-2.267 236.603 83.78 310.974 83.78ZM1367.75 0c13.038 110.536-34.69 221.525-105.093 301.45-70.743 79.813-186.494 141.94-299.977 133.55-15.305-108.495 41.947-221.184 107.248-292.154C1142.939 63.034 1266.172 3.855 1367.75 0Z"/>
+                </svg>
+                <svg
+                  data-os-icon="windows"
+                  class="os-icon h-4 w-4 opacity-80 transition group-hover:opacity-100"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M13.146 10.434v7.035c3.614.488 7.228.992 10.836 1.53V11.713c-3.617 0-7.233-.279-10.852-.279ZM4 10.435v6.786c2.726.368 5.452.72 8.173 1.121-.005-2.626-.012-5.252-.012-7.878-2.724.005-5.447-.039-8.161-.029ZM4 2.843v6.767c2.726.007 5.452-.034 8.178-.031 0-2.62 0-5.236-.003-7.856C9.447 1.064 6.717 1.425 4 1.843ZM24 9.472c-3.612.014-7.224.069-10.838.08 0-2.663 0-5.322.002-7.983C17.77.018 21.385-.5 25 0c0 3.158-.002 6.313 0 9.472Z" transform="translate(-4 -0.002)"/>
+                </svg>
+                <svg
+                  data-os-icon="linux"
+                  class="os-icon h-4 w-4 opacity-80 transition group-hover:opacity-100"
+                  viewBox="0 0 305 305"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M274.659 244.888c-8.944-3.663-12.77-8.524-12.4-15.777.381-8.466-4.422-14.667-6.703-17.117 1.378-5.264 5.405-23.474.004-39.291-5.804-16.93-23.524-42.787-41.808-68.204-7.485-10.438-7.839-21.784-8.248-34.922-.392-12.531-.834-26.735-7.822-42.525C190.084 9.859 174.838 0 155.851 0c-11.295 0-22.889 3.53-31.811 9.684-18.27 12.609-15.855 40.1-14.257 58.291.219 2.491.425 4.844.545 6.853 1.064 17.816.096 27.206-1.17 30.06-.819 1.865-4.851 7.173-9.118 12.793-4.413 5.812-9.416 12.4-13.517 18.539-4.893 7.387-8.843 18.678-12.663 29.597-2.795 7.99-5.435 15.537-8.005 20.047-4.871 8.676-3.659 16.766-2.647 20.505-1.844 1.281-4.508 3.803-6.757 8.557-2.718 5.8-8.233 8.917-19.701 11.122-5.27 1.078-8.904 3.294-10.804 6.586-2.765 4.791-1.259 10.811.115 14.925 2.03 6.048.765 9.876-1.535 16.826-.53 1.604-1.131 3.42-1.74 5.423-.959 3.161-.613 6.035 1.026 8.542 4.331 6.621 16.969 8.956 29.979 10.492 7.768.922 16.27 4.029 24.493 7.035 8.057 2.944 16.388 5.989 23.961 6.913 1.151.145 2.291.218 3.39.218 11.434 0 16.6-7.587 18.238-10.704 4.107-.838 18.272-3.522 32.871-3.882 14.576-.416 28.679 2.462 32.674 3.357 1.256 2.404 4.567 7.895 9.845 10.724 2.901 1.586 6.938 2.495 11.073 2.495 4.416 0 12.817-1.044 19.466-8.039 6.632-7.028 23.202-16 35.302-22.551 2.7-1.462 5.226-2.83 7.441-4.065 6.797-3.768 10.506-9.152 10.175-14.771-.146-2.382-3.235-6.476-7.932-8.399ZM124.189 243.535c-.846-5.96-8.513-11.871-17.392-18.715-7.26-5.597-15.489-11.94-17.756-17.312-4.685-11.082-.992-30.568 5.447-40.602 3.182-5.024 5.781-12.643 8.295-20.011 2.714-7.956 5.521-16.182 8.66-19.783 4.971-5.622 9.565-16.561 10.379-25.182 4.655 4.444 11.876 10.083 18.547 10.083 1.027 0 2.024-.134 2.977-.403 4.564-1.318 11.277-5.197 17.769-8.947 5.597-3.234 12.499-7.222 15.096-7.585 4.453 6.394 30.328 63.655 32.972 82.044 2.092 14.55-.118 26.578-1.229 31.289-.894-.122-1.96-.221-3.08-.221-7.207 0-9.115 3.934-9.612 6.283-1.278 6.103-1.413 25.618-1.427 30.003-2.606 3.311-15.785 18.903-34.706 21.706-7.707 1.12-14.904 1.688-21.39 1.688-5.544 0-9.082-.428-10.551-.651l-9.508-10.879c1.775-1.772 5.523-5.678 4.535-12.726ZM39.917 245.477c-.494-2.312-.884-4.137-.465-5.905.304-1.31 6.771-2.714 9.533-3.313 3.883-.843 7.899-1.714 10.525-3.308 3.551-2.151 5.474-6.118 7.17-9.618 1.228-2.531 2.496-5.148 4.005-6.007.085-.05.215-.108.463-.108 2.827 0 8.759 5.943 12.177 11.262.867 1.341 2.473 4.028 4.331 7.139 5.557 9.298 13.166 22.033 17.14 26.301 3.581 3.837 9.378 11.214 7.952 17.541-1.044 4.909-6.602 8.901-7.913 9.784-.476.108-1.065.163-1.758.163-7.606 0-22.662-6.328-30.751-9.728l-1.197-.503c-4.517-1.894-11.891-3.087-19.022-4.241-5.674-.919-13.444-2.176-14.732-3.312-1.044-1.171.167-4.978 1.235-8.337.769-2.414 1.563-4.91 1.998-7.523.539-3.134-.187-6.527-.769-9.253Z"/>
+                </svg>
               </span>
             </a>
             <a
@@ -121,70 +169,32 @@
           </div>
           <dl class="mt-10 grid grid-cols-3 gap-6 text-center md:max-w-md md:text-left">
             <div>
-              <dt class="text-xs uppercase tracking-wide text-slate-400">2× faster than Postman</dt>
-              <dd class="mt-2 text-2xl font-semibold text-white">Speed</dd>
+              <dt class="text-xs uppercase tracking-wide text-slate-400">Postman</dt>
+              <dd class="mt-2 text-2xl font-semibold text-white">
+                <span class="text-3xl font-extrabold text-[#58D7FF]">2×</span> faster
+              </dd>
             </div>
             <div>
-              <dt class="text-xs uppercase tracking-wide text-slate-400">5× faster than Bruno</dt>
-              <dd class="mt-2 text-2xl font-semibold text-white">Throughput</dd>
+              <dt class="text-xs uppercase tracking-wide text-slate-400">Bruno</dt>
+              <dd class="mt-2 text-2xl font-semibold text-white">
+                <span class="text-3xl font-extrabold text-[#C97DFF]">5×</span> faster
+              </dd>
             </div>
             <div>
-              <dt class="text-xs uppercase tracking-wide text-slate-400">Git synced workspaces</dt>
-              <dd class="mt-2 text-2xl font-semibold text-white">56k</dd>
+              <dt class="text-xs uppercase tracking-wide text-slate-400">Local DB sync</dt>
+              <dd class="mt-2 text-2xl font-semibold text-white">
+                <span class="text-3xl font-extrabold text-emerald-300">100%</span> offline
+              </dd>
             </div>
           </dl>
         </div>
-        <div class="relative flex-1">
-          <div class="relative rounded-3xl border border-white/10 bg-gradient-to-br from-ink-700/80 via-slate-900/40 to-slate-900/80 p-6 shadow-[0_35px_60px_-25px_rgba(17,26,56,0.65)] backdrop-blur">
-            <div class="flex items-center justify-between text-xs text-slate-400">
-              <span class="inline-flex items-center gap-2">
-                <span class="flex items-center gap-1">
-                  <span class="h-2.5 w-2.5 rounded-full bg-rose-400"></span>
-                  <span class="h-2.5 w-2.5 rounded-full bg-amber-300"></span>
-                  <span class="h-2.5 w-2.5 rounded-full bg-emerald-400"></span>
-                </span>
-                DevTools://workspace/launches.graphql
-              </span>
-              <span class="rounded-full border border-white/10 bg-white/5 px-3 py-1 font-medium text-white">Live</span>
-            </div>
-            <div class="mt-6 grid gap-4 rounded-2xl border border-white/5 bg-[linear-gradient(160deg,rgba(12,22,51,0.75),rgba(42,27,78,0.55))] p-5">
-              <div>
-                <p class="text-sm uppercase tracking-wide text-slate-400">Request</p>
-                <div class="mt-2 rounded-lg border border-white/5 bg-black/30 p-4">
-                  <code class="block font-mono text-sm text-slate-200">POST https://api.launchpad.dev/graphql</code>
-                  <code class="mt-2 block font-mono text-[13px] text-slate-400">Header • Authorization: Bearer {{workspace.token}}</code>
-                </div>
-              </div>
-              <div>
-                <p class="text-sm uppercase tracking-wide text-slate-400">Body</p>
-                <pre class="mt-2 overflow-hidden rounded-lg border border-white/5 bg-[linear-gradient(160deg,rgba(12,22,51,0.75),rgba(42,27,78,0.55))] p-4 text-left font-mono text-sm leading-relaxed text-sky-200">
-query Launches($limit: Int!) {
-  launches(limit: $limit) {
-    id
-    mission
-    windowStart
-  }
-}
-                </pre>
-              </div>
-              <div>
-                <p class="text-sm uppercase tracking-wide text-slate-400">Response</p>
-                <pre class="mt-2 overflow-hidden rounded-lg border border-white/5 bg-[linear-gradient(160deg,rgba(12,22,51,0.75),rgba(42,27,78,0.55))] p-4 text-left font-mono text-sm leading-relaxed text-emerald-200">
-{
-  "data": {
-    "launches": [
-      { "mission": "Aurora", "windowStart": "2025-07-12" },
-      { "mission": "Velocity", "windowStart": "2025-09-03" }
-    ]
-  }
-}
-                </pre>
-              </div>
-            </div>
-            <div class="mt-5 flex items-center justify-between text-xs text-slate-400">
-              <span>Encrypted workspace · synced to Git</span>
-              <span>Auto-templated using secrets</span>
-            </div>
+        <div class="relative flex-1 md:flex-[1.35] overflow-visible">
+          <div class="relative mx-auto w-full max-w-[580px] overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-[0_35px_60px_-25px_rgba(17,26,56,0.65)] backdrop-blur md:-mr-24 md:w-[135%] md:max-w-none md:rounded-[22px] md:shadow-[0_55px_90px_-35px_rgba(17,26,56,0.75)]">
+            <img
+              src="assets/devtools-main-ss.png"
+              alt="DevTools main workspace screenshot"
+              class="block w-full object-cover object-left md:w-full"
+            />
           </div>
         </div>
       </section>
@@ -539,6 +549,26 @@ query Launches($limit: Int!) {
 
     <script>
       document.getElementById('year').textContent = new Date().getFullYear();
+
+      (function () {
+        const ua = navigator.userAgent || navigator.platform || '';
+        let os = 'other';
+        if (/Mac|iP(hone|od|ad)/i.test(ua)) {
+          os = 'mac';
+        } else if (/Win/i.test(ua)) {
+          os = 'windows';
+        } else if (/Linux/i.test(ua)) {
+          os = 'linux';
+        }
+
+        if (os === 'other') {
+          return;
+        }
+
+        document.querySelectorAll('[data-os-icon]').forEach((icon) => {
+          icon.classList.toggle('hidden', icon.getAttribute('data-os-icon') !== os);
+        });
+      })();
     </script>
   </body>
 </html>
