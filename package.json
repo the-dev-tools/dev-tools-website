@@ -1,0 +1,23 @@
+{
+  "name": "dev-tools-website",
+  "private": true,
+  "version": "0.0.1",
+  "description": "DevTools marketing site + docs (Next.js + Nextra)",
+  "scripts": {
+    "dev": "next dev -p 3030",
+    "build": "next build",
+    "start": "next start -p 3030",
+    "export": "next export"
+  },
+  "dependencies": {
+    "next": "^14.2.0",
+    "nextra": "^2.13.2",
+    "nextra-theme-docs": "^2.13.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "engines": {
+    "node": ">=18",
+    "npm": ">=9"
+  }
+}

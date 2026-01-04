@@ -1,0 +1,39 @@
+---
+title: Writing Docs
+description: Tips for using MDX and Nextra components effectively.
+---
+
+# Writing Docs
+
+Nextra supports Markdown and MDX. Start with Markdown; add small React snippets only when it adds clarity.
+
+## Headings and TOC
+
+- Use one `#` per page for the title.
+- Use `##` and `###` for sections; they show up in the right-hand table of contents.
+
+## Callouts
+
+> Tip: Use blockquotes for simple notes.
+
+For richer callouts, Nextra provides a `<Callout>` component:
+
+```mdx
+<Callout type="info">Information callout.</Callout>
+<Callout type="warning">Be careful here.</Callout>
+```
+
+## Tabs
+
+Use headings or separate pages for alternative flows. If you prefer tabs, you can bring your own small component later.
+
+## Linking
+
+- Link to other pages with absolute paths: `[Getting Started](/docs/getting-started)`
+- External links open in a new tab by default in this theme.
+
+## Organizing pages
+
+- Create folders under `pages/docs/` and use `_meta.json` files to control titles and ordering.
+- Keep page names kebab-cased; titles come from `_meta.json`.
+
