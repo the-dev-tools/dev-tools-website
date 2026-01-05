@@ -75,6 +75,8 @@ When you first open DevTools Desktop:
 
 Your workspace is now ready to organize your API requests and flows.
 
+![New Workspace modal and empty workspace](/docs/assets/devtools-new-workspace-modal.webp)
+
 ### 2. Create Your First Request
 
 Let's create a simple API request:
@@ -87,6 +89,12 @@ Let's create a simple API request:
 3. Click **Send**
 
 You should see a successful response with user data in JSON format.
+
+![Create a new HTTP request from the Files sidebar](/docs/assets/sidebar-new-http-request-menu.webp)
+
+![First request to jsonplaceholder users/1 showing a 200 JSON response](/docs/assets/first-request-jsonplaceholder-users-1.webp)
+
+![Typing the URL, clicking Send, and seeing the response](/docs/assets/first-request-send-and-response.gif)
 
 ### 3. Save and Organize
 
@@ -107,6 +115,8 @@ The request editor provides a familiar interface similar to Postman:
 - **Query Params Tab**: Build query strings visually
 - **Tests Tab**: Add response assertions
 
+![Annotated request editor UI](/docs/assets/request-editor-annotated.gif)
+
 ### Response Viewer
 
 After sending a request:
@@ -114,24 +124,6 @@ After sending a request:
 - **Headers**: Inspect response headers
 - **Status**: HTTP status code and response time
 - **Variables**: See extracted variables (when using flows)
-
-### File Organization
-
-DevTools organizes your requests:
-```
-Workspace
-├── jsonplaceholder.typicode.com/
-│   ├── users/
-│   │   ├── GET User by ID
-│   │   └── GET All Users
-│   └── posts/
-│       └── GET Posts
-└── api.example.com/
-    └── auth/
-        └── POST Login
-```
-
-This mirrors your API structure, making requests easy to find.
 
 ## Next Steps
 

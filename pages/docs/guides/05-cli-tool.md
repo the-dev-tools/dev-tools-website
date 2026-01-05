@@ -56,6 +56,8 @@ devtools version
 # Output: DevToolsCLI v0.5.1
 ```
 
+![CLI version output](/docs/assets/cli-version-output.webp)
+
 ## Commands
 
 The CLI has two main command groups: **flow** and **version**.
@@ -69,6 +71,8 @@ Execute API test flows from YAML files.
 ```bash
 devtools flow run <yamlflow-file> [flow-name]
 ```
+
+![CLI basic run example](/docs/assets/cli-run-basic.webp)
 
 **Arguments:**
 - `<yamlflow-file>`: Path to YAML workflow file (required)
@@ -277,6 +281,8 @@ Displays an ASCII table with execution details:
 Flow Duration: 390ms | Steps: 2/2 Successful
 ```
 
+![CLI console report example](/docs/assets/cli-run-basic.webp)
+
 Features:
 - Real-time progress updates
 - Visual status indicators
@@ -318,6 +324,8 @@ devtools flow run tests.yaml --report json:results.json
 - Generate custom reports
 - Integrate with monitoring systems
 - Aggregate test metrics
+
+![JSON report viewed in editor](/docs/assets/cli-json-report-view.webp)
 
 ### JUnit XML Report
 

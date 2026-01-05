@@ -2,7 +2,7 @@ import React from 'react'
 import type { DocsThemeConfig } from 'nextra-theme-docs'
 
 const config: DocsThemeConfig = {
-  logo: <span>DevTools</span>,
+  logo: <img src="/logo.svg" alt="DevTools" style={{ height: '2.25rem' }} />,
   project: {
     link: 'https://github.com/the-dev-tools/dev-tools'
   },

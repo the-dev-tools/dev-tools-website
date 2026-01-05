@@ -23,9 +23,19 @@ HAR (HTTP Archive) is a JSON-based format that records all HTTP interactions bet
 
 1. Open Chrome DevTools (F12 or Cmd+Opt+I on Mac)
 2. Go to the **Network** tab
-3. Check **Preserve log** to keep requests across page navigations
-4. Perform your workflow (login, navigate, submit forms, etc.)
-5. Right-click in the Network tab → **Save all as HAR with content**
+3. Click the gear icon to open settings
+
+   ![Open DevTools settings from the Network panel toolbar](/docs/assets/chrome-devtools-open-settings-gear.webp)
+
+4. In Preferences → Network, enable **Allow to generate HAR with sensitive data**
+
+   ![Enable Allow to generate HAR with sensitive data in DevTools preferences](/docs/assets/chrome-devtools-allow-har-with-sensitive-data.webp)
+
+5. Back in the Network tab, check **Preserve log** to keep requests across page navigations
+6. Perform your workflow (login, navigate, submit forms, etc.)
+7. Use the download icon → **Export HAR (with sensitive data)** or right‑click → **Save all as HAR with content**
+
+   ![Export HAR from the Network tab toolbar and choose with sensitive data](/docs/assets/chrome-devtools-export-har-button-menu.webp)
 
 **Important:** To capture passwords and other sensitive data in HAR files, you must select **"Save all as HAR with content"** in the Network tab. DevTools stores all data locally on your machine - no data is sent to external servers.
 
@@ -46,6 +56,12 @@ DevTools will:
 - ✅ Detect data dependencies (responses used in later requests)
 - ✅ Generate variable mappings automatically
 - ✅ Add response assertions
+
+![Import dialog selecting HAR file](/docs/assets/import-dialog-select-har.webp)
+
+![Map domain to {{BASE_URL}} variable](/docs/assets/import-map-domain-to-base-url.webp)
+
+![Flow canvas overview: palette, canvas, run controls](/docs/assets/flow-canvas-overview.webp)
 
 ## Import Features
 
@@ -100,9 +116,10 @@ Every HAR import creates a visual Flow showing:
 **Example Flow Structure:**
 ```
 [Start] → [Login] → [Get Profile] → [Update Settings]
-                   ↓
-                   [Get Notifications]
+                    ↓
+                     [Get Notifications]
 ```
+
 
 ### File Organization
 

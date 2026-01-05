@@ -125,6 +125,8 @@ This allows you to:
    - **Type**: Normal (or Global for workspace-wide)
 4. Click **Create**
 
+![Environments list overview](/docs/assets/environments-list-overview.webp)
+
 **YAML (for CLI):**
 
 ```yaml
@@ -139,6 +141,8 @@ env:
 **Desktop:**
 
 Click the environment dropdown in the toolbar and select your target environment. All subsequent requests will use variables from that environment.
+
+![Environment switcher dropdown](/docs/assets/environment-switcher-dropdown.webp)
 
 **CLI:**
 
@@ -161,6 +165,7 @@ Drag and drop environments in the Settings panel to change their display order.
    - **Value**: Variable value (e.g., `https://api.example.com`)
    - **Description**: Optional notes
    - **Enabled**: Toggle to enable/disable
+
 
 **YAML:**
 
@@ -324,6 +329,8 @@ Every node automatically creates output variables based on its execution results
 {{NodeName.request.url}}
 {{NodeName.response.duration}}
 ```
+
+![Response JSON with highlighted path used in variable reference](/docs/assets/response-json-highlighted-path.webp)
 
 **Nested Access:**
 
@@ -538,6 +545,8 @@ DevTools tracks which variables are actually used during execution:
 - See which variables were read
 - Identify unused variables
 - Validate variable resolution
+
+![Used Variables tab](/docs/assets/used-variables-tab.webp)
 
 This helps:
 - Debug variable issues

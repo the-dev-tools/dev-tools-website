@@ -2,6 +2,8 @@
 
 Flows are the heart of DevTools' automation capabilities. They allow you to create visual, graph-based API test workflows without writing code. This guide covers everything you need to know about building, customizing, and executing Flows.
 
+![Flow canvas overview: palette, canvas, run controls](/docs/assets/flow-canvas-overview.webp)
+
 ## What is a Flow?
 
 A **Flow** is a visual representation of an API testing workflow. It consists of:
@@ -29,6 +31,8 @@ A **Flow** is a visual representation of an API testing workflow. It consists of
 3. Connect nodes by dragging from output handles to input handles
 4. Configure each node (see Node Types below)
 5. Click **Run Flow** to execute
+
+![Drag, connect, configure, run a small flow](/docs/assets/flow-build-connect-run.gif)
 
 ### Method 2: Auto-Generate from HAR Import
 
@@ -113,6 +117,8 @@ From subsequent nodes, reference this data:
 {{Login.request.url}}
 ```
 
+![HTTP Request node configuration panel](/docs/assets/flow-node-http-config.gif)
+
 ---
 
 ### 3. Condition Node (If/Else)
@@ -186,6 +192,8 @@ Fetch 5 users sequentially:
     url: https://api.example.com/users/{{FetchUsers.index}}
 ```
 
+![For loop node settings](/docs/assets/flow-node-for-loop-config.webp)
+
 ---
 
 ### 5. For-Each Loop Node
@@ -227,6 +235,8 @@ Process each user from a list:
     body:
       lastProcessed: '{{$timestamp}}'
 ```
+
+![For‑each node config selecting array items](/docs/assets/flow-node-for-each-config.webp)
 
 ---
 
@@ -412,6 +422,8 @@ Every node automatically creates output variables. Access them from subsequent n
 {{ProcessData.activeCount}}
 {{FetchUsersLoop.index}}
 ```
+
+![JavaScript node editor and output](/docs/assets/flow-node-js-config.webp)
 
 See the [Environments & Variables](./04-environments-and-variables.md) guide for more details.
 

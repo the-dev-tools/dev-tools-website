@@ -16,6 +16,8 @@ This guide provides real-world examples and best practices for using DevTools ef
 
 This example demonstrates a complete e-commerce test flow with authentication, product management, and order processing.
 
+![E‑commerce flow run (end‑to‑end)](/docs/assets/example-ecommerce-flow-run.gif)
+
 ### Scenario
 
 Test a complete user journey:
