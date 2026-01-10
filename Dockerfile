@@ -13,34 +13,18 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build Next.js app
+# Build static Next.js site
 ENV NEXT_TELEMETRY_DISABLED 1
 RUN npm run build
 
-# Stage 3: Runner
-FROM node:18-alpine AS runner
-WORKDIR /app
+# Stage 3: Runner - Serve with gostatic
+FROM pierrezemb/gostatic
 
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
+# Copy built static site into the container
+COPY --from=builder /app/out /srv/http
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+# Default gostatic port
+EXPOSE 8043
 
-# Copy necessary files from builder
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/next.config.js ./next.config.js
-
-# Copy built Next.js files
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-USER nextjs
-
-EXPOSE 3000
-
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
-
-CMD ["node", "server.js"]
+# Run the server
+CMD ["-port", "8043", "-path", "/srv/http"]

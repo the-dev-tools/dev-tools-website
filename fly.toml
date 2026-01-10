@@ -9,7 +9,7 @@ primary_region = "iad"
   NEXT_TELEMETRY_DISABLED = "1"
 
 [[services]]
-  internal_port = 3000
+  internal_port = 8043
   processes = ["app"]
   protocol = "tcp"
 
@@ -39,5 +39,5 @@ primary_region = "iad"
     grace_period = "5s"
     restart_limit = 0
     method = "get"
-    path = "/docs"
+    path = "/"
     protocol = "http"

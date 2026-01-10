@@ -7,7 +7,11 @@ const withNextra = require('nextra')({
 /** @type {import('next').NextConfig} */
 module.exports = withNextra({
   reactStrictMode: true,
-  output: 'standalone',
+  output: 'export',
+  trailingSlash: true,
+  images: {
+    unoptimized: true
+  },
   async rewrites() {
     // Serve the static marketing homepage from public/index.html at '/'
     return [{ source: '/', destination: '/index.html' }]

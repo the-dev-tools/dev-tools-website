@@ -133,19 +133,19 @@ Branches execution based on a boolean expression.
 **Examples:**
 ```javascript
 // Check response status
-{{GetUser.response.status}} == 200
+GetUser.response.status == 200
 
 // Check response body
-{{Login.response.body.success}} == true
+Login.response.body.success == true
 
 // Compare values
-{{CreateUser.response.body.id}} > 0
+CreateUser.response.body.id > 0
 
 // String comparison
-{{GetProfile.response.body.role}} == "admin"
+GetProfile.response.body.role == "admin"
 
 // Complex condition
-{{GetUsers.response.status}} == 200 && {{GetUsers.response.body.length}} > 0
+GetUsers.response.status == 200 && GetUsers.response.body.length > 0
 ```
 
 **Visual Flow:**
