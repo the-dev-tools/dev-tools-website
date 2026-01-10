@@ -375,44 +375,108 @@
               Go from real browser traffic to parallelised API checks in four clicks. DevTools keeps every step versionable so your team can review and rerun in Git.
             </p>
           </div>
-          <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            <div class="flex flex-col gap-3 rounded-2xl border border-white/10 bg-slate-900/50 p-6 shadow-[0_25px_45px_-30px_rgba(15,23,42,0.8)]">
-              <span class="flex h-10 w-10 items-center justify-center rounded-full bg-[#58D7FF]/20 text-[#58D7FF]">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-5 w-5" fill="none" aria-hidden="true">
-                  <path d="M4 5h4l2 4-2 4H4l2-4L4 5Zm12 0h4l2 4-2 4h-4l2-4-2-4ZM10 15h4l2 4-2 4h-4l2-4-2-4Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-              </span>
-              <h3 class="text-lg font-semibold text-white">Record</h3>
-              <p class="text-sm text-slate-300">Capture a HAR straight from the browser or proxy and drop it into DevTools.</p>
+          <div class="space-y-16">
+            <!-- Row 1: Image left, text right -->
+            <div class="grid items-center gap-8 md:grid-cols-2">
+              <figure class="order-1 overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-[0_25px_45px_-30px_rgba(15,23,42,0.8)]">
+                <div class="w-full" style="aspect-ratio: 16 / 10;">
+                  <img
+                    src="/docs/assets/import-dialog-select-har.webp"
+                    alt="Import a HAR file into DevTools"
+                    loading="lazy"
+                    decoding="async"
+                    fetchpriority="low"
+                    class="h-full w-full object-contain bg-slate-950/60"
+                  />
+                </div>
+              </figure>
+              <div class="order-2">
+                <h3 class="text-2xl font-semibold text-white">Record real traffic</h3>
+                <p class="mt-3 text-slate-300">Capture a HAR from your browser or proxy and drag it into DevTools. We’ll parse requests and auth headers automatically.</p>
+                <ul class="mt-4 space-y-2 text-sm text-slate-300">
+                  <li>• Chrome DevTools → Save all as HAR</li>
+                  <li>• Sensitive data safe: process happens locally</li>
+                </ul>
+                <div class="mt-4 text-sm">
+                  <a href="/docs/guides/02-importing-har-files#recording-har-files" class="underline decoration-dotted underline-offset-2 hover:text-white">How to record a HAR</a>
+                  <span class="mx-2 opacity-50">•</span>
+                  <a href="/docs/guides/02-importing-har-files#importing-har-files" class="underline decoration-dotted underline-offset-2 hover:text-white">How to import a HAR</a>
+                </div>
+              </div>
             </div>
-            <div class="flex flex-col gap-3 rounded-2xl border border-white/10 bg-slate-900/50 p-6 shadow-[0_25px_45px_-30px_rgba(15,23,42,0.8)]">
-              <span class="flex h-10 w-10 items-center justify-center rounded-full bg-[#C97DFF]/20 text-[#C97DFF]">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-5 w-5" fill="none" aria-hidden="true">
-                  <path d="m5 5 7-3 7 3v5c0 6-4 10-7 11-3-1-7-5-7-11V5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                  <path d="M9 10h6M12 7v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-              </span>
-              <h3 class="text-lg font-semibold text-white">Flow</h3>
-              <p class="text-sm text-slate-300">DevTools builds the flow tree with Variable Mapping for tokens, IDs, and headers.</p>
+
+            <!-- Row 2: Text left, image right (reversed) -->
+            <div class="grid items-center gap-8 md:grid-cols-2">
+              <div class="md:order-1 order-2">
+                <h3 class="text-2xl font-semibold text-white">Build flows automatically</h3>
+                <p class="mt-3 text-slate-300">DevTools constructs a visual flow tree and applies Variable Mapping for tokens, IDs, and headers.</p>
+                <ul class="mt-4 space-y-2 text-sm text-slate-300">
+                  <li>• Nodes created from your traffic</li>
+                  <li>• Deterministic variable mapping</li>
+                </ul>
+              </div>
+              <figure class="md:order-2 order-1 overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-[0_25px_45px_-30px_rgba(15,23,42,0.8)]">
+                <div class="w-full" style="aspect-ratio: 16 / 10;">
+                  <img
+                    src="/docs/assets/flow-canvas-overview.webp"
+                    alt="Flow canvas overview"
+                    loading="lazy"
+                    decoding="async"
+                    fetchpriority="low"
+                    class="h-full w-full object-contain bg-slate-950/60"
+                  />
+                </div>
+              </figure>
             </div>
-            <div class="flex flex-col gap-3 rounded-2xl border border-white/10 bg-slate-900/50 p-6 shadow-[0_25px_45px_-30px_rgba(15,23,42,0.8)]">
-              <span class="flex h-10 w-10 items-center justify-center rounded-full bg-sky-400/20 text-sky-200">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-5 w-5" fill="none" aria-hidden="true">
-                  <path d="M7 3h7l4 4v11a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                  <path d="M9 15.5 11 17l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-              </span>
-              <h3 class="text-lg font-semibold text-white">YAML</h3>
-              <p class="text-sm text-slate-300">Export flows as human-readable YAML so every change can be reviewed in Git.</p>
+
+            <!-- Row 3: Image left, text right -->
+            <div class="grid items-center gap-8 md:grid-cols-2">
+              <figure class="order-1 overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-[0_25px_45px_-30px_rgba(15,23,42,0.8)]">
+                <div class="w-full" style="aspect-ratio: 16 / 10;">
+                  <img
+                    src="/docs/assets/flow-build-connect-run.gif"
+                    alt="Build and connect nodes with variable mapping"
+                    loading="lazy"
+                    decoding="async"
+                    fetchpriority="low"
+                    class="h-full w-full object-contain bg-slate-950/60"
+                  />
+                </div>
+              </figure>
+              <div class="order-2">
+                <h3 class="text-2xl font-semibold text-white">Map variables and assert</h3>
+                <p class="mt-3 text-slate-300">Keep logic in flows, not random scripts. Define variables, reuse them across nodes, and add assertions at the flow level.</p>
+                <a href="/docs/guides/03-working-with-flows" class="mt-4 inline-block text-sm text-slate-200 underline decoration-dotted underline-offset-2 hover:text-white">Learn how flows work</a>
+              </div>
             </div>
-            <div class="flex flex-col gap-3 rounded-2xl border border-white/10 bg-slate-900/50 p-6 shadow-[0_25px_45px_-30px_rgba(15,23,42,0.8)]">
-              <span class="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-400/20 text-emerald-200">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-5 w-5" fill="none" aria-hidden="true">
-                  <path d="m4 17 4 4 12-12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-              </span>
-              <h3 class="text-lg font-semibold text-white">CI</h3>
-              <p class="text-sm text-slate-300">Run the Go-based engine locally or in CI with deterministic exit codes and reports.</p>
+
+            <!-- Row 4: Text left, image right (reversed) -->
+            <div class="grid items-center gap-8 md:grid-cols-2">
+              <div class="md:order-1 order-2">
+                <h3 class="text-2xl font-semibold text-white">Export to YAML and run in CI</h3>
+                <p class="mt-3 text-slate-300">Export human‑readable YAML for review in Git. Run locally or in CI with clear exit codes and reports.</p>
+                <ul class="mt-4 space-y-2 text-sm text-slate-300">
+                  <li>• Git‑diffable flow definitions</li>
+                  <li>• CLI JSON and JUnit outputs</li>
+                </ul>
+                <div class="mt-4 text-sm">
+                  <a href="/docs/guides/02-importing-har-files#export-to-yaml-flow" class="underline decoration-dotted underline-offset-2 hover:text-white">How to export YAML</a>
+                  <span class="mx-2 opacity-50">•</span>
+                  <a href="/docs/guides/03-working-with-flows#yaml-flow-format" class="underline decoration-dotted underline-offset-2 hover:text-white">YAML flow format</a>
+                </div>
+              </div>
+              <figure class="md:order-2 order-1 overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-[0_25px_45px_-30px_rgba(15,23,42,0.8)]">
+                <div class="w-full" style="aspect-ratio: 16 / 10;">
+                  <img
+                    src="/docs/assets/cli-json-report-view.webp"
+                    alt="CLI JSON report and CI‑friendly output"
+                    loading="lazy"
+                    decoding="async"
+                    fetchpriority="low"
+                    class="h-full w-full object-contain bg-slate-950/60"
+                  />
+                </div>
+              </figure>
             </div>
           </div>
         </div>
