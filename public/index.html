@@ -1021,13 +1021,13 @@
         });
       })();
 
-      // Pick OS-specific desktop binary from GitHub latest release (fallback to latest page)
+      // Pick OS-specific desktop binary from GitHub releases (searches multiple releases)
       (function () {
         const downloadLinks = Array.from(document.querySelectorAll('[data-download]'));
         if (!downloadLinks.length) return;
 
         const repo = 'the-dev-tools/dev-tools';
-        const apiUrl = `https://api.github.com/repos/${repo}/releases/latest`;
+        const apiUrl = `https://api.github.com/repos/${repo}/releases?per_page=15`;
         const fallback = `https://github.com/${repo}/releases/latest`;
 
         // Ensure a sensible default
@@ -1049,32 +1049,60 @@
           if (/arm|aarch64|apple m\d|apple silicon/.test(ua)) arch = 'arm64';
         } catch (_) {}
 
+        // Helper function to find matching asset in a release
+        function findAssetInRelease(release, os, arch) {
+          const assets = Array.isArray(release.assets) ? release.assets : [];
+          if (!assets.length) return null;
+
+          const pick = (patterns) =>
+            assets.find((asset) => patterns.some((p) => p.test(asset.name))) || null;
+
+          let asset = null;
+          if (os === 'mac') {
+            if (arch === 'arm64') {
+              asset = pick([/darwin[-_]?arm64.*\.dmg$/i, /arm64.*\.dmg$/i]);
+            }
+            if (!asset) {
+              asset = pick([/darwin[-_]?x64.*\.dmg$/i, /x64.*\.dmg$/i, /\.dmg$/i]);
+            }
+          } else if (os === 'windows') {
+            asset = pick([/win32[-_]?x64.*\.exe$/i, /win.*\.exe$/i, /\.exe$/i, /\.msi$/i]);
+          } else if (os === 'linux') {
+            asset = pick([/linux[-_]?x86_64.*AppImage$/i, /\.AppImage$/i, /\.deb$/i, /\.rpm$/i, /linux/i, /\.tar\.gz$/i]);
+          }
+
+          return asset;
+        }
+
         fetch(apiUrl)
           .then((r) => (r.ok ? r.json() : Promise.reject(new Error('Release fetch failed'))))
-          .then((data) => {
-            const assets = Array.isArray(data.assets) ? data.assets : [];
-            if (!assets.length) return; // keep fallback
+          .then((releases) => {
+            // Filter to only desktop releases (tagged with desktop@)
+            const desktopReleases = releases.filter(release =>
+              release.tag_name && release.tag_name.startsWith('desktop@')
+            );
 
-            const pick = (patterns) =>
-              assets.find((asset) => patterns.some((p) => p.test(asset.name))) || null;
-
-            let asset = null;
-            if (os === 'mac') {
-              if (arch === 'arm64') {
-                asset = pick([/darwin[-_]?arm64.*\.dmg$/i, /arm64.*\.dmg$/i]);
+            // Search through releases (newest first) to find matching binary
+            let matchedAsset = null;
+            for (const release of desktopReleases) {
+              matchedAsset = findAssetInRelease(release, os, arch);
+              if (matchedAsset) {
+                break; // Found a match, stop searching
               }
-              if (!asset) {
-                asset = pick([/darwin[-_]?x64.*\.dmg$/i, /x64.*\.dmg$/i, /\.dmg$/i]);
-              }
-            } else if (os === 'windows') {
-              asset = pick([/win32[-_]?x64.*\.exe$/i, /win.*\.exe$/i, /\.exe$/i, /\.msi$/i]);
-            } else if (os === 'linux') {
-              asset = pick([/linux[-_]?x86_64.*AppImage$/i, /\.AppImage$/i, /\.deb$/i, /\.rpm$/i, /linux/i, /\.tar\.gz$/i]);
             }
 
-            if (!asset) asset = assets[0] || null;
-            if (asset && asset.browser_download_url) {
-              downloadLinks.forEach((a) => a.setAttribute('href', asset.browser_download_url));
+            // If no pattern match but desktop releases exist, fallback to first asset
+            if (!matchedAsset && desktopReleases.length > 0) {
+              const latestRelease = desktopReleases[0];
+              const assets = latestRelease.assets || [];
+              if (assets.length > 0) {
+                matchedAsset = assets[0];
+              }
+            }
+
+            // Update download links if match found
+            if (matchedAsset && matchedAsset.browser_download_url) {
+              downloadLinks.forEach((a) => a.setAttribute('href', matchedAsset.browser_download_url));
             }
           })
           .catch(() => {
