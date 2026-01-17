@@ -32,7 +32,10 @@ A **Flow** is a visual representation of an API testing workflow. It consists of
 4. Configure each node (see Node Types below)
 5. Click **Run Flow** to execute
 
-![Drag, connect, configure, run a small flow](/docs/assets/flow-build-connect-run.gif)
+<video autoplay loop muted playsinline style="max-width: 100%; height: auto;" aria-label="Drag, connect, configure, run a small flow">
+  <source src="/docs/assets/flow-build-connect-run.webm" type="video/webm" />
+  <source src="/docs/assets/flow-build-connect-run.mp4" type="video/mp4" />
+</video>
 
 ### Method 2: Auto-Generate from HAR Import
 
@@ -117,7 +120,10 @@ From subsequent nodes, reference this data:
 {{Login.request.url}}
 ```
 
-![HTTP Request node configuration panel](/docs/assets/flow-node-http-config.gif)
+<video autoplay loop muted playsinline style="max-width: 100%; height: auto;" aria-label="HTTP Request node configuration panel">
+  <source src="/docs/assets/flow-node-http-config.webm" type="video/webm" />
+  <source src="/docs/assets/flow-node-http-config.mp4" type="video/mp4" />
+</video>
 
 ---
 

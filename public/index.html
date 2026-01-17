@@ -9,44 +9,11 @@
       content="DevTools is a fast, secure API client that keeps your team in sync without trading privacy for productivity."
     />
     <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
-      rel="stylesheet"
-    />
-    <script>
-      window.tailwindcss = window.tailwindcss || {};
-      window.tailwindcss.config = {
-        darkMode: 'class',
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Inter', 'ui-sans-serif', 'system-ui'],
-              mono: ['JetBrains Mono', 'ui-monospace']
-            },
-            colors: {
-              ink: {
-                900: '#090510',
-                700: '#1f1633',
-                500: '#5c4d91',
-                400: '#8f7dfa'
-              },
-              neon: '#4de1ff'
-            }
-          }
-        }
-      };
-    </script>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
-    <style>
-      html, body {
-        overflow-x: hidden;
-      }
-      body {
-        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      }
-    </style>
+    <link rel="preload" href="/assets/fonts/inter-variable.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/assets/fonts/jetbrains-mono-variable.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/assets/tailwind.css" as="style" />
+    <link rel="stylesheet" href="/assets/fonts.css" />
+    <link rel="stylesheet" href="/assets/tailwind.css" />
   </head>
   <body class="min-h-full bg-[radial-gradient(circle_at_15%_15%,rgba(77,225,255,0.10),transparent_55%),radial-gradient(circle_at_85%_0%,rgba(143,125,250,0.10),transparent_45%),linear-gradient(120deg,#0A1228_0%,#1C254A_100%)]">
     <header class="relative border-b border-white/10">
@@ -308,17 +275,22 @@
             ></div>
           </div>
           <div class="group relative mx-auto w-full max-w-[580px] overflow-hidden rounded-xl border border-white/10 bg-white/5 shadow-[0_35px_60px_-25px_rgba(17,26,56,0.35)] backdrop-blur md:-mr-24 md:w-[135%] md:max-w-none md:rounded-xl md:shadow-[0_55px_90px_-35px_rgba(17,26,56,0.45)]">
-            <img
-              src="assets/devtools-main-ss-700.jpg"
-              srcset="assets/devtools-main-ss-700.jpg 700w, assets/devtools-main-ss-1400.jpg 1400w"
-              sizes="(min-width: 768px) 780px, 580px"
-              width="1400"
-              height="919"
-              loading="lazy"
-              decoding="async"
-              alt="DevTools main workspace screenshot"
-              class="block w-full object-cover object-left md:w-full"
-            />
+            <picture>
+              <source
+                type="image/webp"
+                srcset="assets/devtools-main-ss-432w.webp 432w, assets/devtools-main-ss-800w.webp 800w, assets/devtools-main-ss-1400w.webp 1400w"
+                sizes="(min-width: 768px) 600px, 100vw"
+              />
+              <img
+                src="assets/devtools-main-ss-800w.webp"
+                width="1400"
+                height="919"
+                loading="lazy"
+                decoding="async"
+                alt="DevTools main workspace screenshot"
+                class="block w-full object-cover object-left md:w-full"
+              />
+            </picture>
             <button
               type="button"
               data-demo-trigger
@@ -371,7 +343,9 @@
               <figure class="order-1 md:col-span-8 overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-[0_25px_45px_-30px_rgba(15,23,42,0.8)]">
                 <div class="w-full" style="aspect-ratio: 16 / 10;">
                   <img
-                    src="/docs/assets/import-dialog-select-har.webp"
+                    src="/docs/assets/import-dialog-select-har-339w.webp"
+                    srcset="/docs/assets/import-dialog-select-har-339w.webp 339w, /docs/assets/import-dialog-select-har-800w.webp 800w"
+                    sizes="(min-width: 768px) 600px, 100vw"
                     alt="Import a HAR file into DevTools"
                     loading="lazy"
                     decoding="async"
@@ -408,7 +382,9 @@
               <figure class="md:order-2 order-1 md:col-span-8 overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-[0_25px_45px_-30px_rgba(15,23,42,0.8)]">
                 <div class="w-full" style="aspect-ratio: 16 / 10;">
                   <img
-                    src="/docs/assets/flow-canvas-overview.webp"
+                    src="/docs/assets/flow-canvas-overview-368w.webp"
+                    srcset="/docs/assets/flow-canvas-overview-368w.webp 368w, /docs/assets/flow-canvas-overview-800w.webp 800w"
+                    sizes="(min-width: 768px) 600px, 100vw"
                     alt="Flow canvas overview"
                     loading="lazy"
                     decoding="async"
@@ -423,14 +399,25 @@
             <div class="grid items-center gap-8 md:grid-cols-12">
               <figure class="order-1 md:col-span-8 overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-[0_25px_45px_-30px_rgba(15,23,42,0.8)]">
                 <div class="w-full" style="aspect-ratio: 16 / 10;">
-                  <img
-                    src="/docs/assets/flow-build-connect-run.gif"
-                    alt="Build and connect steps with variable mapping"
+                  <video
+                    autoplay
+                    loop
+                    muted
+                    playsinline
                     loading="lazy"
-                    decoding="async"
-                    fetchpriority="low"
                     class="h-full w-full object-contain bg-slate-950/60"
-                  />
+                    aria-label="Build and connect steps with variable mapping"
+                  >
+                    <source src="/docs/assets/flow-build-connect-run.webm" type="video/webm" />
+                    <source src="/docs/assets/flow-build-connect-run.mp4" type="video/mp4" />
+                    <img
+                      src="/docs/assets/flow-build-connect-run.gif"
+                      alt="Build and connect steps with variable mapping"
+                      loading="lazy"
+                      decoding="async"
+                      class="h-full w-full object-contain bg-slate-950/60"
+                    />
+                  </video>
                 </div>
               </figure>
               <div class="order-2 md:col-span-4">
@@ -458,7 +445,9 @@
               <figure class="md:order-2 order-1 md:col-span-8 overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-[0_25px_45px_-30px_rgba(15,23,42,0.8)]">
                 <div class="w-full" style="aspect-ratio: 16 / 10;">
                   <img
-                    src="/docs/assets/cli-json-report-view.webp"
+                    src="/docs/assets/cli-json-report-view-337w.webp"
+                    srcset="/docs/assets/cli-json-report-view-337w.webp 337w, /docs/assets/cli-json-report-view-800w.webp 800w"
+                    sizes="(min-width: 768px) 600px, 100vw"
                     alt="CLI JSON report and CI‑friendly output"
                     loading="lazy"
                     decoding="async"

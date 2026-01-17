@@ -94,7 +94,10 @@ You should see a successful response with user data in JSON format.
 
 ![First request to jsonplaceholder users/1 showing a 200 JSON response](/docs/assets/first-request-jsonplaceholder-users-1.webp)
 
-![Typing the URL, clicking Send, and seeing the response](/docs/assets/first-request-send-and-response.gif)
+<video autoplay loop muted playsinline style="max-width: 100%; height: auto;" aria-label="Typing the URL, clicking Send, and seeing the response">
+  <source src="/docs/assets/first-request-send-and-response.webm" type="video/webm" />
+  <source src="/docs/assets/first-request-send-and-response.mp4" type="video/mp4" />
+</video>
 
 ### 3. Save and Organize
 
@@ -115,7 +118,10 @@ The request editor provides a familiar interface similar to Postman:
 - **Query Params Tab**: Build query strings visually
 - **Tests Tab**: Add response assertions
 
-![Annotated request editor UI](/docs/assets/request-editor-annotated.gif)
+<video autoplay loop muted playsinline style="max-width: 100%; height: auto;" aria-label="Annotated request editor UI">
+  <source src="/docs/assets/request-editor-annotated.webm" type="video/webm" />
+  <source src="/docs/assets/request-editor-annotated.mp4" type="video/mp4" />
+</video>
 
 ### Response Viewer
 
