@@ -12,9 +12,9 @@ module.exports = withNextra({
   images: {
     unoptimized: true
   },
+  // All legacy redirects are handled by Caddy at runtime
   async rewrites() {
     // Serve the static marketing homepage from public/index.html at '/'
     return [{ source: '/', destination: '/index.html' }]
   }
 })
-

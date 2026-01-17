@@ -1,0 +1,15 @@
+:8043 {
+  root * /srv/http
+  file_server
+
+  # Permanent redirects for moved docs
+  redir /docs/guides/01-getting-started /docs/start-here/install 301
+  redir /docs/guides/02-importing-har-files /docs/how-to/import-har 301
+  redir /docs/guides/03-working-with-flows /docs/how-to/working-with-flows 301
+  redir /docs/guides/04-environments-and-variables /docs/how-to/environments-and-variables 301
+  redir /docs/guides/05-cli-tool /docs/reference/cli 301
+  redir /docs/guides/06-cicd-integration /docs/how-to/ci-integrations 301
+  redir /docs/guides/07-examples-and-best-practices /docs/cookbook/examples-and-best-practices 301
+  redir /docs/guides/writing-docs /docs/contributing/writing-docs 301
+}
+

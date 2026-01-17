@@ -48,7 +48,7 @@
       }
     </style>
   </head>
-  <body class="min-h-full bg-[radial-gradient(circle_at_15%_15%,rgba(77,225,255,0.18),transparent_55%),radial-gradient(circle_at_85%_0%,rgba(143,125,250,0.18),transparent_45%),linear-gradient(120deg,#0C1633_0%,#2A1B4E_100%)]">
+  <body class="min-h-full bg-[radial-gradient(circle_at_15%_15%,rgba(77,225,255,0.10),transparent_55%),radial-gradient(circle_at_85%_0%,rgba(143,125,250,0.10),transparent_45%),linear-gradient(120deg,#0A1228_0%,#1C254A_100%)]">
     <header class="relative border-b border-white/10">
       <div class="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-white/60 to-transparent"></div>
       <div class="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-5 sm:px-8">
@@ -70,7 +70,7 @@
             Star on GitHub
             <span class="hidden text-xs font-normal text-slate-400 sm:inline" data-gh-stats>14★ • 10 releases</span>
           </a>
-          <a data-download href="https://github.com/the-dev-tools/dev-tools/releases/latest" target="_blank" rel="noopener noreferrer" class="group inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-[#5AF2FF] via-[#9A7DFF] to-[#FF8CE7] px-4 py-2 text-sm font-semibold text-slate-900 shadow-[0_12px_35px_-18px_rgba(129,102,255,0.75)] transition hover:brightness-105">
+          <a data-download href="https://github.com/the-dev-tools/dev-tools/releases/latest" target="_blank" rel="noopener noreferrer" class="group inline-flex items-center gap-2 rounded-md bg-[#58D7FF] px-4 py-2 text-sm font-semibold text-slate-900 shadow-[0_10px_24px_-12px_rgba(88,215,255,0.55)] transition hover:bg-[#6fe0ff]">
             <span>Download</span>
             <span class="flex items-center gap-1 text-xs font-medium transition">
               <svg
@@ -141,7 +141,7 @@
             href="https://github.com/the-dev-tools/dev-tools/releases/latest"
             target="_blank"
             rel="noopener noreferrer"
-            class="group inline-flex w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-[#5AF2FF] via-[#9A7DFF] to-[#FF8CE7] px-7 py-3 text-base font-semibold text-slate-900 shadow-[0_22px_55px_-20px_rgba(129,102,255,0.85)] ring-1 ring-white/20 transition duration-200 hover:scale-[1.03] hover:shadow-[0_30px_70px_-20px_rgba(129,102,255,0.95)]"
+            class="group inline-flex w-full items-center justify-center gap-3 rounded-xl bg-[#58D7FF] px-7 py-3 text-base font-semibold text-slate-900 shadow-[0_22px_45px_-22px_rgba(88,215,255,0.55)] ring-1 ring-white/10 transition duration-200 hover:bg-[#6fe0ff]"
           >
             <span>Download</span>
             <span class="flex items-center gap-1 text-xs font-medium transition">
@@ -188,7 +188,7 @@
           >
             <img src="assets/github.svg" alt="GitHub" class="h-4 w-4 filter invert" />
             Star on GitHub
-            <span class="text-xs font-normal text-slate-400" data-gh-stats>14★ • 10 releases</span>
+            <span class="text-xs font-normal text-slate-400" data-gh-stats>★ • releases</span>
           </a>
         </div>
       </div>
@@ -199,24 +199,32 @@
         <div class="relative flex-1">
           <div class="mb-6 flex justify-center md:justify-start">
             <span class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs uppercase tracking-wide text-slate-200 shadow-[0_10px_40px_rgba(77,225,255,0.15)]">
-              The newest open source API Client just dropped! 
+              Deployable API workflows from real traffic.
             </span>
           </div>
           <h1 class="text-center text-4xl font-extrabold leading-tight text-white sm:text-5xl md:text-left md:text-6xl">
-            Build <span class="text-[#58D7FF] drop-shadow-[0_0_18px_rgba(88,215,255,0.55)]">API flows</span> from real traffic—fast.
+            Deployable API workflows from real traffic.
           </h1>
           <p class="mt-6 max-w-xl text-center text-lg text-slate-300 md:text-left">
-            Lightning-fast, Go-based API client. Import a HAR and DevTools builds a flow tree with Variable Mapping auto-applied—ready to run locally or in CI.
+            Import a HAR → generate a flow → export YAML → run in CI.
           </p>
+          <p class="mt-3 max-w-xl text-center text-base text-slate-300 md:text-left">
+            Local-first. Git-reviewable. CI-ready.
+          </p>
+          <ul class="mt-4 max-w-xl list-disc space-y-1 pl-5 text-sm text-slate-300 md:text-base md:pl-6">
+            <li>HAR → flow steps + mapping</li>
+            <li>YAML export for PR review</li>
+            <li>CLI reports (JUnit/JSON, exit codes)</li>
+          </ul>
           <div class="mt-8 flex items-center gap-3">
             <a
               data-download
               href="https://github.com/the-dev-tools/dev-tools/releases/latest"
               target="_blank"
               rel="noopener noreferrer"
-              class="group inline-flex items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-[#5AF2FF] via-[#9A7DFF] to-[#FF8CE7] px-7 py-3 text-base font-semibold text-slate-900 shadow-[0_22px_55px_-20px_rgba(129,102,255,0.85)] ring-1 ring-white/20 transition duration-200 hover:scale-[1.03] hover:shadow-[0_30px_70px_-20px_rgba(129,102,255,0.95)]"
+              class="group inline-flex items-center justify-center gap-3 rounded-xl bg-[#58D7FF] px-7 py-3 text-base font-semibold text-slate-900 shadow-[0_22px_45px_-22px_rgba(88,215,255,0.55)] ring-1 ring-white/10 transition duration-200 hover:bg-[#6fe0ff]"
             >
-              <span>Download</span>
+              <span>Download Studio</span>
               <span class="flex items-center gap-1 text-xs font-medium text-slate-800 transition group-hover:text-slate-900">
                 <svg
                   data-os-icon="mac"
@@ -248,11 +256,17 @@
               </span>
             </a>
           <a
-            href="#flows"
-              class="group inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-6 py-3 text-base font-semibold text-slate-100 shadow-[0_18px_40px_-28px_rgba(77,225,255,0.8)] transition duration-200 hover:border-neon/60 hover:bg-white/10 hover:text-white"
-            >
-              Docs
-            </a>
+            href="/docs/reference/cli"
+            class="inline-flex items-center justify-center gap-2 rounded-xl border border-[#58D7FF]/60 bg-transparent px-6 py-3 text-base font-semibold text-[#58D7FF] transition duration-200 hover:bg-[#58D7FF]/10 hover:text-white"
+          >
+            Install CLI
+          </a>
+          <a
+            href="/docs/cookbook/examples-and-best-practices"
+            class="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-base font-semibold text-slate-300 transition duration-200 hover:text-white"
+          >
+            View examples
+          </a>
           </div>
           <p class="mt-4 font-mono text-xs text-slate-400">
             <span class="text-slate-300">CLI:</span>
@@ -261,49 +275,39 @@
           <dl class="mt-10 grid grid-cols-3 gap-6 text-center md:max-w-md">
             <div class="flex flex-col items-center text-center">
               <dd class="mt-2 text-white">
-                <span class="block text-4xl font-extrabold text-[#C97DFF]">5×</span>
-                <span class="mt-1 block text-lg font-semibold uppercase tracking-wide">Faster than</span>
-                <span class="mt-0.5 block text-sm text-slate-300">Bruno</span>
+                <span class="block text-2xl font-extrabold text-[#58D7FF]">Parallel</span>
+                <span class="mt-1 block text-sm font-semibold uppercase tracking-wide">By default</span>
               </dd>
             </div>
             <div class="flex flex-col items-center text-center">
               <dd class="mt-2 text-white">
-                <span class="block text-4xl font-extrabold text-[#58D7FF]">2×</span>
-                <span class="mt-1 block text-lg font-semibold uppercase tracking-wide">Faster than</span>
-                <span class="mt-0.5 block text-sm text-slate-300">Postman</span>
+                <span class="block text-2xl font-extrabold text-[#58D7FF]">CI outputs</span>
+                <span class="mt-1 block text-sm font-semibold uppercase tracking-wide">JUnit/JSON, exit codes</span>
               </dd>
             </div>
             <div class="flex flex-col items-center text-center">
               <dd class="mt-2 text-white">
-                <span class="mb-2 block">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="mx-auto h-10 w-10 fill-white" aria-hidden="true">
-                    <path d="M455.925 324.511v-.305c-43.168 34.714-115.123 56.648-200 56.648-74.15 0-138.432-16.743-182.279-44.12-6.223-3.94-12.07-8.112-17.48-12.524v.36c-4.244-3.327-8.28-6.778-12.111-10.359v92.044c0 52.626 89.717 95.445 200 95.445s200-42.819 200-95.445v-56.488l.15-35.363a313.64 313.64 0 0 1-10.28 10.157Z" />
-                    <path d="M255.925 340.831c110.283 0 200-42.82 200-95.444v-65.185c-43.168 34.714-115.123 56.648-200 56.648-74.117 0-138.375-16.73-182.221-44.087-6.244-3.952-12.111-8.137-17.539-12.562v65.185c0 52.819 89.717 95.44 200 95.44Z" />
-                    <path d="M255.925 190.89c110.283 0 200-42.819 200-95.444 0-1.507-.328-2.974-.472-4.463-.836-8.539-3.844-16.81-9.098-24.622C420.507 27.918 344.952 0 255.925 0 166.898 0 91.343 27.918 65.497 66.36c-5.256 7.812-8.264 16.083-9.098 24.622-.147 1.488-.475 2.956-.475 4.463 0 52.625 89.717 95.445 200 95.445Z" />
-                  </svg>
-                </span>
-                <span class="block text-lg font-semibold uppercase tracking-wide">Local-First</span>
-                <span class="mt-0.5 block text-sm text-slate-300">Data stays on your machine.</span>
+                <span class="block text-2xl font-extrabold text-[#58D7FF]">Local-first</span>
+                <span class="mt-1 block text-sm font-semibold uppercase tracking-wide">No cloud dependency</span>
               </dd>
             </div>
           </dl>
-          <p class="mt-2 text-center text-xs text-slate-500 md:text-left md:pl-1">
-            5× faster than Bruno / 2× faster than Postman based on internal benchmark — <a href="#benchmark-methodology" class="underline decoration-dotted underline-offset-2 hover:text-slate-300">see methods</a>.
-          </p>
+
+          
         </div>
         <div class="relative flex-1 md:flex-[1.35] overflow-hidden md:overflow-visible">
           <div class="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
             <div
-              class="absolute left-1/2 top-1/2 h-[150%] w-[125%] max-w-[840px] -translate-x-1/2 -translate-y-1/2 rounded-[46px] bg-slate-950/70 blur-[120px] opacity-90"
+              class="absolute left-1/2 top-1/2 h-[150%] w-[125%] max-w-[840px] -translate-x-1/2 -translate-y-1/2 rounded-[46px] bg-slate-950/60 blur-[120px] opacity-80"
             ></div>
             <div
-              class="absolute left-1/2 top-1/2 h-[135%] w-[118%] max-w-[760px] -translate-x-1/2 -translate-y-1/2 rounded-[50px] bg-[radial-gradient(circle_at_25%_25%,rgba(88,215,255,0.4),transparent_65%),radial-gradient(circle_at_75%_75%,rgba(201,125,255,0.55),transparent_68%)] opacity-70"
+              class="absolute left-1/2 top-1/2 h-[135%] w-[118%] max-w-[760px] -translate-x-1/2 -translate-y-1/2 rounded-[50px] bg-[radial-gradient(circle_at_25%_25%,rgba(88,215,255,0.20),transparent_65%),radial-gradient(circle_at_75%_75%,rgba(201,125,255,0.25),transparent_68%)] opacity-60"
             ></div>
             <div
-              class="absolute left-1/2 bottom-[-18%] h-[55%] w-[70%] -translate-x-1/2 rounded-full bg-[#090c1f] opacity-75 blur-[68px]"
+              class="absolute left-1/2 bottom-[-18%] h-[55%] w-[70%] -translate-x-1/2 rounded-full bg-[#090c1f] opacity-60 blur-[68px]"
             ></div>
           </div>
-          <div class="group relative mx-auto w-full max-w-[580px] overflow-hidden rounded-xl border border-white/10 bg-white/5 shadow-[0_35px_60px_-25px_rgba(17,26,56,0.65)] backdrop-blur md:-mr-24 md:w-[135%] md:max-w-none md:rounded-xl md:shadow-[0_55px_90px_-35px_rgba(17,26,56,0.75)]">
+          <div class="group relative mx-auto w-full max-w-[580px] overflow-hidden rounded-xl border border-white/10 bg-white/5 shadow-[0_35px_60px_-25px_rgba(17,26,56,0.35)] backdrop-blur md:-mr-24 md:w-[135%] md:max-w-none md:rounded-xl md:shadow-[0_55px_90px_-35px_rgba(17,26,56,0.45)]">
             <img
               src="assets/devtools-main-ss-700.jpg"
               srcset="assets/devtools-main-ss-700.jpg 700w, assets/devtools-main-ss-1400.jpg 1400w"
@@ -326,32 +330,15 @@
                 </svg>
               </span>
             </button>
-            <div class="absolute bottom-4 left-4 flex flex-col items-start gap-2 md:bottom-6 md:left-6">
-              <span class="inline-flex items-center gap-2 rounded-full border border-white/20 bg-slate-950/75 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-[#58D7FF] shadow-[0_18px_40px_-24px_rgba(88,215,255,0.75)]">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-3.5 w-3.5" aria-hidden="true">
-                  <path d="M12 14L11.2929 14.7071L12 15.4142L12.7071 14.7071L12 14ZM13 5C13 4.44772 12.5523 4 12 4C11.4477 4 11 4.44771 11 5L13 5ZM6.29289 9.70711L11.2929 14.7071L12.7071 13.2929L7.70711 8.29289L6.29289 9.70711ZM12.7071 14.7071L17.7071 9.70711L16.2929 8.29289L11.2929 13.2929L12.7071 14.7071ZM13 14L13 5L11 5L11 14L13 14Z" fill="currentColor" />
-                  <path d="M5 16L5 17C5 18.1046 5.89543 19 7 19L17 19C18.1046 19 19 18.1046 19 17V16" stroke="currentColor" stroke-width="2" />
-                </svg>
-                Flow generated from HAR capture
-              </span>
-              <span class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#2A1B4E]/80 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-[#C97DFF] shadow-[0_16px_32px_-18px_rgba(201,125,255,0.7)]">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" aria-hidden="true">
-                  <path d="M18 4L21 7M21 7L18 10M21 7H17C16.0707 7 15.606 7 15.2196 7.07686C13.6329 7.39249 12.3925 8.63288 12.0769 10.2196C12 10.606 12 11.0707 12 12C12 12.9293 12 13.394 11.9231 13.7804C11.6075 15.3671 10.3671 16.6075 8.78036 16.9231C8.39397 17 7.92931 17 7 17H3M18 20L21 17M21 17L18 14M21 17H17C16.0707 17 15.606 17 15.2196 16.9231C15.1457 16.9084 15.0724 16.8917 15 16.873M3 7H7C7.92931 7 8.39397 7 8.78036 7.07686C8.85435 7.09158 8.92758 7.1083 9 7.12698" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-                Variables auto-mapped
-              </span>
-              <span class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-slate-900/75 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-200 shadow-[0_18px_36px_-20px_rgba(148,179,255,0.65)]">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" aria-hidden="true">
-                  <path d="M7 3h7l4 4v11a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                  <path d="M14 3v4h4M9 13.5l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-                Export as YAML
-              </span>
-            </div>
+            <!-- Reduced callouts moved to captions below -->
           </div>
-          <p class="mt-4 text-center text-sm text-slate-300 md:text-left md:pl-4">
-            Start from real browser traffic: import a HAR file, DevTools turns it into a replayable API flow with tokens and IDs automatically mapped to variables.
-          </p>
+          <p class="mt-4 text-center text-sm text-slate-300 md:text-left md:pl-4">A real workspace: flows as files, tabs for runs, diffs before export.</p>
+          <p class="mt-2 text-center text-sm text-slate-300 md:text-left md:pl-4">Start from real browser traffic: import a HAR file, DevTools turns it into a replayable API flow with tokens and IDs automatically mapped to variables.</p>
+          <ol class="mt-3 list-decimal pl-8 text-left text-sm text-slate-400 md:pl-12">
+            <li>Generated flow</li>
+            <li>Variables mapped</li>
+            <li>Export YAML</li>
+          </ol>
         </div>
       </section>
 
@@ -375,7 +362,7 @@
             <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs uppercase tracking-wide text-slate-300">How it works</span>
             <h2 class="mt-4 text-3xl font-bold text-white sm:text-4xl">Record → Flow → YAML → CI</h2>
             <p class="mt-3 text-base text-slate-300">
-              Go from real browser traffic to parallelised API checks in four clicks. DevTools keeps every step versionable so your team can review and rerun in Git.
+              Quick mental model: visual API workflows with Git‑native YAML export. Flows you can review and run in CI.
             </p>
           </div>
           <div class="space-y-24">
@@ -401,9 +388,9 @@
                   <li>• Sensitive data safe: process happens locally</li>
                 </ul>
                 <div class="mt-4 text-sm">
-                  <a href="/docs/guides/02-importing-har-files#recording-har-files" class="underline decoration-dotted underline-offset-2 hover:text-white">How to record a HAR</a>
+                  <a href="/docs/how-to/import-har#recording-har-files" class="underline decoration-dotted underline-offset-2 hover:text-white">How to record a HAR</a>
                   <span class="mx-2 opacity-50">•</span>
-                  <a href="/docs/guides/02-importing-har-files#importing-har-files" class="underline decoration-dotted underline-offset-2 hover:text-white">How to import a HAR</a>
+                  <a href="/docs/how-to/import-har#importing-har-files" class="underline decoration-dotted underline-offset-2 hover:text-white">How to import a HAR</a>
                 </div>
               </div>
             </div>
@@ -414,8 +401,8 @@
                 <h3 class="text-2xl font-semibold text-white">Build flows automatically</h3>
                 <p class="mt-3 text-slate-300">DevTools constructs a visual flow tree and applies Variable Mapping for tokens, IDs, and headers.</p>
                 <ul class="mt-4 space-y-2 text-sm text-slate-300">
-                  <li>• Nodes created from your traffic</li>
-                  <li>• Deterministic variable mapping</li>
+                  <li>• Steps generated from your traffic</li>
+                  <li>• Automatic variable mapping (repeatable rules)</li>
                 </ul>
               </div>
               <figure class="md:order-2 order-1 md:col-span-8 overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-[0_25px_45px_-30px_rgba(15,23,42,0.8)]">
@@ -438,7 +425,7 @@
                 <div class="w-full" style="aspect-ratio: 16 / 10;">
                   <img
                     src="/docs/assets/flow-build-connect-run.gif"
-                    alt="Build and connect nodes with variable mapping"
+                    alt="Build and connect steps with variable mapping"
                     loading="lazy"
                     decoding="async"
                     fetchpriority="low"
@@ -448,8 +435,8 @@
               </figure>
               <div class="order-2 md:col-span-4">
                 <h3 class="text-2xl font-semibold text-white">Map variables and assert</h3>
-                <p class="mt-3 text-slate-300">Keep logic in flows, not random scripts. Define variables, reuse them across nodes, and add assertions at the flow level.</p>
-                <a href="/docs/guides/03-working-with-flows" class="mt-4 inline-block text-sm text-slate-200 underline decoration-dotted underline-offset-2 hover:text-white">Learn how flows work</a>
+                <p class="mt-3 text-slate-300">Keep logic in flows, not random scripts. Request editor included, with clear variable mapping and flow‑level assertions.</p>
+                <a href="/docs/how-to/working-with-flows" class="mt-4 inline-block text-sm text-slate-200 underline decoration-dotted underline-offset-2 hover:text-white">Learn how flows work</a>
               </div>
             </div>
 
@@ -457,15 +444,15 @@
             <div class="grid items-center gap-8 md:grid-cols-12">
               <div class="md:order-1 order-2 md:col-span-4">
                 <h3 class="text-2xl font-semibold text-white">Export to YAML and run in CI</h3>
-                <p class="mt-3 text-slate-300">Export human‑readable YAML for review in Git. Run locally or in CI with clear exit codes and reports.</p>
+                <p class="mt-3 text-slate-300">YAML‑native by design: export human‑readable flows for Git review, then run locally or in CI with clear exit codes and reports.</p>
                 <ul class="mt-4 space-y-2 text-sm text-slate-300">
-                  <li>• Git‑diffable flow definitions</li>
-                  <li>• CLI JSON and JUnit outputs</li>
+                  <li>• Git‑reviewable flow definitions</li>
+                  <li>• CLI reports (JUnit/JSON, exit codes)</li>
                 </ul>
                 <div class="mt-4 text-sm">
-                  <a href="/docs/guides/02-importing-har-files#export-to-yaml-flow" class="underline decoration-dotted underline-offset-2 hover:text-white">How to export YAML</a>
+                  <a href="/docs/how-to/import-har#export-to-yaml-flow" class="underline decoration-dotted underline-offset-2 hover:text-white">How to export YAML</a>
                   <span class="mx-2 opacity-50">•</span>
-                  <a href="/docs/guides/03-working-with-flows#yaml-flow-format" class="underline decoration-dotted underline-offset-2 hover:text-white">YAML flow format</a>
+                  <a href="/docs/how-to/working-with-flows#yaml-flow-format" class="underline decoration-dotted underline-offset-2 hover:text-white">YAML flow format</a>
                 </div>
               </div>
               <figure class="md:order-2 order-1 md:col-span-8 overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-[0_25px_45px_-30px_rgba(15,23,42,0.8)]">
@@ -480,6 +467,133 @@
                   />
                 </div>
               </figure>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PR-ready YAML section (Git-native, reviewable flows) -->
+      <section id="pr-ready" class="relative border-b border-white/5 bg-slate-950/70 py-16">
+        <div class="mx-auto grid w-full max-w-6xl grid-cols-1 gap-10 px-4 sm:px-8 md:grid-cols-12">
+          <div class="md:col-span-7">
+            <div class="max-w-2xl">
+              <h2 class="text-3xl font-bold text-white sm:text-4xl">PR‑ready YAML</h2>
+              <p class="mt-3 text-base text-slate-300">Export clean YAML, review in PRs, run in CI with machine‑readable output.</p>
+            </div>
+            <div class="mt-6 rounded-xl border border-white/10 bg-white/5">
+              <div class="flex items-center justify-between border-b border-white/10 px-3 py-2">
+                <div class="flex items-center gap-2 text-xs">
+                  <button data-tab="yaml" class="tab-btn rounded-md px-2 py-1 text-slate-300 hover:text-white" data-active="true">YAML</button>
+                  <button data-tab="actions" class="tab-btn rounded-md px-2 py-1 text-slate-300 hover:text-white">GitHub Actions</button>
+                </div>
+                <div class="flex items-center gap-2">
+                  <a href="https://github.com/the-dev-tools/cli-demo" target="_blank" rel="noopener noreferrer" class="hidden rounded-md border border-white/15 px-2 py-1 text-xs text-slate-300 hover:bg-white/5 hover:text-white md:inline">Open in GitHub</a>
+                  <button data-copy class="rounded-md border border-white/15 px-2 py-1 text-xs text-slate-300 hover:bg-white/5 hover:text-white">Copy</button>
+                </div>
+              </div>
+              <div class="relative">
+                <pre data-panel="yaml" class="tab-panel max-h-80 overflow-auto p-4 text-[13.5px] leading-relaxed text-slate-200"><code>workspace_name: API smoke test
+run:
+  - flow: Smoke
+
+requests:
+  - name: Login
+    method: POST
+    url: "{{api}}/api/auth/login"
+    headers:
+      content-type: application/json
+    body: '{"email":"{{#env:LOGIN_EMAIL}}","password":"{{#env:LOGIN_PASSWORD}}"}'
+    assertions:
+      - response.status == 200
+
+  - name: List products (auth)
+    method: GET
+    url: "{{api}}/api/products"
+    headers:
+      - name: authorization
+        value: "Bearer {{ http_1.response.body.token }}"
+        enabled: true
+    assertions:
+      - response.status == 200
+
+flows:
+  - name: Smoke
+    steps:
+      - manual_start:
+          name: Start
+
+      - request:
+          name: http_1
+          depends_on: Start
+          use_request: Login
+
+      - request:
+          name: http_2
+          depends_on: http_1
+          use_request: List products (auth)
+
+environments:
+  - name: default
+    variables:
+      api: https://ecommerce-admin-panel.fly.dev
+                </code></pre>
+                <pre data-panel="actions" class="tab-panel hidden max-h-80 overflow-auto p-4 text-[13.5px] leading-relaxed text-slate-200"><code>env:
+  LOGIN_EMAIL: ${{ secrets.LOGIN_EMAIL }}
+  LOGIN_PASSWORD: ${{ secrets.LOGIN_PASSWORD }}
+
+steps:
+  - uses: actions/checkout@v4
+
+  - name: Install DevTools CLI
+    run: curl -fsSL https://sh.dev.tools/install.sh | bash
+
+  - name: Run flow (JUnit)
+    run: devtools flow run --report junit:test-results.xml exported-dev-tools.yaml
+                </code></pre>
+              </div>
+              <div class="border-t border-white/10 px-3 py-2 text-[11px] text-slate-400">Review in PRs. Run in CI. Machine‑readable outputs.</div>
+            </div>
+          </div>
+          <div class="md:col-span-5">
+            <div class="rounded-2xl border border-white/10 bg-white/5 p-5">
+              <h3 class="text-base font-semibold text-white">What you’re seeing</h3>
+              <ul class="mt-3 list-disc space-y-2 pl-5 text-sm text-slate-300">
+                <li>Env refs from CI (<code>{{#env:LOGIN_EMAIL}}</code>, <code>{{#env:LOGIN_PASSWORD}}</code>)</li>
+                <li>Token chaining between requests (<code>Bearer {{ http_1.response.body.token }}</code>)</li>
+                <li>Status assertions on each request</li>
+              </ul>
+              <div class="mt-4 text-xs text-slate-400">Tabs show the same flow as YAML, and a GitHub Actions snippet to run it.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="scale" class="relative border-b border-white/5 bg-[linear-gradient(160deg,rgba(12,22,51,0.55),rgba(42,27,78,0.4))] py-16">
+        <div class="mx-auto w-full max-w-6xl px-4 sm:px-8">
+          <div class="max-w-3xl">
+            <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-wide text-slate-300">Roadmap</span>
+            <h2 class="mt-4 text-3xl font-bold text-white sm:text-4xl">Scale when you're ready</h2>
+            <p class="mt-3 text-base text-slate-300">Run flows locally and in CI for free. When your suite needs more, scale with DevTools Cloud <span class="opacity-80">(Roadmap)</span> or self‑host executors.</p>
+            <div class="mt-6 grid gap-6 md:grid-cols-2">
+              <div class="rounded-2xl border border-white/10 bg-white/5 p-5">
+                <h3 class="text-lg font-semibold text-white">DevTools Cloud adds</h3>
+                <ul class="mt-3 space-y-1 text-sm text-slate-300">
+                  <li>• Scheduling</li>
+                  <li>• Multi‑region runs</li>
+                  <li>• Shared secrets/environments</li>
+                  <li>• RBAC + audit log</li>
+                  <li>• Hosted executors + autoscaling</li>
+                  <li>• Run history + dashboards</li>
+                </ul>
+              </div>
+              <div class="rounded-2xl border border-white/10 bg-white/5 p-5">
+                <h3 class="text-lg font-semibold text-white">Self‑host executors add</h3>
+                <ul class="mt-3 space-y-1 text-sm text-slate-300">
+                  <li>• Run in your VPC</li>
+                  <li>• Your data residency</li>
+                  <li>• Your infra control</li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
@@ -515,7 +629,7 @@
                   <th scope="row" class="px-4 py-4 align-top font-semibold text-slate-100">Flows (visual + reusable)</th>
                   <td class="px-4 py-4">✅ Flow <strong>trees</strong> from HAR; visual builder</td>
                   <td class="px-4 py-4">❌ No flows</td>
-                  <td class="px-4 py-4">⚠️ Flows exist but <strong>cloud-locked</strong>; poor exportability</td>
+                  <td class="px-4 py-4">⚠️ Flows available; export limited</td>
                 </tr>
                 <tr>
                   <th scope="row" class="px-4 py-4 align-top font-semibold text-slate-100">HAR → Flow (auto-build from real traffic)</th>
@@ -525,13 +639,13 @@
                 </tr>
                 <tr class="bg-white/3">
                   <th scope="row" class="px-4 py-4 align-top font-semibold text-slate-100">YAML export of flows (Git-reviewable)</th>
-                  <td class="px-4 py-4">✅ <strong>Yes</strong> (per-node overrides)</td>
+                  <td class="px-4 py-4">✅ <strong>Yes</strong> (per-step overrides)</td>
                   <td class="px-4 py-4">❌ No</td>
                   <td class="px-4 py-4">❌ No (not for Flows)</td>
                 </tr>
                 <tr>
-                  <th scope="row" class="px-4 py-4 align-top font-semibold text-slate-100">Variable mapping (node-scoped, JSON-path)</th>
-                  <td class="px-4 py-4">✅ Strong, deterministic</td>
+                  <th scope="row" class="px-4 py-4 align-top font-semibold text-slate-100">Variable mapping (step-scoped, JSONPath)</th>
+                  <td class="px-4 py-4">✅ Automatic, rule‑based (overrides)</td>
                   <td class="px-4 py-4">⚠️ Basic vars</td>
                   <td class="px-4 py-4">⚠️ Mixed; often script-heavy</td>
                 </tr>
@@ -545,7 +659,7 @@
                   <th scope="row" class="px-4 py-4 align-top font-semibold text-slate-100">Performance testing &amp; <strong>regional</strong> locations</th>
                   <td class="px-4 py-4">🚧 Roadmap (designed pricing)</td>
                   <td class="px-4 py-4">❌ No</td>
-                  <td class="px-4 py-4">⚠️ Separate add-ons/monitors; $$</td>
+                  <td class="px-4 py-4">⚠️ Separate add‑ons/monitors</td>
                 </tr>
                 <tr class="bg-white/3">
                   <th scope="row" class="px-4 py-4 align-top font-semibold text-slate-100">Runner tech &amp; speed</th>
@@ -572,10 +686,10 @@
                   <td class="px-4 py-4">⚠️ Possible but heavier, cloud-dependent</td>
                 </tr>
                 <tr class="bg-white/3">
-                  <th scope="row" class="px-4 py-4 align-top font-semibold text-slate-100">Developer sentiment</th>
-                  <td class="px-4 py-4">✅ Git-friendly, open</td>
-                  <td class="px-4 py-4">👍 Local, minimal</td>
-                  <td class="px-4 py-4">👎 Not OSS; <strong>cloud lock-in</strong>; low dev love</td>
+                  <th scope="row" class="px-4 py-4 align-top font-semibold text-slate-100">Collaboration &amp; dependency</th>
+                  <td class="px-4 py-4">✅ No account required; local‑first</td>
+                  <td class="px-4 py-4">✅ Local; no account</td>
+                  <td class="px-4 py-4">⚠️ Requires account for collaboration; cloud‑dependent features</td>
                 </tr>
               </tbody>
             </table>
@@ -933,7 +1047,7 @@
               class="h-full w-full"
               title="DevTools flow demo"
               src=""
-              data-src="https://www.youtube.com/embed/DVDXfZUGzCk?autoplay=1&rel=0"
+              data-src="https://www.youtube.com/embed/Xa36ssjErB8?autoplay=1&rel=0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowfullscreen
             ></iframe>
@@ -1253,6 +1367,56 @@
         document.addEventListener('keydown', (event) => {
           if (event.key === 'Escape') {
             closeModal();
+          }
+        });
+      })();
+
+      // Artifact Tabs: simple toggle + copy
+      (function () {
+        const container = document.querySelector('.tab-panel')?.parentElement?.parentElement;
+        // Fallback: scan for any tabs on page
+        const tabSets = Array.from(document.querySelectorAll('.tab-panel')).reduce((set, el) => {
+          const box = el.closest('.rounded-xl');
+          if (box) set.add(box);
+          return set;
+        }, new Set());
+        tabSets.forEach((box) => {
+          const tabs = box.querySelectorAll('button.tab-btn');
+          const panels = box.querySelectorAll('.tab-panel');
+          const copyBtn = box.querySelector('[data-copy]');
+
+          function activate(name) {
+            panels.forEach((p) => {
+              const active = p.getAttribute('data-panel') === name;
+              p.classList.toggle('hidden', !active);
+            });
+            tabs.forEach((t) => {
+              const active = t.getAttribute('data-tab') === name;
+              t.setAttribute('data-active', active ? 'true' : 'false');
+              t.classList.toggle('bg-slate-900/40', active);
+              t.classList.toggle('text-white', active);
+            });
+          }
+
+          tabs.forEach((t) => t.addEventListener('click', () => activate(t.getAttribute('data-tab'))));
+          // default to first tab
+          const first = tabs[0];
+          if (first) activate(first.getAttribute('data-tab'));
+
+          if (copyBtn) {
+            copyBtn.addEventListener('click', async () => {
+              const visible = Array.from(panels).find((p) => !p.classList.contains('hidden'));
+              if (!visible) return;
+              const code = visible.querySelector('code');
+              const text = code ? code.textContent : '';
+              try {
+                await navigator.clipboard.writeText(text);
+                copyBtn.textContent = 'Copied';
+                setTimeout(() => (copyBtn.textContent = 'Copy'), 1200);
+              } catch (_) {
+                // noop
+              }
+            });
           }
         });
       })();

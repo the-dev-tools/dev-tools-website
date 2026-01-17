@@ -18,6 +18,15 @@ class MyDocument extends Document {
         </Head>
         <body className="min-h-full bg-[radial-gradient(circle_at_15%_15%,rgba(77,225,255,0.18),transparent_55%),radial-gradient(circle_at_85%_0%,rgba(143,125,250,0.18),transparent_45%),linear-gradient(120deg,#0C1633_0%,#2A1B4E_100%)]">
           <Main />
+          <noscript>
+            <img
+              height="1"
+              width="1"
+              style={{ display: 'none' }}
+              alt=""
+              src="https://px.ads.linkedin.com/collect/?pid=9257801&fmt=gif"
+            />
+          </noscript>
           <NextScript />
         </body>
       </Html>

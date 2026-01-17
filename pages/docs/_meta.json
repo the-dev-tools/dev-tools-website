@@ -1,4 +1,18 @@
 {
   "index": "Introduction",
-  "guides": { "title": "Guides" }
+  "start-here": {
+    "title": "Start here"
+  },
+  "how-to": {
+    "title": "How‑to"
+  },
+  "reference": {
+    "title": "Reference"
+  },
+  "cookbook": {
+    "title": "Cookbook"
+  },
+  "contributing": {
+    "title": "Contributing"
+  }
 }

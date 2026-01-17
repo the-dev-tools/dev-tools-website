@@ -17,14 +17,12 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED 1
 RUN npm run build
 
-# Stage 3: Runner - Serve with gostatic
-FROM pierrezemb/gostatic
+# Stage 3: Runner - Serve with Caddy (301-friendly redirects)
+FROM caddy:2-alpine
 
-# Copy built static site into the container
+# Copy built static site and Caddyfile
 COPY --from=builder /app/out /srv/http
+COPY Caddyfile /etc/caddy/Caddyfile
 
-# Default gostatic port
+# Default Caddy port (matches Fly internal_port)
 EXPOSE 8043
-
-# Run the server
-CMD ["-port", "8043", "-path", "/srv/http"]

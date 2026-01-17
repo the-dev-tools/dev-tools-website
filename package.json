@@ -7,7 +7,8 @@
     "dev": "next dev -p 3030",
     "build": "next build",
     "start": "next start -p 3030",
-    "export": "next export"
+    "export": "next export",
+    "preview": "npm run build && npx serve out -l 3030"
   },
   "dependencies": {
     "next": "^14.2.0",
