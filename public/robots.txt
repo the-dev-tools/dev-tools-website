@@ -1,0 +1,9 @@
+# Allow all search engines
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://dev.tools/sitemap.xml
+
+# Crawl-delay (optional, be nice to servers)
+# Crawl-delay: 1

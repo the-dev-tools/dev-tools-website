@@ -5,10 +5,11 @@
   "description": "DevTools marketing site + docs (Next.js + Nextra)",
   "scripts": {
     "dev": "next dev -p 3030",
-    "build": "next build",
+    "build": "next build && node scripts/generate-sitemap.js",
     "start": "next start -p 3030",
     "export": "next export",
-    "preview": "npm run build && npx serve out -l 3030"
+    "preview": "npm run build && npx serve out -l 3030",
+    "sitemap": "node scripts/generate-sitemap.js"
   },
   "dependencies": {
     "next": "^14.2.0",
