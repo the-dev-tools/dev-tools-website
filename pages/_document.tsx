@@ -14,7 +14,7 @@ class MyDocument extends Document {
             href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
             rel="stylesheet"
           />
-          {/* Tailwind CSS and custom body styles are embedded in public/index.html for the homepage. */}
+          {/* Google Analytics now in app/layout.tsx via @next/third-parties */}
         </Head>
         <body className="min-h-full bg-[radial-gradient(circle_at_15%_15%,rgba(77,225,255,0.18),transparent_55%),radial-gradient(circle_at_85%_0%,rgba(143,125,250,0.18),transparent_45%),linear-gradient(120deg,#0C1633_0%,#2A1B4E_100%)]">
           <Main />

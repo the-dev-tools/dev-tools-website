@@ -1,0 +1,72 @@
+---
+title: "Introducing DevTools: Local-First API Testing"
+date: "2026-01-20"
+author:
+  name: "DevTools Team"
+  avatar: "/logo.svg"
+tags: ["announcement", "api-testing", "local-first"]
+category: "Product"
+summary: "We're excited to announce DevTools, a local-first API testing and flow automation tool that turns browser traffic into executable YAML flows."
+---
+
+# Introducing DevTools
+
+We're excited to announce **DevTools**, a local-first API testing and flow automation tool. DevTools helps you ship reliable APIs with exportable YAML and a workflow that respects your team's velocity.
+
+## Why Local-First?
+
+Your API testing data is sensitive. DevTools keeps everything on your machine:
+
+- **No cloud dependency**: Everything runs locally
+- **No telemetry**: Your data stays private
+- **Git-reviewable**: YAML flows are text files you can commit
+
+## How It Works
+
+The flow from traffic to tests takes minutes:
+
+1. **Import HAR**: Record browser traffic and import the HAR file
+2. **Generate Flow**: DevTools automatically creates a flow tree with variable mapping
+3. **Export YAML**: Save flows as reviewable text files
+4. **Run in CI**: Execute with the Go-based CLI runner
+
+### Example Flow
+
+```yaml
+flows:
+  - name: AuthFlow
+    steps:
+      - request:
+          name: Login
+          method: POST
+          url: '{{BASE_URL}}/auth/login'
+          body:
+            email: "test@example.com"
+            password: "secret"
+      - request:
+          name: GetProfile
+          method: GET
+          url: '{{BASE_URL}}/me'
+          headers:
+            authorization: "Bearer {{ Login.response.body.token }}"
+```
+
+## Key Features
+
+- **HAR → Flow Tree**: Import browser traffic and get a visual flow graph
+- **Auto Variable Mapping**: Tokens/IDs extracted automatically
+- **YAML Export**: Flows as text files for PR review
+- **Go-Fast Runner**: Parallel execution with multithreaded Go engine
+- **CI Integration**: JUnit/JSON reports and deterministic exit codes
+
+## What's Next?
+
+We're working on:
+
+- GraphQL and gRPC support
+- Enhanced dataset management
+- Optional team features (SSO, policies)
+
+Try DevTools today and see how local-first API testing can transform your workflow.
+
+[Download DevTools](https://github.com/the-dev-tools/dev-tools/releases/latest) or [Read the Docs](/docs)

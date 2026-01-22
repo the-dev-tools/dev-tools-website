@@ -67,6 +67,15 @@
       }
     }
     </script>
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=AW-17895561658"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'AW-17895561658');
+    </script>
   </head>
   <body class="min-h-full bg-[radial-gradient(circle_at_15%_15%,rgba(77,225,255,0.10),transparent_55%),radial-gradient(circle_at_85%_0%,rgba(143,125,250,0.10),transparent_45%),linear-gradient(120deg,#0A1228_0%,#1C254A_100%)]">
     <header class="relative border-b border-white/10">

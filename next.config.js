@@ -11,10 +11,7 @@ module.exports = withNextra({
   trailingSlash: true,
   images: {
     unoptimized: true
-  },
-  // All legacy redirects are handled by Caddy at runtime
-  async rewrites() {
-    // Serve the static marketing homepage from public/index.html at '/'
-    return [{ source: '/', destination: '/index.html' }]
   }
+  // Homepage now served from app/page.tsx (App Router)
+  // Docs continue to use pages/docs/ (Pages Router with Nextra)
 })

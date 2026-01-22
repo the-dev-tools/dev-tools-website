@@ -1,43 +1,62 @@
 const fs = require('fs');
 const path = require('path');
-const glob = require('glob');
 
 const SITE_URL = 'https://dev.tools';
-const PAGES_DIR = path.join(__dirname, '..', 'pages');
-const OUT_DIR = path.join(__dirname, '..', 'out');
+const ROOT_DIR = path.join(__dirname, '..');
+const DOCS_DIR = path.join(ROOT_DIR, 'pages', 'docs');
+const BLOG_DIR = path.join(ROOT_DIR, 'content', 'blog');
+const OUT_DIR = path.join(ROOT_DIR, 'out');
 
-// Get all doc pages
-const docPages = glob.sync('pages/docs/**/*.{md,mdx}', { cwd: path.join(__dirname, '..') });
+function listContentFiles(dir, extensions) {
+  const entries = [];
+  if (!fs.existsSync(dir)) return entries;
+  const stack = [dir];
+  while (stack.length) {
+    const current = stack.pop();
+    const items = fs.readdirSync(current, { withFileTypes: true });
+    for (const it of items) {
+      const full = path.join(current, it.name);
+      if (it.isDirectory()) {
+        stack.push(full);
+      } else if (extensions.some(ext => it.name.toLowerCase().endsWith(ext))) {
+        entries.push(full);
+      }
+    }
+  }
+  return entries;
+}
 
-// Convert file paths to URLs
+// Base URLs
 const urls = [
-  // Homepage
   { loc: '/', priority: '1.0', changefreq: 'weekly' },
+  { loc: '/docs/', priority: '0.9', changefreq: 'weekly' },
+  { loc: '/blog/', priority: '0.8', changefreq: 'weekly' },
 ];
 
-// Add all doc pages
-const addedUrls = new Set(['/']); // Track to avoid duplicates
+const added = new Set(urls.map(u => u.loc));
 
-// Add docs homepage with high priority
-urls.push({ loc: '/docs/', priority: '0.9', changefreq: 'weekly' });
-addedUrls.add('/docs/');
-docPages.forEach(file => {
-  // Convert pages/docs/path/to/file.md to /docs/path/to/file/
-  let url = file
-    .replace('pages/', '/')
-    .replace(/\.(md|mdx)$/, '/')
-    .replace('/index/', '/');
-
-  // Avoid duplicates
-  if (!addedUrls.has(url)) {
-    addedUrls.add(url);
-    urls.push({
-      loc: url,
-      priority: '0.8',
-      changefreq: 'monthly'
-    });
+// Docs: convert pages/docs/**.mdx to /docs/**/
+const docFiles = listContentFiles(DOCS_DIR, ['.md', '.mdx']);
+for (const file of docFiles) {
+  const rel = path.relative(path.join(ROOT_DIR, 'pages'), file).replace(/\\/g, '/');
+  let url = '/' + rel.replace(/\.(md|mdx)$/i, '/');
+  url = url.replace('/docs/index/', '/docs/');
+  if (!added.has(url)) {
+    added.add(url);
+    urls.push({ loc: url, priority: '0.8', changefreq: 'monthly' });
   }
-});
+}
+
+// Blog: content/blog/*.mdx to /blog/slug/
+const blogFiles = listContentFiles(BLOG_DIR, ['.mdx']);
+for (const file of blogFiles) {
+  const slug = path.basename(file, path.extname(file));
+  const url = `/blog/${slug}/`;
+  if (!added.has(url)) {
+    added.add(url);
+    urls.push({ loc: url, priority: '0.7', changefreq: 'monthly' });
+  }
+}
 
 // Generate XML
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
@@ -51,7 +70,7 @@ ${urls.map(({ loc, priority, changefreq }) => `  <url>
 </urlset>`;
 
 // Write sitemap to public directory (for dev) and out directory (for production)
-const publicPath = path.join(__dirname, '..', 'public', 'sitemap.xml');
+const publicPath = path.join(ROOT_DIR, 'public', 'sitemap.xml');
 fs.writeFileSync(publicPath, sitemap);
 console.log(`✅ Sitemap generated: ${publicPath}`);
 console.log(`   ${urls.length} URLs included`);
