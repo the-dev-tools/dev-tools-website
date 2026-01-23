@@ -16,15 +16,15 @@ Automated API tests in CI/CD provide:
 
 ### 1. Export Your Flow to YAML
 
-**Desktop Application:**
+**Studio Application:**
 
 1. Open your workspace
 2. Right-click on a flow → **Export → YAML**
-3. Save as `api-tests.yamlflow.yaml`
+3. Save as `api-tests.yaml`
 4. Commit to your repository
 
 ```bash
-git add api-tests.yamlflow.yaml
+git add api-tests.yaml
 git commit -m "Add API test flow"
 git push
 ```
@@ -73,7 +73,7 @@ jobs:
           API_KEY: ${{ secrets.API_KEY }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
-          devtools flow run api-tests.yamlflow.yaml \
+          devtools flow run api-tests.yaml \
             --report junit:test-results.xml \
             --report json:test-results.json
 
@@ -126,7 +126,7 @@ jobs:
           API_BASE_URL: ${{ matrix.environment.url }}
           API_KEY: ${{ secrets.API_KEY }}
         run: |
-          devtools flow run api-tests.yamlflow.yaml \
+          devtools flow run api-tests.yaml \
             --report junit:test-results-${{ matrix.environment.name }}.xml
 
       - name: Upload Results
@@ -159,7 +159,7 @@ jobs:
         env:
           API_BASE_URL: https://api-staging.example.com
           API_KEY: ${{ secrets.STAGING_API_KEY }}
-        run: devtools flow run smoke-tests.yamlflow.yaml
+        run: devtools flow run smoke-tests.yaml
 
   deploy:
     needs: test  # Only runs if test job succeeds
@@ -189,7 +189,7 @@ api_tests:
     - export PATH="/usr/local/bin:$PATH"
   script:
     - |
-      devtools flow run api-tests.yamlflow.yaml \
+      devtools flow run api-tests.yaml \
         --report junit:test-results.xml \
         --report json:test-results.json
   variables:
@@ -218,7 +218,7 @@ deploy_production:
 test_staging:
   stage: test
   script:
-    - devtools flow run api-tests.yamlflow.yaml
+    - devtools flow run api-tests.yaml
   variables:
     API_BASE_URL: https://api-staging.example.com
     API_KEY: $STAGING_API_KEY
@@ -228,7 +228,7 @@ test_staging:
 test_production:
   stage: test
   script:
-    - devtools flow run smoke-tests.yamlflow.yaml
+    - devtools flow run smoke-tests.yaml
   variables:
     API_BASE_URL: https://api.example.com
     API_KEY: $PROD_API_KEY
@@ -261,7 +261,7 @@ pipeline {
         stage('Run API Tests') {
             steps {
                 sh '''
-                    devtools flow run api-tests.yamlflow.yaml \
+                    devtools flow run api-tests.yaml \
                         --report junit:test-results.xml \
                         --report json:test-results.json
                 '''
@@ -308,7 +308,7 @@ pipeline {
         stage('API Tests') {
             steps {
                 sh 'curl -fsSL https://sh.dev.tools/install.sh | bash'
-                sh 'devtools flow run api-tests.yamlflow.yaml --report junit:results.xml'
+                sh 'devtools flow run api-tests.yaml --report junit:results.xml'
             }
         }
     }
@@ -362,7 +362,7 @@ jobs:
       - run:
           name: Run API Tests
           command: |
-            devtools flow run api-tests.yamlflow.yaml \
+            devtools flow run api-tests.yaml \
               --report junit:test-results.xml \
               --report json:test-results.json
           environment:
@@ -406,7 +406,7 @@ steps:
     displayName: 'Install DevTools CLI'
 
   - bash: |
-      devtools flow run api-tests.yamlflow.yaml \
+      devtools flow run api-tests.yaml \
         --report junit:test-results.xml \
         --report json:test-results.json
     displayName: 'Run API Tests'
@@ -453,7 +453,7 @@ before_install:
   - export PATH="/usr/local/bin:$PATH"
 
 script:
-  - devtools flow run api-tests.yamlflow.yaml --report junit:results.xml
+  - devtools flow run api-tests.yaml --report junit:results.xml
 
 after_script:
   - cat results.xml
@@ -475,12 +475,12 @@ RUN apk add --no-cache curl bash
 RUN curl -fsSL https://sh.dev.tools/install.sh | bash
 
 # Copy test files
-COPY api-tests.yamlflow.yaml /tests/
+COPY api-tests.yaml /tests/
 
 WORKDIR /tests
 
 # Run tests
-CMD ["devtools", "flow", "run", "api-tests.yamlflow.yaml", "--report", "junit:results.xml"]
+CMD ["devtools", "flow", "run", "api-tests.yaml", "--report", "junit:results.xml"]
 ```
 
 **Build and run:**
@@ -539,10 +539,10 @@ Organize flows by test type:
 
 ```
 tests/
-├── smoke-tests.yamlflow.yaml      # Quick health checks (2-3 min)
-├── regression-tests.yamlflow.yaml # Full test suite (10-15 min)
-├── integration-tests.yamlflow.yaml # Cross-service tests
-└── performance-tests.yamlflow.yaml # Load/stress tests
+├── smoke-tests.yaml      # Quick health checks (2-3 min)
+├── regression-tests.yaml # Full test suite (10-15 min)
+├── integration-tests.yaml # Cross-service tests
+└── performance-tests.yaml # Load/stress tests
 ```
 
 **CI Strategy:**

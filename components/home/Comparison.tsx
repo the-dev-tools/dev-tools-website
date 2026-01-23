@@ -9,6 +9,12 @@ export default function Comparison() {
             See how the tooling stacks up when you care about local-first flows, Git-friendly exports, and speed.
           </p>
         </div>
+        <div className="text-sm text-slate-300">
+          <a href="/postman-alternative" className="underline decoration-dotted underline-offset-2 mr-4">Postman alternative →</a>
+          <a href="/bruno-alternative" className="underline decoration-dotted underline-offset-2 mr-4">Bruno alternative →</a>
+          <a href="/compare/devtools-vs-postman" className="underline decoration-dotted underline-offset-2 mr-4">DevTools vs Postman →</a>
+          <a href="/compare/devtools-vs-bruno" className="underline decoration-dotted underline-offset-2">DevTools vs Bruno →</a>
+        </div>
 
         <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5 shadow-[0_25px_60px_-35px_rgba(15,23,42,0.75)]">
           <table className="min-w-full divide-y divide-white/10 text-sm text-slate-200">
@@ -100,4 +106,3 @@ export default function Comparison() {
     </section>
   )
 }
-

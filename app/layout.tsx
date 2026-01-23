@@ -4,6 +4,7 @@ import Header from '@/components/site/Header'
 import Footer from '@/components/site/Footer'
 
 export const metadata = {
+  metadataBase: new URL('https://dev.tools'),
   title: 'DevTools – Local-First API Testing & Flow Automation',
   description: 'Free, open-source API client and flow runner. Record browser traffic, turn it into executable YAML flows with auto-mapped variables, and run at multithreaded Go speed locally or in CI.',
   keywords: 'API testing, API client, flow automation, HAR import, YAML flows, API development, local-first, open source, CI/CD, REST API, HTTP client',
@@ -41,6 +42,27 @@ export default function RootLayout({
         <link rel="icon" type="image/x-icon" href="/assets/favicon.ico" />
         <link rel="preload" href="/assets/fonts/inter-variable.woff2" as="font" type="font/woff2" crossOrigin="" />
         <link rel="preload" href="/assets/fonts/jetbrains-mono-variable.woff2" as="font" type="font/woff2" crossOrigin="" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'SoftwareApplication',
+              name: 'DevTools',
+              applicationCategory: 'DeveloperApplication',
+              operatingSystem: 'Windows, macOS, Linux',
+              description:
+                'Local-first API testing and flow automation tool. Record browser traffic, turn it into executable YAML flows with auto-mapped variables, and run at multithreaded Go speed.',
+              url: 'https://dev.tools',
+              image: 'https://dev.tools/assets/devtools-main-ss-1400w.webp',
+              author: {
+                '@type': 'Organization',
+                name: 'DevTools Labs',
+                url: 'https://dev.tools',
+              },
+            }),
+          }}
+        />
       </head>
       <body className="min-h-full bg-[radial-gradient(circle_at_15%_15%,rgba(77,225,255,0.18),transparent_55%),radial-gradient(circle_at_85%_0%,rgba(143,125,250,0.18),transparent_45%),linear-gradient(120deg,#0C1633_0%,#2A1B4E_100%)]">
         {/* Google Analytics */}

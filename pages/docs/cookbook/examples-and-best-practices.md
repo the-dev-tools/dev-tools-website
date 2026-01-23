@@ -836,7 +836,7 @@ flows:
 ❌ **Don't:**
 - Copy-paste request configurations
 - Write undocumented complex logic
-- Store flows only in Desktop app
+- Store flows only in Studio app
 
 ### 5. Performance
 

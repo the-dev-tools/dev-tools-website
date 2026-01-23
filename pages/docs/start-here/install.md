@@ -4,11 +4,12 @@ This guide will help you install DevTools and create your first API test in minu
 
 ## Installation
 
-DevTools is available in two formats: Desktop Application and CLI Tool.
+DevTools is available in two formats: Studio Application and CLI Tool.
+You can <a href="/download">download DevTools Studio</a> for macOS, Windows, or Linux.
 
-### Desktop Application
+### Studio Application
 
-Download the desktop app for your platform from the [releases page](https://github.com/the-dev-tools/dev-tools/releases):
+Download the Studio app for your platform from the [releases page](https://github.com/the-dev-tools/dev-tools/releases):
 
 **macOS:**
 ```bash
@@ -67,7 +68,7 @@ devtools version
 
 ### 1. Create a Workspace
 
-When you first open DevTools Desktop:
+When you first open DevTools Studio:
 
 1. Click **"New Workspace"**
 2. Give it a name (e.g., "My API Tests")
@@ -145,7 +146,7 @@ Now that you have DevTools installed and understand the basics:
 ### Where is my data stored?
 
 All data is stored **locally** on your machine:
-- Desktop: SQLite database in your user data directory
+- Studio: SQLite database in your user data directory
 - CLI: In-memory database (ephemeral) or specified workspace file
 
 **No data is sent to external servers.**

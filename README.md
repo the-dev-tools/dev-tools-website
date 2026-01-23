@@ -140,7 +140,7 @@ Configured via `@next/third-parties/google` in `app/layout.tsx`:
 ### Header Component
 - Logo → `/`
 - Navigation: Flows, Docs, Blog
-- Desktop: GitHub star button + Download button (OS detection)
+- Studio: GitHub star button + Download button (OS detection)
 - Mobile: Hamburger menu with slide-out panel
 
 ### Footer Component

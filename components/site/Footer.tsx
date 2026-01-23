@@ -33,13 +33,28 @@ export default function Footer() {
             <h3 className="text-xs uppercase tracking-wide text-slate-400">Product</h3>
             <ul className="mt-3 space-y-2">
               <li>
-                <Link href="/#flows" className="transition hover:text-neon">
+                <Link href="/flows" className="transition hover:text-neon">
                   Flows
                 </Link>
               </li>
               <li>
                 <Link href="/blog" className="transition hover:text-neon">
                   Blog
+                </Link>
+              </li>
+              <li>
+                <Link href="/download" className="transition hover:text-neon">
+                  Download
+                </Link>
+              </li>
+              <li>
+                <Link href="/guides" className="transition hover:text-neon">
+                  Guides
+                </Link>
+              </li>
+              <li>
+                <Link href="/templates" className="transition hover:text-neon">
+                  Templates
                 </Link>
               </li>
             </ul>
@@ -52,6 +67,21 @@ export default function Footer() {
               <li>
                 <Link href="/docs" className="transition hover:text-neon">
                   Docs
+                </Link>
+              </li>
+              <li>
+                <Link href="/postman-alternative" className="transition hover:text-neon">
+                  Postman alternative
+                </Link>
+              </li>
+              <li>
+                <Link href="/bruno-alternative" className="transition hover:text-neon">
+                  Bruno alternative
+                </Link>
+              </li>
+              <li>
+                <Link href="/postman-cli-alternative" className="transition hover:text-neon">
+                  Newman (Postman CLI) alternative
                 </Link>
               </li>
               <li>

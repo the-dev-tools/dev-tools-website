@@ -115,7 +115,7 @@ This allows you to:
 
 ### Creating Environments
 
-**Desktop Application:**
+**Studio Application:**
 
 1. Navigate to **Settings → Environments**
 2. Click **New Environment**
@@ -138,7 +138,7 @@ env:
 
 ### Switching Environments
 
-**Desktop:**
+**Studio:**
 
 Click the environment dropdown in the toolbar and select your target environment. All subsequent requests will use variables from that environment.
 
@@ -156,7 +156,7 @@ Drag and drop environments in the Settings panel to change their display order.
 
 ### Adding Variables
 
-**Desktop:**
+**Studio:**
 
 1. Select an environment
 2. Click **Add Variable**
@@ -439,7 +439,7 @@ steps:
     env:
       SECRET_API_KEY: ${{ secrets.API_KEY }}
       DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-    run: devtools flow run tests.yamlflow.yaml
+    run: devtools flow run tests.yaml
 ```
 
 Flow file:
@@ -509,7 +509,7 @@ DevTools converts to: Bearer {{Login.response.body.token}}
 
 You can manually create variable mappings:
 
-**Desktop:**
+**Studio:**
 
 1. Select text in a request (URL, header, body)
 2. Right-click → **Extract to Variable**

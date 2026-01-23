@@ -1,11 +1,11 @@
 ---
-title: Storage model (Desktop SQLite, CLI)
-description: Where data is stored for the desktop app and the CLI, and how to operate in different modes.
+title: Storage model (Studio SQLite, CLI)
+description: Where data is stored for the Studio app and the CLI, and how to operate in different modes.
 ---
 
 # Storage model
 
-Desktop (Studio)
+Studio
 - Stores workspaces locally using SQLite in your user data directory
 - No background syncing or cloud dependency
 - Files and exports are Git‑friendly (YAML flows, JSON reports)

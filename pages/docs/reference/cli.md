@@ -82,10 +82,10 @@ devtools flow run <yamlflow-file> [flow-name]
 
 ```bash
 # Run all flows in the file
-devtools flow run workspace.yamlflow.yaml
+devtools flow run workspace.yaml
 
 # Run a specific flow
-devtools flow run workspace.yamlflow.yaml LoginFlow
+devtools flow run workspace.yaml LoginFlow
 
 # Run with relative path
 devtools flow run ./tests/api-tests.yaml UserFlow
@@ -247,7 +247,7 @@ steps:
       SECRET_API_KEY: ${{ secrets.API_KEY }}
       DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
       API_BASE_URL: https://api-staging.example.com
-    run: devtools flow run tests.yamlflow.yaml
+    run: devtools flow run tests.yaml
 ```
 
 **GitLab CI:**
@@ -255,7 +255,7 @@ steps:
 ```yaml
 test:
   script:
-    - devtools flow run tests.yamlflow.yaml
+    - devtools flow run tests.yaml
   variables:
     SECRET_API_KEY: $CI_SECRET_API_KEY
     API_BASE_URL: https://api-staging.example.com
@@ -559,7 +559,7 @@ LOG_LEVEL=DEBUG devtools flow run tests.yaml
 
 #### Flow Not Found
 
-**Error:** `Flow 'FlowName' not found in workspace.yamlflow.yaml`
+**Error:** `Flow 'FlowName' not found in workspace.yaml`
 
 **Solution:**
 - Check flow name spelling (case-sensitive)
@@ -609,7 +609,7 @@ LOG_LEVEL=DEBUG devtools flow run tests.yaml
 Store flows in Git:
 
 ```bash
-git add tests/*.yamlflow.yaml
+git add tests/*.yaml
 git commit -m "Add API test flows"
 ```
 
@@ -658,10 +658,16 @@ Organize flows logically:
 
 ```
 tests/
-├── auth.yamlflow.yaml           # Authentication flows
-├── user-management.yamlflow.yaml # User CRUD operations
-├── reporting.yamlflow.yaml       # Report generation
-└── smoke-tests.yamlflow.yaml     # Quick health checks
+├── auth.yaml           # Authentication flows
+├── user-management.yaml # User CRUD operations
+├── reporting.yaml       # Report generation
+└── smoke-tests.yaml     # Quick health checks
+
+## Related
+
+- CLI reference: /docs/reference/cli/
+- Newman alternative (CI): /postman-cli-alternative/
+- GitHub Actions template: /templates/github-actions/
 ```
 
 ### 6. Add Assertions

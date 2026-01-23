@@ -50,14 +50,14 @@ You can then customize this auto-generated Flow.
 
 Load Flow definitions from YAML files (useful for version control and CI/CD):
 
-**Desktop:**
+**Studio:**
 ```
 Import → YAML Flow → Select file
 ```
 
 **CLI:**
 ```bash
-devtools flow run my-flow.yamlflow.yaml
+devtools flow run my-flow.yaml
 ```
 
 See [YAML Flow Format](#yaml-flow-format) below.
@@ -367,7 +367,7 @@ Flow Variables > Environment Variables > Global Variables
 
 Add variables at the flow level:
 
-**Desktop:**
+**Studio:**
 ```
 Flow Settings → Variables → Add Variable
 ```
@@ -453,7 +453,7 @@ Use `depends_on` to enforce execution order:
     depends_on: GetUser  # Waits for GetUser to complete
 ```
 
-**Desktop:**
+**Studio:**
 
 Connect nodes with edges (visual dependencies).
 
@@ -528,7 +528,7 @@ export default function(context) {
 
 ### Running a Flow
 
-**Desktop:**
+**Studio:**
 1. Open your flow
 2. Click **Run Flow**
 3. Watch nodes execute in real-time (visual feedback)
@@ -536,7 +536,13 @@ export default function(context) {
 
 **CLI:**
 ```bash
-devtools flow run workspace.yamlflow.yaml FlowName
+devtools flow run workspace.yaml FlowName
+
+## Related
+
+- Flows overview: /flows/
+- Templates library: /templates/
+- Postman alternative: /postman-alternative/
 ```
 
 ### Execution States

@@ -41,7 +41,7 @@ HAR (HTTP Archive) is a JSON-based format that records all HTTP interactions bet
 
 ## Importing HAR Files
 
-1. Open your workspace in DevTools Desktop
+1. Open your workspace in <a href="/download">DevTools Studio</a>
 2. Click **Import** in the toolbar
 3. Select **HAR File** as the format
 4. Choose your `.har` file
@@ -157,7 +157,7 @@ This structure mirrors your API's URL paths for easy navigation.
 
 ### cURL Commands
 
-Paste or import cURL commands in the Desktop app:
+Paste or import cURL commands in the Studio app:
 
 ```
 Import → cURL → Paste command
@@ -237,6 +237,12 @@ Click any request to:
 - Add authentication
 - Modify assertions
 - Add pre-request scripts
+
+## Related
+
+- Postman alternative: /postman-alternative/
+- Generate a HAR (Chrome): /guides/generate-har-chrome/
+- Flows overview: /flows/
 
 ### 3. Configure Variables
 
