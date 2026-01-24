@@ -113,9 +113,9 @@ export default function DownloadButton({ fullWidth, label = 'Download', classNam
     ),
   }
 
-  const baseClasses = 'group inline-flex items-center gap-2 rounded-md bg-[#58D7FF] text-slate-900 shadow-[0_10px_24px_-12px_rgba(88,215,255,0.55)] transition hover:bg-[#6fe0ff]'
+  const baseClasses = 'group inline-flex items-center justify-center gap-2 rounded-md bg-[#58D7FF] text-slate-900 shadow-[0_10px_24px_-12px_rgba(88,215,255,0.55)] transition hover:bg-[#6fe0ff]'
   const sizeClasses = 'px-4 py-2 text-sm'
-  const widthClasses = fullWidth ? 'w-full justify-center' : ''
+  const widthClasses = fullWidth ? 'w-full' : ''
   const classes = [baseClasses, sizeClasses, widthClasses, className].filter(Boolean).join(' ')
 
   if (directDownload) {
