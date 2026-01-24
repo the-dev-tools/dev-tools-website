@@ -13,6 +13,10 @@ export interface BlogPost {
   }
   tags: string[]
   category?: string
+  image?: {
+    url: string
+    alt: string
+  }
   content: string
 }
 
@@ -42,6 +46,7 @@ export async function getAllPosts(): Promise<BlogPost[]> {
         author: data.author,
         tags: data.tags || [],
         category: data.category,
+        image: data.image,
         content
       }
     })
@@ -64,6 +69,7 @@ export async function getPost(slug: string): Promise<BlogPost | null> {
       author: data.author,
       tags: data.tags || [],
       category: data.category,
+      image: data.image,
       content
     }
   } catch {

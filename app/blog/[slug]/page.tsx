@@ -34,6 +34,13 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
   return (
     <article className="mx-auto max-w-3xl px-4 py-16 sm:px-8">
       <header className="mb-12">
+        {post.image && (
+          <img
+            src={post.image.url}
+            alt={post.image.alt}
+            className="w-full h-64 md:h-96 object-cover rounded-2xl mb-8"
+          />
+        )}
         <h1 className="text-5xl font-bold text-white mb-4">{post.title}</h1>
 
         <div className="flex items-center gap-4 text-sm text-slate-400 mb-6">

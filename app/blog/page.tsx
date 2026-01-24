@@ -30,7 +30,15 @@ export default async function BlogPage() {
         {posts.map(post => (
           <article key={post.slug} className="group">
             <Link href={`/blog/${post.slug}`}>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-6 transition hover:border-neon/30 hover:bg-white/10">
+              <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden transition hover:border-neon/30 hover:bg-white/10">
+                {post.image && (
+                  <img
+                    src={post.image.url}
+                    alt={post.image.alt}
+                    className="w-full h-48 object-cover"
+                  />
+                )}
+                <div className="p-6">
                 <div className="mb-3 text-sm text-slate-400">
                   {new Date(post.date).toLocaleDateString('en-US', {
                     year: 'numeric',
@@ -57,6 +65,7 @@ export default async function BlogPage() {
                     ))}
                   </div>
                 )}
+                </div>
               </div>
             </Link>
           </article>
