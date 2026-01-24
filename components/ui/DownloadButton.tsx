@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 
 type OS = 'mac' | 'windows' | 'linux'
 
@@ -8,9 +9,10 @@ type Props = {
   fullWidth?: boolean
   label?: string
   className?: string
+  directDownload?: boolean
 }
 
-export default function DownloadButton({ fullWidth, label = 'Download', className = '' }: Props) {
+export default function DownloadButton({ fullWidth, label = 'Download', className = '', directDownload = false }: Props) {
   const [os, setOS] = useState<OS>('mac')
   const [href, setHref] = useState<string>('https://github.com/the-dev-tools/dev-tools/releases/latest')
 
@@ -19,6 +21,8 @@ export default function DownloadButton({ fullWidth, label = 'Download', classNam
     if (ua.includes('win')) setOS('windows')
     else if (ua.includes('linux')) setOS('linux')
     else setOS('mac')
+
+    if (!directDownload) return
 
     const repo = 'the-dev-tools/dev-tools'
     const apiUrl = `https://api.github.com/repos/${repo}/releases?per_page=15`
@@ -74,7 +78,7 @@ export default function DownloadButton({ fullWidth, label = 'Download', classNam
       .catch(() => {
         // leave fallback
       })
-  }, [])
+  }, [directDownload])
 
   const icons = {
     mac: (
@@ -114,10 +118,19 @@ export default function DownloadButton({ fullWidth, label = 'Download', classNam
   const widthClasses = fullWidth ? 'w-full justify-center' : ''
   const classes = [baseClasses, sizeClasses, widthClasses, className].filter(Boolean).join(' ')
 
+  if (directDownload) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" className={classes}>
+        <span>{label}</span>
+        <span className="flex items-center gap-1 text-xs font-medium transition">{icons[os]}</span>
+      </a>
+    )
+  }
+
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer" className={classes}>
+    <Link href="/download" className={classes}>
       <span>{label}</span>
       <span className="flex items-center gap-1 text-xs font-medium transition">{icons[os]}</span>
-    </a>
+    </Link>
   )
 }

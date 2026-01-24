@@ -68,6 +68,8 @@ export default function MobileNav() {
               <div className="grid gap-2 text-sm">
                 <Link href="/flows" className="rounded-lg px-3 py-2 text-slate-200 transition hover:bg-white/10" onClick={closeMenu}>Flows</Link>
                 <Link href="/download" className="rounded-lg px-3 py-2 text-slate-200 transition hover:bg-white/10" onClick={closeMenu}>Download</Link>
+                <Link href="/pricing" className="rounded-lg px-3 py-2 text-slate-200 transition hover:bg-white/10" onClick={closeMenu}>Pricing</Link>
+                <Link href="/enterprise" className="rounded-lg px-3 py-2 text-slate-200 transition hover:bg-white/10" onClick={closeMenu}>Enterprise</Link>
               </div>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">

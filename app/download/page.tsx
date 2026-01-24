@@ -31,7 +31,7 @@ export default function DownloadPage() {
         <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
           <h2 className="text-2xl font-semibold text-white mb-3">Studio</h2>
           <p className="text-slate-300 mb-4">Auto‑selects the right binary for your OS and architecture.</p>
-          <DownloadButton label="Download Studio" className="rounded-xl px-7 py-3 text-base" />
+          <DownloadButton label="Download Studio" className="rounded-xl px-7 py-3 text-base" directDownload />
           <p className="mt-3 text-xs text-slate-400">Apple Silicon and Intel on macOS. x64 on Windows and Linux.</p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-white/5 p-6">

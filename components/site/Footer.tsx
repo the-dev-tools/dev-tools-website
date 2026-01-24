@@ -38,13 +38,18 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/blog" className="transition hover:text-neon">
-                  Blog
+                <Link href="/download" className="transition hover:text-neon">
+                  Download
                 </Link>
               </li>
               <li>
-                <Link href="/download" className="transition hover:text-neon">
-                  Download
+                <Link href="/pricing" className="transition hover:text-neon">
+                  Pricing
+                </Link>
+              </li>
+              <li>
+                <Link href="/enterprise" className="transition hover:text-neon">
+                  Enterprise
                 </Link>
               </li>
               <li>

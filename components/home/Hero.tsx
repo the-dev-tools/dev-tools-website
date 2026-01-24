@@ -26,12 +26,12 @@ export default function Hero() {
       <div className="relative flex-1">
         <div className="mb-6 flex justify-center md:justify-start">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs uppercase tracking-wide text-slate-200 shadow-[0_10px_40px_rgba(77,225,255,0.15)]">
-            Deployable API workflows from real traffic.
+            From real traffic to CI-ready API workflows.
           </span>
         </div>
 
         <h1 className="text-center text-4xl font-extrabold leading-tight text-white sm:text-5xl md:text-left md:text-6xl">
-          Deployable API workflows from real traffic.
+          From real traffic to CI-ready API workflows.
         </h1>
 
         <p className="mt-6 max-w-xl text-center text-lg text-slate-300 md:text-left">
