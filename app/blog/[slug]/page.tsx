@@ -37,6 +37,16 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
     <div className="mx-auto max-w-6xl px-4 py-16 sm:px-8">
       <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-12">
         <article>
+          <Link
+            href="/blog"
+            className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-neon transition mb-8"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to Blog
+          </Link>
+
           <header className="mb-12">
             {post.image && (
               <img
