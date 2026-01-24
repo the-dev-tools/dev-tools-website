@@ -118,9 +118,20 @@ export default function DownloadButton({ fullWidth, label = 'Download', classNam
   const widthClasses = fullWidth ? 'w-full' : ''
   const classes = [baseClasses, sizeClasses, widthClasses, className].filter(Boolean).join(' ')
 
+  const handleClick = () => {
+    // Track download button click in Google Analytics
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      ;(window as any).gtag('event', 'download_click', {
+        event_category: 'engagement',
+        event_label: directDownload ? `download_direct_${os}` : 'download_page',
+        value: 1,
+      })
+    }
+  }
+
   if (directDownload) {
     return (
-      <a href={href} target="_blank" rel="noopener noreferrer" className={classes}>
+      <a href={href} target="_blank" rel="noopener noreferrer" className={classes} onClick={handleClick}>
         <span>{label}</span>
         <span className="flex items-center gap-1 text-xs font-medium transition">{icons[os]}</span>
       </a>
@@ -128,7 +139,7 @@ export default function DownloadButton({ fullWidth, label = 'Download', classNam
   }
 
   return (
-    <Link href="/download" className={classes}>
+    <Link href="/download" className={classes} onClick={handleClick}>
       <span>{label}</span>
       <span className="flex items-center gap-1 text-xs font-medium transition">{icons[os]}</span>
     </Link>

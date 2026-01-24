@@ -1,4 +1,5 @@
 import DownloadButton from '@/components/ui/DownloadButton'
+import CodeBlock from '@/components/ui/CodeBlock'
 import Link from 'next/link'
 
 export const metadata = {
@@ -37,7 +38,7 @@ export default function DownloadPage() {
         <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
           <h2 className="text-2xl font-semibold text-white mb-3">CLI</h2>
           <p className="text-slate-300 mb-4">Run YAML flows in CI with JUnit/JSON outputs and proper exit codes.</p>
-          <pre className="bg-slate-900/50 border border-white/10 rounded-lg p-4 overflow-x-auto text-[13px] text-slate-200"><code>curl -fsSL https://sh.dev.tools/install.sh | bash</code></pre>
+          <CodeBlock code="curl -fsSL https://sh.dev.tools/install.sh | bash" eventLabel="cli_install_download_page" />
           <p className="mt-2 text-sm text-slate-400">
             See the <Link href="/docs/reference/cli" className="underline decoration-dotted underline-offset-2">CLI reference</Link>.
           </p>

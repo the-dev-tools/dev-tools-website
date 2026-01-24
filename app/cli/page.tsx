@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import CodeBlock from '@/components/ui/CodeBlock'
+import CommandCard from '@/components/cli/CommandCard'
 
 export const metadata = {
   title: 'DevTools CLI – Run YAML API workflows in CI (JUnit/JSON, exit codes)',
@@ -21,11 +23,7 @@ export default function CLIPage() {
           {/* Install Block */}
           <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-6">
             <div className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">Install</div>
-            <div className="rounded-lg bg-slate-900/60 p-4">
-              <code className="block font-mono text-sm text-slate-200">
-                curl -fsSL https://sh.dev.tools/install.sh | bash
-              </code>
-            </div>
+            <CodeBlock code="curl -fsSL https://sh.dev.tools/install.sh | bash" eventLabel="cli_install_cli_page" />
             <p className="mt-3 text-xs text-slate-400">
               Installs to <code className="rounded bg-slate-800/50 px-1.5 py-0.5 text-neon">~/.devtools/bin</code>
             </p>
@@ -34,11 +32,7 @@ export default function CLIPage() {
           {/* Example Block */}
           <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6">
             <div className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">Example</div>
-            <div className="rounded-lg bg-slate-900/60 p-4">
-              <code className="block font-mono text-sm text-slate-200">
-                devtools flow run --report junit:test-results.xml tests.yaml
-              </code>
-            </div>
+            <CodeBlock code="devtools flow run --report junit:test-results.xml tests.yaml" eventLabel="cli_example_junit" />
             <p className="mt-3 text-xs text-slate-400">
               Runs flows in parallel, outputs JUnit XML and exits with status code 0 (pass) or 1 (fail)
             </p>
@@ -128,25 +122,26 @@ export default function CLIPage() {
         <div className="mx-auto w-full max-w-6xl px-4 sm:px-8">
           <h2 className="text-3xl font-bold text-white sm:text-4xl">Common Commands</h2>
           <div className="mt-8 space-y-4">
-            <div className="rounded-xl border border-white/10 bg-white/5 p-5">
-              <code className="block font-mono text-sm text-neon">devtools flow run tests.yaml</code>
-              <p className="mt-2 text-sm text-slate-400">Run flows from a YAML file (parallel by default)</p>
-            </div>
-
-            <div className="rounded-xl border border-white/10 bg-white/5 p-5">
-              <code className="block font-mono text-sm text-neon">devtools flow run --report junit:results.xml tests.yaml</code>
-              <p className="mt-2 text-sm text-slate-400">Run flows and output JUnit XML report</p>
-            </div>
-
-            <div className="rounded-xl border border-white/10 bg-white/5 p-5">
-              <code className="block font-mono text-sm text-neon">devtools flow run --sequential tests.yaml</code>
-              <p className="mt-2 text-sm text-slate-400">Run flows sequentially (one at a time)</p>
-            </div>
-
-            <div className="rounded-xl border border-white/10 bg-white/5 p-5">
-              <code className="block font-mono text-sm text-neon">devtools flow validate tests.yaml</code>
-              <p className="mt-2 text-sm text-slate-400">Validate YAML syntax without running flows</p>
-            </div>
+            <CommandCard
+              command="devtools flow run tests.yaml"
+              description="Run flows from a YAML file (parallel by default)"
+              eventLabel="cli_cmd_run"
+            />
+            <CommandCard
+              command="devtools flow run --report junit:results.xml tests.yaml"
+              description="Run flows and output JUnit XML report"
+              eventLabel="cli_cmd_junit"
+            />
+            <CommandCard
+              command="devtools flow run --sequential tests.yaml"
+              description="Run flows sequentially (one at a time)"
+              eventLabel="cli_cmd_sequential"
+            />
+            <CommandCard
+              command="devtools flow validate tests.yaml"
+              description="Validate YAML syntax without running flows"
+              eventLabel="cli_cmd_validate"
+            />
           </div>
 
           <div className="mt-8">
