@@ -2,6 +2,24 @@ import fs from 'fs'
 import path from 'path'
 import matter from 'gray-matter'
 
+export interface BlogCTA {
+  heading: string
+  body: string
+  buttonText: string
+  url: string
+  secondaryText?: string
+  secondaryUrl?: string
+}
+
+export interface BlogCTAConfig {
+  primary?: BlogCTA
+  secondary?: BlogCTA
+  badge?: {
+    text: string
+    variant: 'neutral' | 'success' | 'warning'
+  } | null
+}
+
 export interface BlogPost {
   slug: string
   title: string
@@ -17,6 +35,7 @@ export interface BlogPost {
     url: string
     alt: string
   }
+  cta?: BlogCTAConfig
   content: string
 }
 
@@ -47,6 +66,7 @@ export async function getAllPosts(): Promise<BlogPost[]> {
         tags: data.tags || [],
         category: data.category,
         image: data.image,
+        cta: data.cta,
         content
       }
     })
@@ -70,6 +90,7 @@ export async function getPost(slug: string): Promise<BlogPost | null> {
       tags: data.tags || [],
       category: data.category,
       image: data.image,
+      cta: data.cta,
       content
     }
   } catch {

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { MDXRemote } from 'next-mdx-remote/rsc'
 import { getPost, getAllPosts } from '@/lib/blog'
+import BlogSidebar from '@/components/BlogSidebar'
 
 const components = {
   h1: (props: any) => <h1 className="text-4xl font-bold text-white mb-6" {...props} />,
@@ -32,57 +33,65 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
   }
 
   return (
-    <article className="mx-auto max-w-3xl px-4 py-16 sm:px-8">
-      <header className="mb-12">
-        {post.image && (
-          <img
-            src={post.image.url}
-            alt={post.image.alt}
-            className="w-full h-64 md:h-96 object-cover rounded-2xl mb-8"
-          />
-        )}
-        <h1 className="text-5xl font-bold text-white mb-4">{post.title}</h1>
+    <div className="mx-auto max-w-6xl px-4 py-16 sm:px-8">
+      <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-12">
+        <article>
+          <header className="mb-12">
+            {post.image && (
+              <img
+                src={post.image.url}
+                alt={post.image.alt}
+                className="w-full h-64 md:h-96 object-cover rounded-2xl mb-8"
+              />
+            )}
+            <h1 className="text-5xl font-bold text-white mb-4">{post.title}</h1>
 
-        <div className="flex items-center gap-4 text-sm text-slate-400 mb-6">
-          <time dateTime={post.date}>
-            {new Date(post.date).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            })}
-          </time>
+            <div className="flex items-center gap-4 text-sm text-slate-400 mb-6">
+              <time dateTime={post.date}>
+                {new Date(post.date).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </time>
 
-          {post.author && (
-            <div className="flex items-center gap-2">
-              {post.author.avatar && (
-                <img
-                  src={post.author.avatar}
-                  alt={post.author.name}
-                  className="w-6 h-6 rounded-full"
-                />
+              {post.author && (
+                <div className="flex items-center gap-2">
+                  {post.author.avatar && (
+                    <img
+                      src={post.author.avatar}
+                      alt={post.author.name}
+                      className="w-6 h-6 rounded-full"
+                    />
+                  )}
+                  <span>{post.author.name}</span>
+                </div>
               )}
-              <span>{post.author.name}</span>
             </div>
-          )}
-        </div>
 
-        {post.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {post.tags.map(tag => (
-              <span
-                key={tag}
-                className="px-3 py-1 text-xs font-medium bg-neon/10 text-neon rounded-full border border-neon/30"
-              >
-                {tag}
-              </span>
-            ))}
+            {post.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {post.tags.map(tag => (
+                  <span
+                    key={tag}
+                    className="px-3 py-1 text-xs font-medium bg-neon/10 text-neon rounded-full border border-neon/30"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </header>
+
+          <div className="prose prose-invert prose-slate max-w-none">
+            <MDXRemote source={post.content} components={components} />
           </div>
-        )}
-      </header>
+        </article>
 
-      <div className="prose prose-invert prose-slate max-w-none">
-        <MDXRemote source={post.content} components={components} />
+        <div className="hidden lg:block">
+          <BlogSidebar cta={post.cta} />
+        </div>
       </div>
-    </article>
+    </div>
   )
 }
