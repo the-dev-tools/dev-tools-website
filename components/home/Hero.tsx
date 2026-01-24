@@ -65,34 +65,6 @@ export default function Hero() {
             See examples
           </Link>
         </div>
-
-        <p className="mt-4 font-mono text-xs text-slate-400">
-          <span className="text-slate-300">CLI:</span>{' '}
-          <code className="rounded bg-slate-900/60 px-2 py-1 text-[11px] text-slate-200">
-            curl -fsSL https://sh.dev.tools/install.sh | bash
-          </code>
-        </p>
-
-        <dl className="mt-10 grid grid-cols-3 gap-6 text-center md:max-w-md">
-          <div className="flex flex-col items-center text-center">
-            <dd className="mt-2 text-white">
-              <span className="block text-2xl font-extrabold text-[#58D7FF]">Parallel</span>
-              <span className="mt-1 block text-sm font-semibold uppercase tracking-wide">By default</span>
-            </dd>
-          </div>
-          <div className="flex flex-col items-center text-center">
-            <dd className="mt-2 text-white">
-              <span className="block text-2xl font-extrabold text-[#58D7FF]">CI outputs</span>
-              <span className="mt-1 block text-sm font-semibold uppercase tracking-wide">JUnit/JSON</span>
-            </dd>
-          </div>
-          <div className="flex flex-col items-center text-center">
-            <dd className="mt-2 text-white">
-              <span className="block text-2xl font-extrabold text-[#58D7FF]">Local-first</span>
-              <span className="mt-1 block text-sm font-semibold uppercase tracking-wide">No cloud</span>
-            </dd>
-          </div>
-        </dl>
       </div>
 
       {/* Right: Screenshot */}
@@ -133,18 +105,27 @@ export default function Hero() {
           </button>
         </div>
 
-        {/* Captions below screenshot */}
-        <p className="mt-4 text-center text-sm text-slate-300 md:text-left md:pl-4">
-          A real workspace: flows as files, tabs for runs, diffs before export.
-        </p>
-        <p className="mt-2 text-center text-sm text-slate-300 md:text-left md:pl-4">
-          Start from real browser traffic: import a HAR file, DevTools turns it into a replayable API flow with tokens and IDs automatically mapped to variables.
-        </p>
-        <ol className="mt-3 list-decimal pl-8 text-left text-sm text-slate-400 md:pl-12">
-          <li>Generated flow</li>
-          <li>Variables mapped</li>
-          <li>Export YAML</li>
-        </ol>
+        {/* Stats below screenshot */}
+        <dl className="mt-8 grid grid-cols-3 gap-6 text-center">
+          <div className="flex flex-col items-center text-center">
+            <dd className="mt-2 text-white">
+              <span className="block text-2xl font-extrabold text-[#58D7FF]">Parallel</span>
+              <span className="mt-1 block text-sm font-semibold uppercase tracking-wide">By default</span>
+            </dd>
+          </div>
+          <div className="flex flex-col items-center text-center">
+            <dd className="mt-2 text-white">
+              <span className="block text-2xl font-extrabold text-[#58D7FF]">CI outputs</span>
+              <span className="mt-1 block text-sm font-semibold uppercase tracking-wide">JUnit/JSON</span>
+            </dd>
+          </div>
+          <div className="flex flex-col items-center text-center">
+            <dd className="mt-2 text-white">
+              <span className="block text-2xl font-extrabold text-[#58D7FF]">Local-first</span>
+              <span className="mt-1 block text-sm font-semibold uppercase tracking-wide">No cloud</span>
+            </dd>
+          </div>
+        </dl>
       </div>
 
       {/* Demo Modal */}
