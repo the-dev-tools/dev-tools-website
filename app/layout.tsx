@@ -66,7 +66,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full bg-[radial-gradient(circle_at_15%_15%,rgba(77,225,255,0.18),transparent_55%),radial-gradient(circle_at_85%_0%,rgba(143,125,250,0.18),transparent_45%),linear-gradient(120deg,#0C1633_0%,#2A1B4E_100%)]">
         {/* Google Analytics */}
-        <GoogleAnalytics gaId="AW-17895561658" />
+        <GoogleAnalytics gaId="G-7QRW3WMN91" />
 
         <Header />
         {children}
