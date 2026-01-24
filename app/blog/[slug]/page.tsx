@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { MDXRemote } from 'next-mdx-remote/rsc'
+import remarkGfm from 'remark-gfm'
 import { getPost, getAllPosts } from '@/lib/blog'
 import BlogSidebar from '@/components/BlogSidebar'
 
@@ -19,6 +20,16 @@ const components = {
   blockquote: (props: any) => (
     <blockquote className="border-l-4 border-neon/50 pl-4 italic text-slate-300 my-4" {...props} />
   ),
+  table: (props: any) => (
+    <div className="overflow-x-auto mb-6">
+      <table className="w-full border-collapse border border-white/10 text-sm" {...props} />
+    </div>
+  ),
+  thead: (props: any) => <thead className="bg-slate-800/50" {...props} />,
+  tbody: (props: any) => <tbody {...props} />,
+  tr: (props: any) => <tr className="border-b border-white/10" {...props} />,
+  th: (props: any) => <th className="px-4 py-3 text-left font-semibold text-white border border-white/10" {...props} />,
+  td: (props: any) => <td className="px-4 py-3 text-slate-300 border border-white/10" {...props} />,
 }
 
 export async function generateStaticParams() {
@@ -99,7 +110,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
           </header>
 
           <div className="prose prose-invert prose-slate max-w-none">
-            <MDXRemote source={post.content} components={components} />
+            <MDXRemote source={post.content} components={components} options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }} />
           </div>
         </article>
 
