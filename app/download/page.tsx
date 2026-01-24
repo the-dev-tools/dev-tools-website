@@ -80,7 +80,7 @@ export default function DownloadPage() {
         <div className="mt-3 space-y-4 text-slate-300">
           <div>
             <h3 className="font-semibold text-white">Is it free?</h3>
-            <p>Yes. DevTools Studio and the DevTools CLI are open source.</p>
+            <p>Yes. DevTools Studio and the DevTools CLI are open source under the Apache-2.0 license. <a href="https://github.com/the-dev-tools/dev-tools" target="_blank" rel="noopener noreferrer" className="text-neon underline decoration-dotted underline-offset-2">View on GitHub</a>.</p>
           </div>
           <div>
             <h3 className="font-semibold text-white">Does it run offline?</h3>

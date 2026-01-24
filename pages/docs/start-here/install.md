@@ -175,7 +175,7 @@ Absolutely! The CLI tool is designed for CI/CD integration. See [CI/CD Integrati
 
 ### Is DevTools free?
 
-Yes, DevTools is **source-available** and free to use. The source code is available on [GitHub](https://github.com/the-dev-tools/dev-tools).
+Yes, DevTools is **open source under the Apache-2.0 license** and free to use. The source code is available on [GitHub](https://github.com/the-dev-tools/dev-tools).
 
 ---
 

@@ -39,7 +39,7 @@ export default function Hero() {
         </p>
 
         <p className="mt-3 max-w-xl text-center text-base text-slate-300 md:text-left">
-          Local-first. Git-reviewable. CI-ready. <a href="/download" className="underline decoration-dotted underline-offset-2">Download DevTools Studio</a>
+          Local-first. Git-reviewable. CI-ready.
         </p>
 
         <ul className="mt-4 max-w-xl list-disc space-y-1 pl-5 text-sm text-slate-300 md:text-base md:pl-6">
@@ -49,20 +49,20 @@ export default function Hero() {
         </ul>
 
         <div className="mt-8 flex flex-wrap items-center gap-3">
-          <DownloadButton label="Download DevTools Studio" className="rounded-xl px-7 py-3 text-base" />
+          <DownloadButton label="Download Studio" className="rounded-xl px-7 py-3 text-base" />
 
           <Link
-            href="/docs/reference/cli"
+            href="/cli"
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#58D7FF]/60 bg-transparent px-6 py-3 text-base font-semibold text-[#58D7FF] transition hover:bg-[#58D7FF]/10 hover:text-white"
           >
             Install CLI
           </Link>
 
           <Link
-            href="/docs/cookbook/examples-and-best-practices"
+            href="/templates"
             className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-base font-semibold text-slate-300 transition hover:text-white"
           >
-            View examples
+            See examples
           </Link>
         </div>
 

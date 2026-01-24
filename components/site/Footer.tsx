@@ -119,6 +119,11 @@ export default function Footer() {
             <h3 className="text-xs uppercase tracking-wide text-slate-400">Legal</h3>
             <ul className="mt-3 space-y-2 text-slate-500">
               <li>
+                <a href="https://github.com/the-dev-tools/dev-tools/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" className="transition hover:text-neon">
+                  License: Apache-2.0
+                </a>
+              </li>
+              <li>
                 <span className="opacity-70">Privacy</span>
               </li>
               <li>
