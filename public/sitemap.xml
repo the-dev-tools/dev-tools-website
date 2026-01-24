@@ -4,198 +4,210 @@
     <loc>https://dev.tools/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/docs/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/blog/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/download/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/postman-alternative/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/postman-cli-alternative/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/bruno-alternative/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/compare/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/compare/devtools-vs-postman/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/compare/devtools-vs-bruno/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/flows/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
+  </url>
+  <url>
+    <loc>https://dev.tools/docs/index-for-ai/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/docs/start-here/install/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/docs/reference/cli/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/docs/reference/storage-model/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/docs/how-to/ci-integrations/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/docs/how-to/environments-and-variables/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/docs/how-to/import-har/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/docs/how-to/working-with-flows/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/docs/cookbook/examples-and-best-practices/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/docs/contributing/writing-docs/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/docs/concepts/determinism-claims/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
+  </url>
+  <url>
+    <loc>https://dev.tools/blog/github-flow-explained-for-api-testing-teams/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/blog/introducing-devtools/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/guides/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/guides/newman-alternative-ci/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/guides/migrate-from-postman/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/guides/api-regression-testing-github-actions/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/templates/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/templates/oauth-client-credentials/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/templates/login-create-fetch-delete/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/templates/jenkins/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/templates/gitlab-ci/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/templates/github-actions/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
   </url>
   <url>
     <loc>https://dev.tools/templates/auth-jwt/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <lastmod>2026-01-22</lastmod>
+    <lastmod>2026-01-24</lastmod>
   </url>
 </urlset>

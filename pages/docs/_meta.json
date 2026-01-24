@@ -1,5 +1,8 @@
 {
   "index": "Introduction",
+  "index-for-ai": {
+    "display": "hidden"
+  },
   "start-here": {
     "title": "Start here"
   },
@@ -14,5 +17,8 @@
   },
   "contributing": {
     "title": "Contributing"
+  },
+  "concepts": {
+    "title": "Concepts"
   }
 }

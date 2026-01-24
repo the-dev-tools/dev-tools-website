@@ -97,3 +97,29 @@ export async function getPost(slug: string): Promise<BlogPost | null> {
     return null
   }
 }
+
+export async function getAllTags(): Promise<string[]> {
+  const posts = await getAllPosts()
+  const tags = new Set<string>()
+  posts.forEach(post => post.tags.forEach(tag => tags.add(tag)))
+  return Array.from(tags).sort()
+}
+
+export async function getPostsByTag(tag: string): Promise<BlogPost[]> {
+  const posts = await getAllPosts()
+  return posts.filter(post => post.tags.includes(tag))
+}
+
+export async function getAllAuthors(): Promise<string[]> {
+  const posts = await getAllPosts()
+  const authors = new Set<string>()
+  posts.forEach(post => {
+    if (post.author?.name) authors.add(post.author.name)
+  })
+  return Array.from(authors).sort()
+}
+
+export async function getPostsByAuthor(authorName: string): Promise<BlogPost[]> {
+  const posts = await getAllPosts()
+  return posts.filter(post => post.author?.name === authorName)
+}

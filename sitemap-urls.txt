@@ -9,6 +9,7 @@ https://dev.tools/compare/
 https://dev.tools/compare/devtools-vs-postman/
 https://dev.tools/compare/devtools-vs-bruno/
 https://dev.tools/flows/
+https://dev.tools/docs/index-for-ai/
 https://dev.tools/docs/start-here/install/
 https://dev.tools/docs/reference/cli/
 https://dev.tools/docs/reference/storage-model/
@@ -19,6 +20,7 @@ https://dev.tools/docs/how-to/working-with-flows/
 https://dev.tools/docs/cookbook/examples-and-best-practices/
 https://dev.tools/docs/contributing/writing-docs/
 https://dev.tools/docs/concepts/determinism-claims/
+https://dev.tools/blog/github-flow-explained-for-api-testing-teams/
 https://dev.tools/blog/introducing-devtools/
 https://dev.tools/guides/
 https://dev.tools/guides/newman-alternative-ci/

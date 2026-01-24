@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { MDXRemote } from 'next-mdx-remote/rsc'
 import { getPost, getAllPosts } from '@/lib/blog'
@@ -56,7 +57,10 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
               </time>
 
               {post.author && (
-                <div className="flex items-center gap-2">
+                <Link
+                  href={`/blog/author/${encodeURIComponent(post.author.name)}`}
+                  className="flex items-center gap-2 hover:text-neon transition"
+                >
                   {post.author.avatar && (
                     <img
                       src={post.author.avatar}
@@ -65,19 +69,20 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
                     />
                   )}
                   <span>{post.author.name}</span>
-                </div>
+                </Link>
               )}
             </div>
 
             {post.tags.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {post.tags.map(tag => (
-                  <span
+                  <Link
                     key={tag}
-                    className="px-3 py-1 text-xs font-medium bg-neon/10 text-neon rounded-full border border-neon/30"
+                    href={`/blog/tag/${encodeURIComponent(tag)}`}
+                    className="px-3 py-1 text-xs font-medium bg-neon/10 text-neon rounded-full border border-neon/30 hover:bg-neon/20 transition"
                   >
                     {tag}
-                  </span>
+                  </Link>
                 ))}
               </div>
             )}
