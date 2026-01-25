@@ -58,7 +58,7 @@ export default function RootLayout({
               image: 'https://dev.tools/assets/devtools-main-ss-1400w.webp',
               author: {
                 '@type': 'Organization',
-                name: 'DevTools Labs',
+                name: 'DevTools',
                 url: 'https://dev.tools',
               },
             }),

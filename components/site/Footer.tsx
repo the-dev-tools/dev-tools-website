@@ -131,7 +131,7 @@ export default function Footer() {
                 </a>
               </li>
               <li>
-                <span className="opacity-70">Privacy</span>
+                <Link href="/privacy" className="transition hover:text-neon">Privacy</Link>
               </li>
               <li>
                 <span className="opacity-70">Terms</span>
@@ -146,7 +146,7 @@ export default function Footer() {
 
       {/* Copyright */}
       <div className="mt-12 border-t border-white/5 pt-6 text-center text-xs text-slate-500">
-        © {currentYear} DevTools Labs. All rights reserved.
+        © {currentYear} DevTools. All rights reserved.
       </div>
     </footer>
   )

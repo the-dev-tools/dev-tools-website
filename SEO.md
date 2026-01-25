@@ -44,7 +44,7 @@ Added schema.org structured data:
 - **Pricing:** Free (0 USD)
 - **Rating:** 5/5 with 14 reviews
 - **Platforms:** Windows, macOS, Linux
-- **Organization:** DevTools Labs
+- **Organization:** DevTools
 
 This helps search engines understand:
 - What the software does
