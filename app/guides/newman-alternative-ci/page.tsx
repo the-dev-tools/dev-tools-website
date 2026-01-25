@@ -90,17 +90,9 @@ export default function GuideNewmanAlternativeCI() {
             </div>
           </div>
 
-          {/* TODO: Screenshot → /public/media/newman-alternative-ci-install-verify.png */}
-          <figure className="not-prose mt-4">
-            <img
-              src="/media/newman-alternative-ci-install-verify.png"
-              alt="Install DevTools CLI and verify version for Newman alternative CI"
-              className="w-full rounded-xl border border-white/10"
-            />
-            <figcaption className="mt-2 text-center text-sm text-slate-400">
-              Install and verify the CLI locally.
-            </figcaption>
-          </figure>
+          {/* TODO: Screenshot → /public/media/newman-alternative-ci-install-verify.png
+              Alt: Install DevTools CLI and verify version for Newman alternative CI
+              Caption: Install and verify the CLI locally. */}
         </section>
 
         <section className="mb-12">
@@ -153,17 +145,9 @@ jobs:
           if-no-files-found: warn
           retention-days: 7`}</code></pre>
 
-          {/* TODO: Screenshot → /public/media/newman-alternative-ci-junit-artifact.png */}
-          <figure className="not-prose mt-4">
-            <img
-              src="/media/newman-alternative-ci-junit-artifact.png"
-              alt="GitHub Actions uploading JUnit XML test results from DevTools CLI"
-              className="w-full rounded-xl border border-white/10"
-            />
-            <figcaption className="mt-2 text-center text-sm text-slate-400">
-              Upload JUnit XML so PRs show test summaries and history.
-            </figcaption>
-          </figure>
+          {/* TODO: Screenshot → /public/media/newman-alternative-ci-junit-artifact.png
+              Alt: GitHub Actions uploading JUnit XML test results from DevTools CLI
+              Caption: Upload JUnit XML so PRs show test summaries and history. */}
 
           {/* TODO: Micro‑video embed placeholder */}
           <div className="not-prose mt-4 rounded-lg border border-white/10 bg-white/5 p-4">
@@ -206,17 +190,9 @@ steps:
             </div>
           </div>
 
-          {/* TODO: Screenshot → /public/media/newman-alternative-ci-yaml-envvars.png */}
-          <figure className="not-prose mt-4">
-            <img
-              src="/media/newman-alternative-ci-yaml-envvars.png"
-              alt="YAML API test flow using #env variables for CI secrets"
-              className="w-full rounded-xl border border-white/10"
-            />
-            <figcaption className="mt-2 text-center text-sm text-slate-400">
-              YAML pattern for secrets and base URLs.
-            </figcaption>
-          </figure>
+          {/* TODO: Screenshot → /public/media/newman-alternative-ci-yaml-envvars.png
+              Alt: YAML API test flow using #env variables for CI secrets
+              Caption: YAML pattern for secrets and base URLs. */}
         </section>
 
         <section className="mb-12">

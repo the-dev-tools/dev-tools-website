@@ -63,10 +63,8 @@ export default function GuideGenerateHarChrome() {
                     <li>Right click → Inspect</li>
                     <li>Open the Network panel</li>
                   </ul>
-                  {/* TODO: screenshot chrome-network-tab.png */}
-                  <figure className="mt-3">
-                    <img src="/media/chrome-network-tab.png" alt="Chrome DevTools Network tab open" className="w-full rounded-lg border border-white/10" />
-                  </figure>
+                  {/* TODO: screenshot → /public/media/chrome-network-tab.png
+                      Alt: Chrome DevTools Network tab open */}
                 </div>
               </div>
             </div>
@@ -80,10 +78,8 @@ export default function GuideGenerateHarChrome() {
                     <li>Network toolbar → gear icon</li>
                     <li>Preferences → Network → Allow to generate HAR with sensitive data</li>
                   </ul>
-                  {/* TODO: screenshot chrome-allow-har-sensitive-data.png */}
-                  <figure className="mt-3">
-                    <img src="/media/chrome-allow-har-sensitive-data.png" alt="Chrome setting 'Allow to generate HAR with sensitive data' enabled" className="w-full rounded-lg border border-white/10" />
-                  </figure>
+                  {/* TODO: screenshot → /public/media/chrome-allow-har-sensitive-data.png
+                      Alt: Chrome setting 'Allow to generate HAR with sensitive data' enabled */}
                 </div>
               </div>
             </div>
@@ -99,10 +95,8 @@ export default function GuideGenerateHarChrome() {
                     <li>Click the clear icon to start clean</li>
                     <li>Perform the workflow (login, click, submit, etc.)</li>
                   </ul>
-                  {/* TODO: GIF chrome-preserve-log-clear.gif */}
-                  <figure className="mt-3">
-                    <img src="/media/chrome-preserve-log-clear.gif" alt="Chrome Network: Preserve log and Clear, then capturing a user flow" className="w-full rounded-lg border border-white/10" />
-                  </figure>
+                  {/* TODO: GIF → /public/media/chrome-preserve-log-clear.gif
+                      Alt: Chrome Network: Preserve log and Clear, then capturing a user flow */}
                 </div>
               </div>
             </div>
@@ -117,10 +111,8 @@ export default function GuideGenerateHarChrome() {
                     <li>Or right‑click request list → Save all as HAR with content</li>
                   </ul>
                   <p className="text-slate-400 text-sm mt-2">Suggested names: login-create-order.har, checkout-flow.har</p>
-                  {/* TODO: screenshot chrome-save-har-with-content.png */}
-                  <figure className="mt-3">
-                    <img src="/media/chrome-save-har-with-content.png" alt="Right-click menu 'Save all as HAR with content' in Chrome Network" className="w-full rounded-lg border border-white/10" />
-                  </figure>
+                  {/* TODO: screenshot → /public/media/chrome-save-har-with-content.png
+                      Alt: Right-click menu 'Save all as HAR with content' in Chrome Network */}
                 </div>
               </div>
             </div>
@@ -153,15 +145,11 @@ export default function GuideGenerateHarChrome() {
             <div className="rounded-xl border border-white/10 bg-white/5 p-6">
               <h3 className="text-lg font-semibold text-white mb-2">Filter and map domains</h3>
               <p className="text-slate-300 text-sm">Remove analytics/fonts/CDNs; map domains to variables (e.g., BASE_URL).</p>
-              {/* TODO: screenshots */}
-              <div className="grid gap-3 sm:grid-cols-2 mt-3">
-                <figure>
-                  <img src="/media/devtools-import-har-domain-filter.png" alt="DevTools import HAR: domain filter checklist" className="w-full rounded-lg border border-white/10" />
-                </figure>
-                <figure>
-                  <img src="/media/devtools-domain-to-variable.png" alt="Map domain to {{BASE_URL}} variable in DevTools" className="w-full rounded-lg border border-white/10" />
-                </figure>
-              </div>
+              {/* TODO: screenshots
+                  1. /public/media/devtools-import-har-domain-filter.png
+                     Alt: DevTools import HAR: domain filter checklist
+                  2. /public/media/devtools-domain-to-variable.png
+                     Alt: Map domain to {{BASE_URL}} variable in DevTools */}
             </div>
           </div>
         </section>
@@ -172,10 +160,8 @@ export default function GuideGenerateHarChrome() {
             <div className="rounded-xl border border-white/10 bg-white/5 p-6">
               <h3 className="text-lg font-semibold text-white mb-2">Review flow + dependencies</h3>
               <p className="text-slate-300 text-sm">Check the generated sequence and auto‑detected variable chaining.</p>
-              {/* TODO: screenshot devtools-flow-dependencies.png */}
-              <figure className="mt-3">
-                <img src="/media/devtools-flow-dependencies.png" alt="DevTools flow dependencies visual with token chaining" className="w-full rounded-lg border border-white/10" />
-              </figure>
+              {/* TODO: screenshot → /public/media/devtools-flow-dependencies.png
+                  Alt: DevTools flow dependencies visual with token chaining */}
             </div>
 
             <div className="rounded-xl border border-white/10 bg-white/5 p-6">
@@ -188,15 +174,11 @@ export default function GuideGenerateHarChrome() {
             <div className="rounded-xl border border-white/10 bg-white/5 p-6">
               <h3 className="text-lg font-semibold text-white mb-2">Export YAML and commit</h3>
               <p className="text-slate-300 text-sm">Run once locally, then export to YAML and commit to your repo.</p>
-              {/* TODO: screenshots */}
-              <div className="grid gap-3 sm:grid-cols-2 mt-3">
-                <figure>
-                  <img src="/media/devtools-export-yaml.png" alt="Export flow to YAML in DevTools" className="w-full rounded-lg border border-white/10" />
-                </figure>
-                <figure>
-                  <img src="/media/git-diff-yaml-flow.png" alt="PR diff showing readable YAML flow changes" className="w-full rounded-lg border border-white/10" />
-                </figure>
-              </div>
+              {/* TODO: screenshots
+                  1. /public/media/devtools-export-yaml.png
+                     Alt: Export flow to YAML in DevTools
+                  2. /public/media/git-diff-yaml-flow.png
+                     Alt: PR diff showing readable YAML flow changes */}
             </div>
           </div>
         </section>
