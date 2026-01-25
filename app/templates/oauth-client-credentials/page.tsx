@@ -3,7 +3,6 @@ import Link from 'next/link'
 export const metadata = {
   title: 'Template: OAuth Client Credentials (YAML)',
   description: 'YAML flow template for obtaining an access token with OAuth client credentials and using it.',
-  alternates: { canonical: '/templates/oauth-client-credentials' },
 }
 
 export default function TemplateOAuthClientCreds() {

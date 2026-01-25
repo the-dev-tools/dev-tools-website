@@ -6,7 +6,6 @@ export const metadata = {
   title: 'DevTools Enterprise – SSO, RBAC, Audit Logs, and Dedicated Support',
   description:
     'DevTools Enterprise adds SAML SSO, SCIM provisioning, RBAC, shared secrets, audit logs, and dedicated support for teams that need security and compliance.',
-  alternates: { canonical: '/enterprise' },
   openGraph: {
     title: 'DevTools Enterprise – SSO, RBAC, Audit Logs, and Dedicated Support',
     description:

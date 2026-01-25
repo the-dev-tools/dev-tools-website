@@ -3,16 +3,19 @@ import Link from 'next/link'
 export const metadata = {
   title: 'Template: GitLab CI (YAML flows + JUnit)',
   description: 'Run DevTools YAML flows in GitLab CI with JUnit output.',
-  alternates: { canonical: '/templates/gitlab-ci' },
 }
 
 export default function TemplateGitLabCI() {
   return (
     <main className="mx-auto max-w-3xl px-4 py-16 sm:px-8">
       <h1 className="text-3xl font-extrabold text-white mb-4">GitLab CI</h1>
-      <p className="text-slate-300 mb-6">
+      <p className="text-slate-300 mb-2">
         Run DevTools YAML flows in GitLab CI and emit JUnit reports. Useful for merge request checks and scheduled
         pipelines across environments.
+      </p>
+      <p className="text-slate-400 text-sm mb-6">
+        For the full setup (PR checks, artifacts, caching, smoke vs regression), see the{' '}
+        <Link className="underline" href="/guides/api-regression-testing-github-actions">API regression testing guide</Link>.
       </p>
 
       <div className="rounded-lg border border-white/10 bg-white/5 p-4 mb-6">

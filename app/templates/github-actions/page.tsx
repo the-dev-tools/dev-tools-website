@@ -3,16 +3,19 @@ import Link from 'next/link'
 export const metadata = {
   title: 'Template: GitHub Actions (YAML flows + JUnit)',
   description: 'Run DevTools YAML flows in GitHub Actions with JUnit output for PR‑visible results.',
-  alternates: { canonical: '/templates/github-actions' },
 }
 
 export default function TemplateGitHubActions() {
   return (
     <main className="mx-auto max-w-3xl px-4 py-16 sm:px-8">
       <h1 className="text-3xl font-extrabold text-white mb-4">GitHub Actions</h1>
-      <p className="text-slate-300 mb-6">
+      <p className="text-slate-300 mb-2">
         Run DevTools YAML flows in GitHub Actions and publish JUnit results for PR checks. Great for smoke and
         regression suites that run on pushes and pull requests.
+      </p>
+      <p className="text-slate-400 text-sm mb-6">
+        For the full setup (PR checks, artifacts, caching, smoke vs regression), see the{' '}
+        <Link className="underline" href="/guides/api-regression-testing-github-actions">API regression testing guide</Link>.
       </p>
 
       <div className="rounded-lg border border-white/10 bg-white/5 p-4 mb-6">

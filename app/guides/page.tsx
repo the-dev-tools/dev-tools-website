@@ -3,7 +3,6 @@ import Link from 'next/link'
 export const metadata = {
   title: 'Guides – Migrations, CI, and Recipes',
   description: 'Practical guides: migrate from Postman, Newman alternative in CI, regression testing in GitHub Actions, generate HAR safely.',
-  alternates: { canonical: '/guides' },
 }
 
 export default function GuidesIndex() {
@@ -44,4 +43,3 @@ export default function GuidesIndex() {
     </main>
   )
 }
-

@@ -1,10 +1,20 @@
 import Link from 'next/link'
 import { getPostsByTag, getAllTags } from '@/lib/blog'
 import { notFound } from 'next/navigation'
+import type { Metadata } from 'next'
 
 export async function generateStaticParams() {
   const tags = await getAllTags()
   return tags.map(tag => ({ tag: encodeURIComponent(tag) }))
+}
+
+export function generateMetadata({ params }: { params: { tag: string } }): Metadata {
+  const tag = decodeURIComponent(params.tag)
+  return {
+    title: `Posts tagged "${tag}" – DevTools Blog`,
+    description: `Articles and updates related to ${tag}.` ,
+    alternates: { canonical: `/blog/tag/${params.tag}/` },
+  }
 }
 
 export default async function TagPage({ params }: { params: { tag: string } }) {

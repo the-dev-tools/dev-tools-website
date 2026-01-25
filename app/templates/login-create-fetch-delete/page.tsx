@@ -3,7 +3,6 @@ import Link from 'next/link'
 export const metadata = {
   title: 'Template: login → create → fetch → delete (YAML)',
   description: 'Common CRUD‑style workflow as a YAML flow with variable mapping.',
-  alternates: { canonical: '/templates/login-create-fetch-delete' },
 }
 
 export default function TemplateCRUD() {

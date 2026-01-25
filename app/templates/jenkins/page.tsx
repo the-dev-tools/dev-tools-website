@@ -3,7 +3,6 @@ import Link from 'next/link'
 export const metadata = {
   title: 'Template: Jenkins (YAML flows + JUnit)',
   description: 'Run DevTools YAML flows in Jenkins pipelines with JUnit output.',
-  alternates: { canonical: '/templates/jenkins' },
 }
 
 export default function TemplateJenkins() {

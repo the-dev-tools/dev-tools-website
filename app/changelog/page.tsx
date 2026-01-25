@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import type React from 'react'
 import { getChangelog } from '@/lib/changelog'
 
 export const metadata = {
@@ -6,8 +7,8 @@ export const metadata = {
   description: 'Product updates, new features, and improvements to Dev Tools.',
 }
 
-function parseInlineMarkdown(text: string): (string | JSX.Element)[] {
-  const elements: (string | JSX.Element)[] = []
+function parseInlineMarkdown(text: string): (string | React.ReactElement)[] {
+  const elements: (string | React.ReactElement)[] = []
   let remaining = text
   let key = 0
 
@@ -104,7 +105,7 @@ function parseInlineMarkdown(text: string): (string | JSX.Element)[] {
 
 function MarkdownContent({ content }: { content: string }) {
   const lines = content.split('\n')
-  const elements: JSX.Element[] = []
+  const elements: React.ReactElement[] = []
   let currentList: string[] = []
   let currentCodeBlock: string[] = []
   let inCodeBlock = false

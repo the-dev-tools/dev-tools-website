@@ -3,7 +3,6 @@ import Link from 'next/link'
 export const metadata = {
   title: 'Template: JWT Auth flow (YAML)',
   description: 'YAML flow template for logging in and using a JWT for authenticated requests.',
-  alternates: { canonical: '/templates/auth-jwt' },
 }
 
 export default function TemplateAuthJWT() {

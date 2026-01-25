@@ -1,6 +1,11 @@
 import Link from 'next/link'
 import { getAllPosts } from '@/lib/blog'
 
+export const metadata = {
+  title: 'DevTools Blog – Product updates, API testing, developer workflows',
+  description: 'News, tutorials, and deep dives on API testing, YAML flows, HAR imports, and CI automation with DevTools.',
+}
+
 export default async function BlogPage() {
   const posts = await getAllPosts()
 

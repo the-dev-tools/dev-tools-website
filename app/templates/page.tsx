@@ -3,7 +3,6 @@ import Link from 'next/link'
 export const metadata = {
   title: 'Templates – Auth, Workflows, and CI',
   description: 'Copy‑paste templates for common auth patterns, workflows, and CI setups.',
-  alternates: { canonical: '/templates' },
 }
 
 const items = [
@@ -30,4 +29,3 @@ export default function TemplatesIndex() {
     </main>
   )
 }
-

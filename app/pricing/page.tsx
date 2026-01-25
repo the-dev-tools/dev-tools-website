@@ -5,7 +5,6 @@ export const metadata = {
   title: 'DevTools Pricing – Free Studio & CLI, Enterprise SSO + Collaboration',
   description:
     'DevTools Studio and CLI are free forever. Enterprise adds SAML SSO, SCIM, RBAC, shared secrets, audit logs, and dedicated support for teams.',
-  alternates: { canonical: '/pricing' },
   openGraph: {
     title: 'DevTools Pricing – Free Studio & CLI, Enterprise SSO + Collaboration',
     description:

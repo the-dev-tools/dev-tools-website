@@ -1,5 +1,6 @@
 import React from 'react'
 import type { DocsThemeConfig } from 'nextra-theme-docs'
+import { useRouter } from 'next/router'
 
 const config: DocsThemeConfig = {
   logo: <img src="/logo.svg" alt="DevTools" style={{ height: '2.25rem' }} />,
@@ -18,14 +19,21 @@ const config: DocsThemeConfig = {
     text: 'DevTools Documentation'
   },
   useNextSeoProps() {
+    // Build a clean, trailing-slashed canonical for every docs page
+    const { asPath } = useRouter()
+    const pathOnly = (asPath || '/').split('#')[0].split('?')[0] || '/'
+    const trailing = pathOnly.endsWith('/') ? pathOnly : pathOnly + '/'
+    const canonical = `https://dev.tools${trailing}`
+
     return {
       titleTemplate: '%s – DevTools',
-      description: 'Local-first API testing and flow automation. Record browser traffic, turn it into executable YAML flows, and run at Go speed.',
-      canonical: 'https://dev.tools',
+      description:
+        'Local-first API testing and flow automation. Record browser traffic, turn it into executable YAML flows, and run at Go speed.',
+      canonical,
       openGraph: {
         type: 'website',
         locale: 'en_US',
-        url: 'https://dev.tools',
+        url: canonical,
         siteName: 'DevTools',
         images: [
           {
@@ -33,13 +41,13 @@ const config: DocsThemeConfig = {
             width: 1400,
             height: 917,
             alt: 'DevTools API Testing Interface',
-          }
-        ]
+          },
+        ],
       },
       twitter: {
         handle: '@devtools',
         cardType: 'summary_large_image',
-      }
+      },
     }
   },
   head: (

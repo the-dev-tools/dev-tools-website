@@ -3,7 +3,6 @@ import Link from 'next/link'
 export const metadata = {
   title: 'Compare DevTools – vs Postman, vs Bruno',
   description: 'Side-by-side comparisons: DevTools vs Postman and DevTools vs Bruno. Flows, HAR import, YAML export, CI reporting.',
-  alternates: { canonical: '/compare' },
 }
 
 export default function CompareIndex() {

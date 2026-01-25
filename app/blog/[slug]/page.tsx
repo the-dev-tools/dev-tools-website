@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { MDXRemote } from 'next-mdx-remote/rsc'
 import remarkGfm from 'remark-gfm'
 import { getPost, getAllPosts } from '@/lib/blog'
+import type { Metadata } from 'next'
 import BlogSidebar from '@/components/BlogSidebar'
 
 const components = {
@@ -35,6 +36,23 @@ const components = {
 export async function generateStaticParams() {
   const posts = await getAllPosts()
   return posts.map(post => ({ slug: post.slug }))
+}
+
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const post = await getPost(params.slug)
+  if (!post) return { alternates: { canonical: `/blog/${params.slug}/` } }
+  return {
+    title: `${post.title}`,
+    description: post.summary,
+    alternates: { canonical: `/blog/${params.slug}/` },
+    openGraph: {
+      title: post.title,
+      description: post.summary,
+      url: `https://dev.tools/blog/${params.slug}/`,
+      images: post.image ? [{ url: post.image.url, alt: post.image.alt }] : undefined,
+      type: 'article',
+    },
+  }
 }
 
 export default async function BlogPostPage({ params }: { params: { slug: string } }) {

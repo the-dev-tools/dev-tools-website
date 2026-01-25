@@ -4,7 +4,6 @@ export const metadata = {
   title: 'Postman CLI / Newman Alternative – DevTools CLI (Fast, JUnit/JSON)',
   description:
     'A faster Newman alternative: DevTools CLI runs YAML flows in parallel with clear exit codes and JUnit/JSON outputs.',
-  alternates: { canonical: '/postman-cli-alternative' },
 }
 
 export default function NewmanAlternativePage() {

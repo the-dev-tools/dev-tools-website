@@ -6,7 +6,6 @@ export const metadata = {
   title: 'DevTools Studio – Download (macOS, Windows, Linux)',
   description:
     'DevTools Studio is a local‑first API client and flow builder. Download for macOS, Windows, or Linux, and pair with the DevTools CLI for CI (JUnit/JSON).',
-  alternates: { canonical: '/download' },
   openGraph: {
     title: 'DevTools Studio – Download (macOS, Windows, Linux)',
     description:

@@ -4,7 +4,6 @@ export const metadata = {
   title: 'API Regression Testing in GitHub Actions (YAML + JUnit)',
   description:
     'Run DevTools YAML flows in GitHub Actions as regression tests. PR-visible JUnit results, JSON reports, caching, timeouts, and artifact uploads.',
-  alternates: { canonical: '/guides/api-regression-testing-github-actions' },
 }
 
 export default function GuideApiRegressionGitHubActions() {
@@ -308,4 +307,3 @@ jobs:
     </main>
   )
 }
-

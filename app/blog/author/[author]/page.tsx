@@ -1,10 +1,20 @@
 import Link from 'next/link'
 import { getPostsByAuthor, getAllAuthors } from '@/lib/blog'
 import { notFound } from 'next/navigation'
+import type { Metadata } from 'next'
 
 export async function generateStaticParams() {
   const authors = await getAllAuthors()
   return authors.map(author => ({ author: encodeURIComponent(author) }))
+}
+
+export function generateMetadata({ params }: { params: { author: string } }): Metadata {
+  const author = decodeURIComponent(params.author)
+  return {
+    title: `${author} – DevTools Blog`,
+    description: `Articles written by ${author}.`,
+    alternates: { canonical: `/blog/author/${params.author}/` },
+  }
 }
 
 export default async function AuthorPage({ params }: { params: { author: string } }) {

@@ -4,7 +4,6 @@ export const metadata = {
   title: 'Bruno Alternative – DevTools (Flows from HAR, YAML Export, CI)',
   description:
     'DevTools is a Bruno alternative focused on visual flows from HAR, automatic variable mapping, YAML export, and CI reporting.',
-  alternates: { canonical: '/bruno-alternative' },
 }
 
 export default function BrunoAlternativePage() {

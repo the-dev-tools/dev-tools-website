@@ -4,7 +4,6 @@ export const metadata = {
   title: 'Postman Alternative – DevTools (Local‑First, YAML Flows, CI‑Ready)',
   description:
     'DevTools is a local‑first Postman alternative: import HAR → generate visual flows → export YAML → run in CI with JUnit/JSON.',
-  alternates: { canonical: '/postman-alternative' },
 }
 
 export default function PostmanAlternativePage() {
