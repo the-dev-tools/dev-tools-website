@@ -98,7 +98,9 @@ export default function Footer() {
                 <span className="opacity-70">API status</span>
               </li>
               <li>
-                <span className="opacity-70">Release notes</span>
+                <Link href="/changelog" className="transition hover:text-neon">
+                  Changelog
+                </Link>
               </li>
             </ul>
           </div>

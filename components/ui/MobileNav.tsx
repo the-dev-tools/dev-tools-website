@@ -105,6 +105,7 @@ export default function MobileNav() {
                 <Link href="/templates/jenkins" className="rounded-lg px-3 py-2 text-slate-200 transition hover:bg-white/10" onClick={closeMenu}>Jenkins</Link>
                 <Link href="/blog" className="rounded-lg px-3 py-2 text-slate-200 transition hover:bg-white/10" onClick={closeMenu}>Blog</Link>
                 <Link href="/blog/introducing-devtools" className="rounded-lg px-3 py-2 text-slate-200 transition hover:bg-white/10" onClick={closeMenu}>Introducing DevTools</Link>
+                <Link href="/changelog" className="rounded-lg px-3 py-2 text-slate-200 transition hover:bg-white/10" onClick={closeMenu}>Changelog</Link>
               </div>
             </div>
           </nav>
