@@ -5,7 +5,9 @@ WORKDIR /app
 
 # Copy package files
 COPY package.json package-lock.json* ./
-RUN npm ci
+# Use BuildKit cache mount for npm cache to speed up builds
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci
 
 # Stage 2: Builder
 FROM node:18-alpine AS builder
@@ -15,7 +17,9 @@ COPY . .
 
 # Build static Next.js site
 ENV NEXT_TELEMETRY_DISABLED 1
-RUN npm run build
+# Use BuildKit cache mount for Next.js build cache to speed up builds
+RUN --mount=type=cache,target=/app/.next/cache \
+    npm run build
 
 # Stage 3: Runner - Serve with Caddy (301-friendly redirects)
 FROM caddy:2-alpine
