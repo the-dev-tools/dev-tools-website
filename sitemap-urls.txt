@@ -6,7 +6,9 @@ https://dev.tools/templates/jenkins/
 https://dev.tools/templates/gitlab-ci/
 https://dev.tools/templates/github-actions/
 https://dev.tools/templates/auth-jwt/
+https://dev.tools/subscribe/
 https://dev.tools/studio/
+https://dev.tools/privacy/
 https://dev.tools/pricing/
 https://dev.tools/postman-cli-alternative/
 https://dev.tools/postman-alternative/
@@ -18,10 +20,12 @@ https://dev.tools/guides/api-regression-testing-github-actions/
 https://dev.tools/flows/
 https://dev.tools/enterprise/
 https://dev.tools/download/
+https://dev.tools/contact/
 https://dev.tools/compare/
 https://dev.tools/compare/devtools-vs-postman/
 https://dev.tools/compare/devtools-vs-bruno/
 https://dev.tools/cli/
+https://dev.tools/changelog/
 https://dev.tools/bruno-alternative/
 https://dev.tools/blog/
 https://dev.tools/docs/
@@ -37,4 +41,5 @@ https://dev.tools/docs/cookbook/examples-and-best-practices/
 https://dev.tools/docs/contributing/writing-docs/
 https://dev.tools/docs/concepts/determinism-claims/
 https://dev.tools/blog/github-flow-explained-for-api-testing-teams/
+https://dev.tools/blog/har-to-yaml-generate-api-regression-tests-for-ci-github-actions-example/
 https://dev.tools/blog/introducing-devtools/

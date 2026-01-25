@@ -52,6 +52,17 @@ function listContentFiles(dir, extensions) {
   return entries;
 }
 
+// Check if a page has noindex in metadata
+function hasNoIndex(filePath) {
+  try {
+    const content = fs.readFileSync(filePath, 'utf8');
+    // Look for robots: { index: false } pattern
+    return /robots:\s*\{\s*index:\s*false/i.test(content);
+  } catch (e) {
+    return false;
+  }
+}
+
 // Auto-discover all App Router pages
 function discoverAppPages() {
   const pages = [];
@@ -70,6 +81,11 @@ function discoverAppPages() {
           stack.push(fullPath);
         }
       } else if (it.isFile() && (it.name === 'page.tsx' || it.name === 'page.jsx')) {
+        // Skip pages with noindex in metadata
+        if (hasNoIndex(fullPath)) {
+          continue;
+        }
+
         const rel = path.relative(APP_DIR, cur).replace(/\\/g, '/');
         const url = rel ? `/${rel}/` : '/';
         const depth = rel ? rel.split('/').length : 0;
