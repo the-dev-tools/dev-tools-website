@@ -95,6 +95,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/subscribe" className="transition hover:text-neon">
+                  Subscribe
+                </Link>
+              </li>
+              <li>
                 <span className="opacity-70">API status</span>
               </li>
               <li>
@@ -116,7 +121,9 @@ export default function Footer() {
                 <span className="opacity-70">Careers</span>
               </li>
               <li>
-                <span className="opacity-70">Contact</span>
+                <Link href="/contact" className="transition hover:text-neon">
+                  Contact
+                </Link>
               </li>
             </ul>
           </div>
