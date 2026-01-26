@@ -18,3 +18,4 @@ yarn-error.log*
 
 # Generated data
 public/data/github-stats.json
+lib/github-stats.ts

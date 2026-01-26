@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react'
+import { GITHUB_STATS } from '@/lib/github-stats'
 
 const fmtStars = (n: number | null | undefined) => {
   if (typeof n !== 'number' || !isFinite(n)) return null
@@ -10,28 +11,16 @@ const fmtStars = (n: number | null | undefined) => {
   return `${k.toFixed(digits)}k`
 }
 
+// Initialize with build-time data
+const initialStars = GITHUB_STATS.stars ? `${fmtStars(GITHUB_STATS.stars)}★` : '★'
+const initialReleases = GITHUB_STATS.releaseCount ? `${GITHUB_STATS.releaseCount} releases` : 'releases'
+
 export default function GitHubStarButton() {
-  const [starsText, setStarsText] = useState<string | null>(null)
-  const [releasesText, setReleasesText] = useState<string | null>(null)
+  const [starsText, setStarsText] = useState<string>(initialStars)
+  const [releasesText, setReleasesText] = useState<string>(initialReleases)
 
   useEffect(() => {
-    // First, load baked-in data from build time
-    fetch('/data/github-stats.json')
-      .then(r => (r.ok ? r.json() : null))
-      .then(data => {
-        if (data && data.stars) {
-          const starsTxt = fmtStars(data.stars)
-          if (starsTxt) setStarsText(`${starsTxt}★`)
-        }
-        if (data && data.releaseCount) {
-          setReleasesText(`${data.releaseCount} releases`)
-        }
-      })
-      .catch(() => {
-        // Ignore errors, will fetch from API below
-      })
-
-    // Then, fetch fresh data from GitHub API
+    // Fetch fresh data from GitHub API to update
     const repo = 'the-dev-tools/dev-tools'
     const repoUrl = `https://api.github.com/repos/${repo}`
     const releasesUrl = `https://api.github.com/repos/${repo}/releases?per_page=100`
@@ -63,7 +52,7 @@ export default function GitHubStarButton() {
       />
       Star on GitHub
       <span className="text-xs font-normal text-slate-400">
-        {starsText || '★'} • {releasesText || 'releases'}
+        {starsText} • {releasesText}
       </span>
     </a>
   )
