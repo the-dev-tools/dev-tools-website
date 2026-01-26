@@ -15,3 +15,6 @@ yarn-error.log*
 
 # Environment
 .env*.local
+
+# Generated data
+public/data/github-stats.json

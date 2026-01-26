@@ -2,22 +2,39 @@
 
 import { useEffect, useState } from 'react'
 
+const fmtStars = (n: number | null | undefined) => {
+  if (typeof n !== 'number' || !isFinite(n)) return null
+  if (n < 1000) return `${n}`
+  const k = n / 1000
+  const digits = n >= 100000 ? 0 : 1
+  return `${k.toFixed(digits)}k`
+}
+
 export default function GitHubStarButton() {
   const [starsText, setStarsText] = useState<string | null>(null)
   const [releasesText, setReleasesText] = useState<string | null>(null)
 
   useEffect(() => {
+    // First, load baked-in data from build time
+    fetch('/data/github-stats.json')
+      .then(r => (r.ok ? r.json() : null))
+      .then(data => {
+        if (data && data.stars) {
+          const starsTxt = fmtStars(data.stars)
+          if (starsTxt) setStarsText(`${starsTxt}★`)
+        }
+        if (data && data.releaseCount) {
+          setReleasesText(`${data.releaseCount} releases`)
+        }
+      })
+      .catch(() => {
+        // Ignore errors, will fetch from API below
+      })
+
+    // Then, fetch fresh data from GitHub API
     const repo = 'the-dev-tools/dev-tools'
     const repoUrl = `https://api.github.com/repos/${repo}`
     const releasesUrl = `https://api.github.com/repos/${repo}/releases?per_page=100`
-
-    const fmtStars = (n: number | null | undefined) => {
-      if (typeof n !== 'number' || !isFinite(n)) return null
-      if (n < 1000) return `${n}`
-      const k = n / 1000
-      const digits = n >= 100000 ? 0 : 1
-      return `${k.toFixed(digits)}k`
-    }
 
     Promise.all([
       fetch(repoUrl).then(r => (r.ok ? r.json() : null)).catch(() => null),
@@ -45,7 +62,7 @@ export default function GitHubStarButton() {
         className="h-4 w-4 opacity-90 transition group-hover:opacity-100 filter invert"
       />
       Star on GitHub
-      <span className="hidden text-xs font-normal text-slate-400 sm:inline">
+      <span className="text-xs font-normal text-slate-400">
         {starsText || '★'} • {releasesText || 'releases'}
       </span>
     </a>

@@ -17,13 +17,6 @@ export default function Footer() {
           <p className="text-sm text-slate-400">
             DevTools is crafted by a remote team of developer tooling obsessives. We believe great API experiences begin with trustworthy, sustainable workflows.
           </p>
-          <div className="flex gap-3 text-slate-500">
-            <span className="opacity-70">Twitter</span>
-            <span className="opacity-70">GitHub</span>
-            <Link href="/docs" className="transition hover:text-neon">
-              Docs
-            </Link>
-          </div>
         </div>
 
         {/* Footer Columns */}
@@ -68,7 +61,7 @@ export default function Footer() {
           {/* Resources Column */}
           <div>
             <h3 className="text-xs uppercase tracking-wide text-slate-400">Resources</h3>
-            <ul className="mt-3 space-y-2 text-slate-500">
+            <ul className="mt-3 space-y-2 text-slate-300">
               <li>
                 <Link href="/docs" className="transition hover:text-neon">
                   Docs
@@ -100,9 +93,6 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <span className="opacity-70">API status</span>
-              </li>
-              <li>
                 <Link href="/changelog" className="transition hover:text-neon">
                   Changelog
                 </Link>
@@ -113,13 +103,7 @@ export default function Footer() {
           {/* Company Column */}
           <div>
             <h3 className="text-xs uppercase tracking-wide text-slate-400">Company</h3>
-            <ul className="mt-3 space-y-2 text-slate-500">
-              <li>
-                <span className="opacity-70">About</span>
-              </li>
-              <li>
-                <span className="opacity-70">Careers</span>
-              </li>
+            <ul className="mt-3 space-y-2 text-slate-300">
               <li>
                 <Link href="/contact" className="transition hover:text-neon">
                   Contact
@@ -131,7 +115,7 @@ export default function Footer() {
           {/* Legal Column */}
           <div>
             <h3 className="text-xs uppercase tracking-wide text-slate-400">Legal</h3>
-            <ul className="mt-3 space-y-2 text-slate-500">
+            <ul className="mt-3 space-y-2 text-slate-300">
               <li>
                 <a href="https://github.com/the-dev-tools/dev-tools/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" className="transition hover:text-neon">
                   License: Apache-2.0
@@ -139,12 +123,6 @@ export default function Footer() {
               </li>
               <li>
                 <Link href="/privacy" className="transition hover:text-neon">Privacy</Link>
-              </li>
-              <li>
-                <span className="opacity-70">Terms</span>
-              </li>
-              <li>
-                <span className="opacity-70">Security</span>
               </li>
             </ul>
           </div>
