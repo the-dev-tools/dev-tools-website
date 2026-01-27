@@ -7,7 +7,7 @@ import CompareMenu from './CompareMenu'
 
 export default function Header() {
   return (
-    <header className="relative border-b border-white/10">
+    <header className="relative z-20 border-b border-white/10">
       {/* Gradient top border */}
       <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-white/60 to-transparent"></div>
 

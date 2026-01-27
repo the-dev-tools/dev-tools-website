@@ -53,7 +53,7 @@ export default function Hero() {
 
           <Link
             href="/cli"
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#58D7FF]/60 bg-transparent px-6 py-3 text-base font-semibold text-[#58D7FF] transition hover:bg-[#58D7FF]/10 hover:text-white"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-neon/60 bg-transparent px-6 py-3 text-base font-semibold text-neon transition hover:bg-neon/10 hover:text-white"
           >
             Install CLI
           </Link>
@@ -70,11 +70,9 @@ export default function Hero() {
       {/* Right: Screenshot */}
       <div className="relative flex-1 md:flex-[1.35] overflow-hidden md:overflow-visible">
         <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
-          <div className="absolute left-1/2 top-1/2 h-[150%] w-[125%] max-w-[840px] -translate-x-1/2 -translate-y-1/2 rounded-[46px] bg-slate-950/60 blur-[120px] opacity-80"></div>
-          <div className="absolute left-1/2 top-1/2 h-[135%] w-[118%] max-w-[760px] -translate-x-1/2 -translate-y-1/2 rounded-[50px] bg-[radial-gradient(circle_at_25%_25%,rgba(88,215,255,0.20),transparent_65%),radial-gradient(circle_at_75%_75%,rgba(201,125,255,0.25),transparent_68%)] opacity-60"></div>
-          <div className="absolute left-1/2 bottom-[-18%] h-[55%] w-[70%] -translate-x-1/2 rounded-full bg-[#090c1f] opacity-60 blur-[68px]"></div>
+          <div className="absolute left-1/2 bottom-[-18%] h-[55%] w-[70%] -translate-x-1/2 rounded-full bg-[rgb(9,13,30)] opacity-60 blur-[68px]"></div>
         </div>
-        <div className="group relative mx-auto w-full max-w-[580px] overflow-hidden rounded-xl border border-white/10 bg-white/5 shadow-[0_35px_60px_-25px_rgba(17,26,56,0.35)] backdrop-blur md:-mr-24 md:w-[135%] md:max-w-none md:rounded-xl md:shadow-[0_55px_90px_-35px_rgba(17,26,56,0.45)]">
+        <div className="group relative mx-auto w-full max-w-[580px] overflow-hidden rounded-xl border border-white/10 bg-white/5 shadow-[0_35px_60px_-25px_rgba(5,8,22,0.35)] backdrop-blur md:-mr-24 md:w-[135%] md:max-w-none md:rounded-xl md:shadow-[0_55px_90px_-35px_rgba(5,8,22,0.45)]">
           <picture>
             <source
               type="image/webp"
@@ -97,7 +95,7 @@ export default function Hero() {
             className="absolute inset-0 flex items-center justify-center bg-slate-950/0 transition duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neon group-hover:bg-slate-950/25"
             aria-label="Play demo"
           >
-            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-950/65 backdrop-blur-lg text-white opacity-0 shadow-[0_22px_44px_-22px_rgba(5,10,26,0.85)] transition duration-300 group-hover:scale-105 group-hover:bg-slate-950/80 group-hover:opacity-100 md:h-20 md:w-20">
+            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-950/65 backdrop-blur-lg text-white opacity-0 shadow-[0_22px_44px_-22px_rgba(5,8,22,0.85)] transition duration-300 group-hover:scale-105 group-hover:bg-slate-950/80 group-hover:opacity-100 md:h-20 md:w-20">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="ml-1 h-10 w-10 opacity-90">
                 <path d="M8.25 5.75v12.5a.75.75 0 0 0 1.142.642l9-6.25a.75.75 0 0 0 0-1.284l-9-6.25A.75.75 0 0 0 8.25 5.75Z" />
               </svg>
@@ -109,19 +107,19 @@ export default function Hero() {
         <dl className="mt-8 grid grid-cols-3 gap-6 text-center">
           <div className="flex flex-col items-center text-center">
             <dd className="mt-2 text-white">
-              <span className="block text-2xl font-extrabold text-[#58D7FF]">Parallel</span>
+              <span className="block text-2xl font-extrabold text-neon">Parallel</span>
               <span className="mt-1 block text-sm font-semibold uppercase tracking-wide">By default</span>
             </dd>
           </div>
           <div className="flex flex-col items-center text-center">
             <dd className="mt-2 text-white">
-              <span className="block text-2xl font-extrabold text-[#58D7FF]">CI outputs</span>
+              <span className="block text-2xl font-extrabold text-neon">CI outputs</span>
               <span className="mt-1 block text-sm font-semibold uppercase tracking-wide">JUnit/JSON</span>
             </dd>
           </div>
           <div className="flex flex-col items-center text-center">
             <dd className="mt-2 text-white">
-              <span className="block text-2xl font-extrabold text-[#58D7FF]">Local-first</span>
+              <span className="block text-2xl font-extrabold text-neon">Local-first</span>
               <span className="mt-1 block text-sm font-semibold uppercase tracking-wide">No cloud</span>
             </dd>
           </div>
@@ -138,7 +136,7 @@ export default function Hero() {
           onClick={() => setDemoOpen(false)}
         >
           <div className="flex h-full w-full items-center justify-center px-4" onClick={e => e.stopPropagation()}>
-            <div className="relative w-full max-w-4xl overflow-hidden rounded-2xl border border-white/10 bg-slate-950/95 shadow-[0_40px_80px_-30px_rgba(8,12,32,0.85)]">
+            <div className="relative w-full max-w-4xl overflow-hidden rounded-2xl border border-white/10 bg-slate-950/95 shadow-[0_40px_80px_-30px_rgba(5,8,22,0.85)]">
               <button
                 type="button"
                 onClick={() => setDemoOpen(false)}

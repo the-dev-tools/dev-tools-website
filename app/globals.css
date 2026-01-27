@@ -20,17 +20,95 @@
 /* Base styles */
 @layer base {
   :root {
+    /* Brand colors */
     --color-neon: #4de1ff;
+    --color-neon-rgb: 77, 225, 255;
+
+    /* Gradient accent colors (RGB values for rgba() usage) */
+    --color-cyan-rgb: 88, 215, 255;       /* #58d7ff - primary glow */
+    --color-cyan-mid-rgb: 59, 192, 232;   /* mid-tone fade */
+    --color-purple-rgb: 143, 125, 250;    /* accent purple */
+
+    /* Dark backgrounds (RGB values) */
+    --color-dark-rgb: 5, 8, 22;           /* primary dark for vignettes */
+    --color-dark-fade-rgb: 9, 13, 30;     /* gradient fade endpoint */
+
+    /* System background tuning (global) */
+    --system-radial-opacity: 0.28; /* desktop default */
+    --system-grid-opacity: 0.08;   /* desktop default */
+    --system-vignette-top: 0.26;   /* navbar mask strength */
   }
 
   body {
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    position: relative; /* anchor pseudo overlays */
+    z-index: 0;
   }
 
   code, pre {
     font-family: 'JetBrains Mono', ui-monospace, monospace;
+  }
+
+  /* Ensure page content paints above the fixed overlays */
+  body > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Global system UI background overlays (CSS-only) */
+  body::before,
+  body::after {
+    content: '';
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+  }
+
+  /* Allow opt-out on specific pages by adding class to <body> */
+  body.system-bg-off::before,
+  body.system-bg-off::after {
+    display: none;
+  }
+
+  /* Radial light (right) + subtle grid (combined) */
+  body::before {
+    z-index: 0; /* below page content */
+    background-image:
+      /* Radial light fields on the right */
+      radial-gradient(120% 85% at 75% 50%, rgba(var(--color-cyan-rgb), 0.30) 0%, rgba(var(--color-cyan-rgb), 0.18) 24%, rgba(var(--color-cyan-mid-rgb), 0.10) 40%, rgba(var(--color-dark-fade-rgb), 0) 62%),
+      radial-gradient(85% 60% at 82% 56%, rgba(var(--color-purple-rgb), 0.16) 0%, rgba(var(--color-purple-rgb), 0.10) 28%, rgba(var(--color-dark-fade-rgb), 0) 60%),
+      /* Subtle grid (screen-space) */
+      repeating-linear-gradient(0deg, rgba(255, 255, 255, var(--system-grid-opacity)) 0 1px, transparent 1px 16px),
+      repeating-linear-gradient(90deg, rgba(255, 255, 255, calc(var(--system-grid-opacity) * 0.9)) 0 1px, transparent 1px 16px);
+    background-blend-mode: normal, normal, soft-light, soft-light;
+    opacity: var(--system-radial-opacity);
+  }
+
+  /* Vignette edges + top fade to keep navbar clean */
+  body::after {
+    z-index: 0;
+    background-image:
+      radial-gradient(120% 110% at 50% 56%, rgba(var(--color-dark-rgb), 0.85) 62%, rgba(var(--color-dark-rgb), 0.55) 78%, rgba(var(--color-dark-rgb), 0) 100%),
+      linear-gradient(to bottom, rgba(var(--color-dark-rgb), var(--system-vignette-top)) 0%, rgba(var(--color-dark-rgb), 0.12) 22%, rgba(var(--color-dark-rgb), 0) 38%);
+    background-blend-mode: normal;
+  }
+
+  @media (max-width: 640px) {
+    :root {
+      --system-radial-opacity: 0.22;
+      --system-grid-opacity: 0.06;
+      --system-vignette-top: 0.30;
+    }
+    body::before {
+      background-image:
+        radial-gradient(130% 100% at 64% 52%, rgba(var(--color-cyan-rgb), 0.26) 0%, rgba(var(--color-cyan-rgb), 0.16) 24%, rgba(var(--color-cyan-mid-rgb), 0.10) 40%, rgba(var(--color-dark-fade-rgb), 0) 62%),
+        radial-gradient(90% 70% at 72% 58%, rgba(var(--color-purple-rgb), 0.14) 0%, rgba(var(--color-purple-rgb), 0.08) 30%, rgba(var(--color-dark-fade-rgb), 0) 60%),
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, var(--system-grid-opacity)) 0 1px, transparent 1px 18px),
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, calc(var(--system-grid-opacity) * 0.9)) 0 1px, transparent 1px 18px);
+      opacity: var(--system-radial-opacity);
+    }
   }
 }
 
