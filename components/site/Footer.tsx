@@ -109,6 +109,17 @@ export default function Footer() {
                   Contact
                 </Link>
               </li>
+              <li>
+                <Link href="/why-we-built-this" className="transition hover:text-neon">
+                  Why we built this
+                </Link>
+              </li>
+              <li>
+                <Link href="/story" className="inline-flex items-center gap-1.5 transition hover:text-neon">
+                  <span className="flex h-3.5 w-3.5 items-center justify-center rounded bg-orange-500 text-[8px] font-bold text-white">Y</span>
+                  Our Story
+                </Link>
+              </li>
             </ul>
           </div>
 

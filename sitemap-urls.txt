@@ -1,4 +1,5 @@
 https://dev.tools/
+https://dev.tools/why-we-built-this/
 https://dev.tools/templates/
 https://dev.tools/templates/oauth-client-credentials/
 https://dev.tools/templates/login-create-fetch-delete/
@@ -40,6 +41,8 @@ https://dev.tools/docs/how-to/working-with-flows/
 https://dev.tools/docs/cookbook/examples-and-best-practices/
 https://dev.tools/docs/contributing/writing-docs/
 https://dev.tools/docs/concepts/determinism-claims/
+https://dev.tools/blog/api-testing-in-github-actions-secrets-auth-retries-rate-limits/
 https://dev.tools/blog/github-flow-explained-for-api-testing-teams/
 https://dev.tools/blog/har-to-yaml-generate-api-regression-tests-for-ci-github-actions-example/
 https://dev.tools/blog/introducing-devtools/
+https://dev.tools/blog/yaml-api-test-file-structure-conventions-for-readable-git-diffs/

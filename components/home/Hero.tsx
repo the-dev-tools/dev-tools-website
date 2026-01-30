@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import DownloadButton from '../ui/DownloadButton'
 import Link from 'next/link'
+import AnimatedGrid from './AnimatedGrid'
 
 export default function Hero() {
   const [demoOpen, setDemoOpen] = useState(false)
@@ -22,12 +23,17 @@ export default function Hero() {
 
   return (
     <section className="relative mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 pb-24 pt-14 sm:px-8 md:flex-row md:items-center">
+      <AnimatedGrid />
       {/* Left: Text content */}
       <div className="relative flex-1">
-        <div className="mb-6 flex justify-center md:justify-start">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs uppercase tracking-wide text-slate-200 shadow-[0_10px_40px_rgba(77,225,255,0.15)]">
-            From real traffic to CI-ready API workflows.
-          </span>
+        <div className="mb-4 flex justify-center md:justify-start">
+          <Link
+            href="/story"
+            className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-3 py-1.5 text-sm font-medium text-neutral-300 transition hover:border-white/30 hover:bg-white/10"
+          >
+            <span className="flex h-4 w-4 items-center justify-center rounded bg-orange-500 text-[10px] font-bold text-white">Y</span>
+            From a YC alum • previously exited
+          </Link>
         </div>
 
         <h1 className="text-center text-4xl font-extrabold leading-tight text-white sm:text-5xl md:text-left md:text-6xl">
@@ -56,13 +62,6 @@ export default function Hero() {
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-neon/60 bg-transparent px-6 py-3 text-base font-semibold text-neon transition hover:bg-neon/10 hover:text-white"
           >
             Install CLI
-          </Link>
-
-          <Link
-            href="/templates"
-            className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-base font-semibold text-slate-300 transition hover:text-white"
-          >
-            See examples
           </Link>
         </div>
       </div>

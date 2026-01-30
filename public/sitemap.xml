@@ -7,6 +7,12 @@
     <lastmod>2026-01-22</lastmod>
   </url>
   <url>
+    <loc>https://dev.tools/why-we-built-this/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-01-29</lastmod>
+  </url>
+  <url>
     <loc>https://dev.tools/templates/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -253,6 +259,12 @@
     <lastmod>2026-01-22</lastmod>
   </url>
   <url>
+    <loc>https://dev.tools/blog/api-testing-in-github-actions-secrets-auth-retries-rate-limits/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <lastmod>2026-01-27</lastmod>
+  </url>
+  <url>
     <loc>https://dev.tools/blog/github-flow-explained-for-api-testing-teams/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -269,5 +281,11 @@
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <lastmod>2026-01-22</lastmod>
+  </url>
+  <url>
+    <loc>https://dev.tools/blog/yaml-api-test-file-structure-conventions-for-readable-git-diffs/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <lastmod>2026-01-26</lastmod>
   </url>
 </urlset>
