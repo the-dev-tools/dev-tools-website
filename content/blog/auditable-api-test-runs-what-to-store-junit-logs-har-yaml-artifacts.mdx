@@ -1,0 +1,344 @@
+---
+title: "Auditable API Test Runs: What to Store (JUnit, Logs, HAR, YAML, Artifacts)"
+date: "2026-02-01"
+slug: "auditable-api-test-runs-what-to-store-junit-logs-har-yaml-artifacts"
+id: "66688eb7-6f2e-4a00-894e-77a00dd5d1dd"
+image:
+  url: "https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/66688eb7-6f2e-4a00-894e-77a00dd5d1dd/main-image.webp"
+  alt: "Auditable API Test Runs: What to Store (JUnit, Logs, HAR, YAML, Artifacts)"
+author:
+  name: "DevTools Team"
+  avatar: "/logo.svg"
+tags: ["ci","github-actions","api-testing","yaml","workflow","pull-requests"]
+category: "CI/CD"
+summary: "Auditable API test runs: what to store in Git vs CI artifacts (YAML, JUnit, logs, HAR). Build reproducible, reviewable evidence in pipelines."
+cta:
+  primary:
+    heading: "Make CI API runs auditable with artifacts"
+    body: "Store YAML flows in Git, then upload JUnit, logs, and a run manifest as CI artifacts. See the DevTools CI integration patterns."
+    buttonText: "Set up CI integrations"
+    url: "https://dev.tools/docs/how-to/ci-integrations/"
+    secondaryText: "GitHub Actions template"
+    secondaryUrl: "https://dev.tools/templates/github-actions/"
+  secondary:
+    heading: "Version YAML flows and variables in Git"
+    body: "Keep test definitions diffable and reproducible. Use environments and variables to separate config from secrets."
+    buttonText: "Manage envs & variables"
+    url: "https://dev.tools/docs/how-to/environments-and-variables/"
+    secondaryText: "Work with flows"
+    secondaryUrl: "https://dev.tools/docs/how-to/working-with-flows/"
+  badge:
+    text: "Audit-ready CI"
+    variant: "neutral"
+---
+
+Auditability in API testing is not “we have a green check in CI.” It is the ability to answer, weeks later, **what ran, against what, with which inputs, and what exactly happened**, without relying on a proprietary UI or a teammate’s laptop.
+
+For experienced teams, the bottleneck is rarely writing the test. It is building a run record that is:
+
+- Reviewable in pull requests
+- Reproducible locally
+- Safe to share (no secrets)
+- Useful for debugging (not just pass/fail)
+
+This is where Git-versioned YAML flows and a disciplined artifact strategy beat UI-locked collections and opaque cloud histories.
+
+## What “auditable” means in practice
+
+An auditable run is one you can reconstruct from durable evidence:
+
+- **Test definition**: the exact API workflow and assertions that were executed
+- **Provenance**: commit SHA, runner version, workflow definition, environment identity
+- **Execution output**: machine-readable results (JUnit), plus enough logs/trace to explain failures
+- **Inputs**: parameters, fixtures, and configuration (without leaking secrets)
+
+If any of these are missing, you can still “test,” but you cannot reliably investigate regressions, prove coverage, or satisfy compliance-style questions.
+
+## Store in Git: the test definition (YAML), not the run output
+
+Treat API tests like production code. Your repo should contain the things you expect to review and diff.
+
+### Commit these
+
+**1) YAML flows (the source of truth)**
+
+Native YAML is the key difference versus Postman/Newman (JSON collection + UI semantics) and Bruno (its own `.bru` DSL). YAML flows are:
+
+- Diffable in PRs
+- Reviewable without a tool UI
+- Portable across CI systems
+
+**2) Deterministic fixtures**
+
+Examples: request bodies, small JSON files, expected schema snapshots, stable test files used for upload/download.
+
+**3) Environment templates (safe defaults)**
+
+Commit non-secret templates like `env/staging.example.yml` or `.env.example`. Do not commit real tokens.
+
+**4) “How to run” docs**
+
+A short `README` next to flows beats tribal knowledge, and it is also part of auditability.
+
+Here is a repo layout that tends to hold up under PR review and long-lived maintenance:
+
+```text
+api-tests/
+  flows/
+    smoke/
+    regression/
+  fixtures/
+  env/
+    staging.example.yml
+    prod.example.yml
+  scripts/
+  README.md
+```
+
+### Do not commit these (by default)
+
+- **JUnit XML** and runner output (belongs to a specific run)
+- **Raw HAR files** from real sessions (usually contain secrets and private data)
+- **Full request/response dumps** unless you have a redaction policy and a strong reason
+
+If it varies run-to-run, it is generally an artifact, not source.
+
+## Store per run: the minimum viable audit packet
+
+When a CI run finishes, you want a small, consistent bundle that lets you answer:
+
+- Which tests ran?
+- Which ones failed?
+- Where is the failure (step name, request, assertion)?
+- Can I reproduce it with the same test definition?
+
+A good default “audit packet” is:
+
+### 1) JUnit XML (for timeline and PR checks)
+
+**Why store it:** JUnit is the lingua franca of CI. GitHub, GitLab, and most test dashboards can ingest it.
+
+**What it provides:**
+
+- Suite/test naming
+- Pass/fail counts
+- Failure messages
+- Duration
+
+**What it does not provide:** request/response context unless your runner includes it in failure output.
+
+Practical advice:
+
+- Name test cases using **stable identifiers** (step IDs, flow names). This makes diffs in historical runs meaningful.
+- Keep failure messages short but specific (assertion + relevant field).
+
+### 2) Runner logs (human-readable, redactable)
+
+Logs are still the fastest way to understand “what happened,” especially with request chaining.
+
+Log output should include:
+
+- Flow name and step ID
+- Target base URL / environment label
+- HTTP method + path (avoid full URLs if they embed secrets)
+- Assertion failures with expected vs actual
+
+Avoid logging full headers and bodies by default. If you must, gate it behind an explicit debug flag and redact.
+
+### 3) A run manifest (provenance)
+
+This is the piece many teams miss. Add a small JSON or YAML file that pins “what ran.” Example fields:
+
+```yaml
+run:
+  git_sha: "${GITHUB_SHA}"
+  workflow: "api-regression"
+  runner: "devtools-cli"
+  runner_version: "<fill from CLI>"
+  environment: "staging"
+  started_at: "<timestamp>"
+  concurrency: 8
+  seed: 12345
+```
+
+Even if you do not have all fields, **git SHA + runner version + environment label** goes a long way.
+
+### 4) Optional: structured JSON results
+
+If your runner outputs JSON alongside JUnit, store it. JSON is easier for:
+
+- Trend analysis
+- Flake detection
+- Custom summarizers
+
+JUnit remains the CI integration format, JSON becomes the engineering format.
+
+## HAR files: great for capture, risky for storage
+
+HAR is excellent as an input during test creation because it reflects real browser traffic. It is also **high-risk as an artifact** because it often contains:
+
+- Authorization headers and cookies
+- Query parameters with tokens
+- Request/response bodies with PII
+
+A practical policy is:
+
+- **Do not upload raw HAR as a CI artifact**.
+- If you must store one for incident reproduction, store a **redacted HAR** with short retention, access controls, and an explicit reason.
+
+If you need a workflow for safe capture and conversion, see:
+
+- [Generate a HAR file in Chrome (Safely)](https://dev.tools/guides/generate-har-chrome/)
+- [How to Redact HAR Files Safely](https://dev.tools/blog/how-to-redact-har-files-safely-keep-tests-shareable-remove-secrets/)
+
+## What to store, how long to store it: a pragmatic matrix
+
+Retention is part of auditability. If you keep everything forever, you will leak something eventually. If you keep nothing, you cannot debug.
+
+Use this as a starting point and adjust to your risk profile:
+
+| Artifact | Purpose | Suggested retention | Default stance |
+|----------|---------|---------------------|----------------|
+| YAML flows (Git) | Test definition, review, blame | Forever | Commit |
+| Fixtures (Git) | Deterministic inputs | Forever | Commit |
+| JUnit XML (artifact) | CI checks, historical proof of run | 14 to 30 days | Store |
+| Runner logs (artifact) | Debugging failures | 7 to 14 days | Store |
+| Run manifest (artifact) | Provenance and reproducibility | 30 to 90 days | Store |
+| JSON results (artifact) | Analytics and debugging | 14 to 30 days | Store if available |
+| Request/response trace (artifact) | Deep debugging | 1 to 7 days | Store only if redacted |
+| Raw HAR (artifact) | Incident reproduction | 0 days | Avoid |
+| Redacted HAR (artifact) | Reproduce complex flows | 1 to 7 days | Only when needed |
+
+## Make request chaining auditable (not mysterious)
+
+Chained workflows (auth then resource creation then retrieval) are where audit trails often collapse, especially in Postman/Newman setups where logic lives in scripts and the “why” is trapped in a UI.
+
+Two practical rules help:
+
+### Use stable step IDs and name captured variables
+
+Your outputs (JUnit and logs) should reference stable identifiers.
+
+A representative YAML excerpt for a chained flow looks like this:
+
+```yaml
+# Illustrative structure (names vary by runner)
+steps:
+  - id: auth_token
+    request:
+      method: POST
+      url: "${BASE_URL}/oauth/token"
+    extract:
+      access_token: "$.access_token"
+    assert:
+      status: 200
+
+  - id: get_profile
+    request:
+      method: GET
+      url: "${BASE_URL}/me"
+      headers:
+        Authorization: "Bearer ${access_token}"
+    assert:
+      status: 200
+```
+
+The audit advantage is that a failure can be described as “`get_profile` returned 401” rather than “request #17 failed.”
+
+### Record the chain boundary in the logs
+
+For failures, you want to know whether the chain broke because:
+
+- Auth token extraction failed
+- Token was extracted but expired
+- A correlation ID changed
+- A dependent resource was not created
+
+This is why storing **runner logs** (even short ones) is often more valuable than storing raw HTTP dumps.
+
+## GitHub Actions artifacts: keep them explicit and predictable
+
+GitHub Actions already provides durable logs, but artifact uploads are what make a run portable and reviewable outside the Actions UI.
+
+Two tips that help in real repos:
+
+- Upload artifacts under a predictable path (`reports/`, `artifacts/`) so local runs match CI.
+- Include the commit SHA in artifact names to avoid ambiguity.
+
+Example snippet (trimmed to just the storage pieces):
+
+```yaml
+# .github/workflows/api-tests.yml
+- name: Run API flows
+  run: |
+    mkdir -p reports
+    # run your CLI here, writing JUnit to reports/junit.xml
+
+- name: Upload JUnit and logs
+  uses: actions/upload-artifact@v4
+  with:
+    name: api-test-artifacts-${{ github.sha }}
+    path: |
+      reports/
+      artifacts/run-manifest.yml
+    retention-days: 30
+```
+
+For the authoritative reference on retention and artifact behavior, link your internal docs to [GitHub documentation on workflow artifacts](https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/storing-and-sharing-data-from-a-workflow).
+
+If you want a full end-to-end workflow (smoke + regression, caching, PR reporting), use the guide and keep this article as your artifact policy:
+
+- [API regression testing in GitHub Actions](https://dev.tools/guides/api-regression-testing-github-actions/)
+
+## A recommended “artifact bundle” layout
+
+When someone downloads artifacts, they should immediately understand what is inside. A simple convention:
+
+```text
+artifacts/
+  run-manifest.yml
+  runner.log
+reports/
+  junit.xml
+  results.json
+```
+
+If you add debug traces (only with redaction), make them clearly opt-in:
+
+```text
+debug/
+  http-trace.redacted.txt
+```
+
+This separation makes it easier to tighten policies later (for example: always keep `reports/`, sometimes keep `debug/`).
+
+## Where DevTools (YAML-first) changes the audit story vs Postman/Newman and Bruno
+
+Auditability is mostly about **what is durable and reviewable**.
+
+- With **Postman**, the canonical artifact is often the collection in a workspace plus history in a UI. Newman runs can emit JUnit, but the definition is still a Postman collection JSON that tends to drift through exports, UI edits, and script-based assertions.
+- With **Bruno**, tests are local-first, but the `.bru` format is still a tool-specific DSL. It can work well, but portability and cross-team review depend on everyone adopting that DSL.
+- With **DevTools**, the durable artifact is **native YAML** that you can diff in PRs, store in Git, and run locally or in CI. That makes it easier to treat “test definition” and “test run evidence” as separate layers.
+
+In other words: you do not need your CI artifacts to explain what ran, because Git already does. Your artifacts can focus on proving outcomes (JUnit) and enabling debugging (logs, manifest).
+
+## Frequently Asked Questions
+
+**Should we commit JUnit XML to Git?** No. JUnit is run output, not source. Commit the YAML flows and fixtures, upload JUnit as a CI artifact.
+
+**Is it ever OK to store HAR files?** Only with a redaction policy and short retention. Default to not storing raw HAR because it frequently contains secrets and sensitive data.
+
+**What is the minimum set of artifacts for an auditable run?** JUnit XML, runner logs, and a small run manifest (commit SHA, runner version, environment label). Everything else is optional.
+
+**How do we keep artifacts useful without leaking data?** Keep logs high-signal (step IDs, status codes, assertion diffs) and make deep HTTP traces opt-in with automated redaction.
+
+**How does YAML help auditability compared to Postman/Newman?** YAML in Git gives you reviewable, diffable test definitions independent of a UI. CI artifacts can then focus on evidence of execution rather than re-explaining the test.
+
+## Put auditability on rails with Git-versioned YAML flows
+
+If your current setup relies on UI history or ad hoc CI logs, start by making the test definition durable: store API workflows as YAML in Git, then standardize your run artifacts (JUnit, logs, a manifest).
+
+DevTools is built for that workflow: convert real browser traffic into reviewable YAML flows, run them locally or in CI, and keep your evidence portable.
+
+- Explore DevTools at [dev.tools](https://dev.tools)
+- For a practical CI implementation, see [API regression testing in GitHub Actions](https://dev.tools/guides/api-regression-testing-github-actions/)
