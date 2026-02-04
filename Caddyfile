@@ -2,6 +2,10 @@
   root * /srv/http
   file_server
 
+  # Redirect www to non-www
+  @www host www.dev.tools
+  redir @www https://dev.tools{uri} 301
+
   # Cache static assets for 1 year
   @static_assets {
     path /assets/* /docs/assets/* /logo.svg
