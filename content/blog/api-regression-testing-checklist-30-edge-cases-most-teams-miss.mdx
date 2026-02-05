@@ -1,0 +1,330 @@
+---
+title: "API Regression Testing Checklist: 30 Edge Cases Most Teams Miss"
+date: "2026-02-05"
+slug: "api-regression-testing-checklist-30-edge-cases-most-teams-miss"
+id: "36c45bd7-30bf-426e-8f1b-f7ad5b3e005c"
+image:
+  url: "https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/36c45bd7-30bf-426e-8f1b-f7ad5b3e005c/main-image.webp"
+  alt: "API Regression Testing Checklist: 30 Edge Cases Most Teams Miss"
+author:
+  name: "DevTools Team"
+  avatar: "/logo.svg"
+tags: ["api-testing","regression-testing","ci","github-actions","yaml","pull-requests"]
+category: "CI/CD"
+summary: "API regression testing checklist: 30 edge cases for auth, rate limits, pagination, idempotency, and partial failures, plus YAML snippets."
+cta:
+  primary:
+    heading: "Run YAML regression checks in CI"
+    body: "Wire deterministic YAML edge-case flows into your pipeline, run on PRs, and publish artifacts for review."
+    buttonText: "Set up CI integrations"
+    url: "https://dev.tools/docs/how-to/ci-integrations/"
+    secondaryText: "GitHub Actions template"
+    secondaryUrl: "https://dev.tools/templates/github-actions/"
+  secondary:
+    heading: "Lock down env vars and secrets"
+    body: "Keep tokens, base URLs, and fixtures deterministic across local runs and CI with explicit environments and variables."
+    buttonText: "Configure variables"
+    url: "https://dev.tools/docs/how-to/environments-and-variables/"
+    secondaryText: "Work with flows"
+    secondaryUrl: "https://dev.tools/docs/how-to/working-with-flows/"
+  badge:
+    text: "Regression checklist"
+    variant: "neutral"
+---
+
+Regression failures almost never come from the “happy path” you recorded last week. They come from **contract edge cases** that only show up under load, partial outages, retries, or when old clients hit a newly deployed backend.
+
+This checklist is aimed at teams doing **YAML-based API regression testing** in Git (reviewed in PRs, executed locally and in CI) where determinism matters more than UI clicks. If you are migrating from Postman/Newman or evaluating Bruno, the main advantage of keeping these cases in native YAML is simple: **the diff is the review**. No opaque collection JSON, no UI-locked state, no “someone changed a script” mystery.
+
+If you want a reference baseline for assertions and Git-friendly structure, see:
+
+- [API Assertions in YAML: Status, JSON Paths, Headers, Timing Thresholds](https://dev.tools/blog/api-assertions-in-yaml-status-json-paths-headers-timing-thresholds/)
+- [YAML API Test File Structure: Conventions for Readable Git Diffs](https://dev.tools/blog/yaml-api-test-file-structure-conventions-for-readable-git-diffs/)
+
+![A simple diagram of a YAML API regression flow with four boxes connected by arrows: “Auth (token)”, “Request (with variables)”, “Assertions (status, headers, JSONPath)”, and “Artifacts (JUnit, logs)”, emphasizing Git review and CI execution.](https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/36c45bd7-30bf-426e-8f1b-f7ad5b3e005c/image-0.webp)
+
+## How to use this checklist (without creating flaky tests)
+
+Treat each edge case below as a **small, isolated flow**:
+
+- Prefer deterministic fixtures (seeded users, stable product IDs, known quotas) over random data.
+- Make request chaining explicit (capture IDs and tokens, then assert on the next step).
+- Avoid “assert full JSON equals” for large responses, assert **shape + invariants** instead.
+- In CI, run edge-case flows with **controlled concurrency**, especially for rate-limit and idempotency checks.
+
+For CI setup patterns, refer to the GitHub Actions guide (this article focuses on what to test, not pipeline wiring):
+
+- [API regression testing in GitHub Actions](https://dev.tools/guides/api-regression-testing-github-actions/)
+
+## The 30 edge cases most teams miss (categorized)
+
+Each row is framed as: **what usually breaks** and **what to assert** in a JSON API regression test.
+
+### Auth (5)
+
+These are the failures that only show up after deploys, key rotations, or account lifecycle changes.
+
+| # | Edge case | What usually breaks | What to assert (contract-level) |
+|---:|----------|---------------------|---------------------------------|
+| 1 | Expired access token | API returns inconsistent status codes (200 with error body, 500), or refresh flow silently fails | Protected endpoint returns 401 (or 403, if that is your policy) with a stable error code; fresh token succeeds |
+| 2 | Revoked user/session | “Deleted user” still accesses cached auth, or returns 404 and hides auth issue | 401/403 with explicit “revoked/disabled” semantics in error payload |
+| 3 | Insufficient scope | API incorrectly returns 404, or over-permits | 403 with a machine-readable permission/scope indicator |
+| 4 | Token audience/issuer mismatch | Acceptance of tokens minted for a different service/environment | 401 with explicit auth error code (not a generic 500) |
+| 5 | Clock skew around `exp`/`nbf` | Random failures in CI runners with slightly skewed clocks | Either documented skew tolerance works, or error response is deterministic and parseable |
+
+#### Copy-paste YAML snippet: expired token, then re-auth and retry
+
+This pattern avoids conditional logic by using a known expired token fixture (in CI, provide it via secret/env var).
+
+```yaml
+# flows/auth_expired_token.yaml
+# Purpose: prove the API rejects expired tokens deterministically, and that a fresh login restores access.
+
+env:
+  BASE_URL: ${BASE_URL}
+  EXPIRED_ACCESS_TOKEN: ${EXPIRED_ACCESS_TOKEN}
+  USERNAME: ${USERNAME}
+  PASSWORD: ${PASSWORD}
+
+steps:
+  - id: reject_expired
+    request:
+      method: GET
+      url: "${BASE_URL}/v1/me"
+      headers:
+        Authorization: "Bearer ${EXPIRED_ACCESS_TOKEN}"
+        Accept: "application/json"
+    assert:
+      status: 401
+
+  - id: login
+    request:
+      method: POST
+      url: "${BASE_URL}/v1/login"
+      headers:
+        Content-Type: "application/json"
+        Accept: "application/json"
+      body:
+        username: "${USERNAME}"
+        password: "${PASSWORD}"
+    extract:
+      access_token: "$.access_token"
+    assert:
+      status: 200
+      jsonpath:
+        - path: "$.access_token"
+          exists: true
+
+  - id: accept_fresh
+    request:
+      method: GET
+      url: "${BASE_URL}/v1/me"
+      headers:
+        Authorization: "Bearer {{ access_token }}"
+        Accept: "application/json"
+    assert:
+      status: 200
+      jsonpath:
+        - path: "$.id"
+          exists: true
+```
+
+Notes for Git review:
+
+- Keep the expired token fixture separate from “normal auth” flows so you do not accidentally depend on token timing.
+- Make your error contract assertions explicit (status, content-type, and a minimal error shape).
+
+### Rate limiting (4)
+
+The edge cases here are about honoring server guidance and keeping CI deterministic under parallelism.
+
+Reference for semantics: [RFC 6585 (429 Too Many Requests)](https://www.rfc-editor.org/rfc/rfc6585) and [RFC 9110 (Retry-After header)](https://www.rfc-editor.org/rfc/rfc9110).
+
+| # | Edge case | What usually breaks | What to assert (contract-level) |
+|---:|----------|---------------------|---------------------------------|
+| 6 | 429 includes `Retry-After` | Clients retry immediately and amplify outages | On 429, `Retry-After` exists and is a valid delta-seconds or HTTP date |
+| 7 | Rate-limit headers consistent | Conflicting `limit/remaining/reset` values across hops | Headers, if present, are parseable and monotonic within a single response |
+| 8 | Burst limit under concurrency | Serial tests pass, parallel CI fails unpredictably | With N parallel requests, you deterministically see some 429s and no 5xx |
+| 9 | Per-tenant isolation | One tenant’s test suite burns another’s quota | Separate API keys do not affect each other’s observed rate headers |
+
+Practical tip: run these as a dedicated CI job with pinned concurrency so the test itself does not become the source of noise. DevTools’ Go runner speed makes it easy to generate bursts, but you still want **controlled** bursts.
+
+If you need deeper CI patterns for retries and rate limits, see [API Testing in GitHub Actions: Secrets, Auth, Retries, Rate Limits](https://dev.tools/blog/api-testing-in-github-actions-secrets-auth-retries-rate-limits/).
+
+### Pagination drift (4)
+
+If your pagination tests only validate “page 1 returns 20 items”, you are not testing drift. Drift happens when the dataset changes between requests.
+
+| # | Edge case | What usually breaks | What to assert (contract-level) |
+|---:|----------|---------------------|---------------------------------|
+| 10 | Inserts between pages | Duplicate items or skipped items across page boundaries | Cursor-based pagination does not repeat IDs when a new record is inserted |
+| 11 | Deletes between pages | Cursor becomes invalid, or server returns 500 | Documented behavior is stable (e.g., 400/410 with error code), not a generic 500 |
+| 12 | Unstable ordering ties | Randomly reordered results across identical queries | Sort is deterministic (e.g., `created_at, id`) and remains stable under ties |
+| 13 | Page size boundaries | Unbounded queries hurt performance, inconsistent errors | `limit` max enforced, `limit=0` and negative values handled deterministically |
+
+Request chaining tip: capture the first page’s IDs, then assert that the second page does not include them. This is an invariants-first approach that is stable in Git and stable in CI.
+
+### Null vs missing fields (4)
+
+Teams often regress here during refactors because “nullable vs optional” is under-specified and tests are too strict or too loose.
+
+Reference: [RFC 8259 (The JSON Data Interchange Syntax)](https://www.rfc-editor.org/rfc/rfc8259).
+
+| # | Edge case | What usually breaks | What to assert (contract-level) |
+|---:|----------|---------------------|---------------------------------|
+| 14 | `null` vs missing | Clients treat missing as “default” and null as “explicitly blank”, backend flips the meaning | Contract is explicit: field is either optional (may be missing) or nullable (may be null), and tests enforce it |
+| 15 | Empty array vs missing array | UI and downstream jobs mis-handle `[]` vs absent | For collection fields, your API uses one convention consistently |
+| 16 | `false` vs missing | Boolean fields become tri-state by accident | If tri-state is intended, document it and assert it; otherwise never omit booleans |
+| 17 | `0` vs missing | Counters and monetary fields regress into “missing means zero” ambiguity | Numeric fields either always present (including 0) or clearly optional with defaults |
+
+Where this bites in Git review: Postman/Newman tests often do full-body equality or implicit JS truthiness checks. In YAML, prefer explicit JSONPath assertions for presence and type so reviewers can see exactly what changed.
+
+### Backward compatibility (4)
+
+Backward compatibility is where over-specified tests become a liability. You want tests that catch real contract breaks, not tests that pin incidental fields.
+
+| # | Edge case | What usually breaks | What to assert (contract-level) |
+|---:|----------|---------------------|---------------------------------|
+| 18 | New enum value in response | Older clients crash on unexpected enum | Tests allow unknown enum values (or assert “enum is one of known + unknown”) depending on your policy |
+| 19 | Extra fields added | Strict decoders or strict tests fail | Tests assert required fields and ignore additional properties |
+| 20 | Error schema consistency across 4xx/5xx | 500 returns HTML, 4xx returns JSON, clients fail to parse | Non-2xx responses keep `application/json` and a stable error envelope |
+| 21 | Newly added request field becomes required | Old clients start failing post-deploy | Missing new field yields default behavior or a clear, versioned error, never a 500 |
+
+This is one place where YAML in Git shines versus UI-driven tools: reviewers can see you changed “assert full body” into “assert required fields + invariants”, which is a compatibility decision.
+
+### Idempotency (4)
+
+Idempotency is not just “use PUT”. It is “what happens when the network lies”, especially in CI and under retries.
+
+| # | Edge case | What usually breaks | What to assert (contract-level) |
+|---:|----------|---------------------|---------------------------------|
+| 22 | POST retry with `Idempotency-Key` after timeout | Duplicate resources created | Retrying the same request with same key returns the same resource (or same operation result) |
+| 23 | Same key, different body | Server incorrectly replays prior response or creates a new resource | Conflict response (409/422) with clear message that key is already used with different payload |
+| 24 | PUT repeated | ETags/versioning drift, server increments revision on no-op | Same PUT twice produces the same representation and stable ETag/version semantics |
+| 25 | PATCH repeated | Patch accidentally becomes “incremental” (non-idempotent) | Either PATCH is idempotent by design and tested as such, or it is explicitly documented as non-idempotent |
+
+#### Copy-paste YAML snippet: Idempotency-Key replay
+
+This is a regression test you can run against staging without heavy fixtures. It uses request chaining to assert that the server returns the same `id` on replay.
+
+```yaml
+# flows/idempotency_post_replay.yaml
+
+env:
+  BASE_URL: ${BASE_URL}
+  API_TOKEN: ${API_TOKEN}
+
+steps:
+  - id: create_once
+    request:
+      method: POST
+      url: "${BASE_URL}/v1/orders"
+      headers:
+        Authorization: "Bearer ${API_TOKEN}"
+        Content-Type: "application/json"
+        Accept: "application/json"
+        Idempotency-Key: "regression-{{ run_id }}"
+      body:
+        currency: "USD"
+        amount_cents: 1234
+    extract:
+      order_id: "$.id"
+    assert:
+      status: 201
+      jsonpath:
+        - path: "$.id"
+          exists: true
+
+  - id: replay_same_key
+    request:
+      method: POST
+      url: "${BASE_URL}/v1/orders"
+      headers:
+        Authorization: "Bearer ${API_TOKEN}"
+        Content-Type: "application/json"
+        Accept: "application/json"
+        Idempotency-Key: "regression-{{ run_id }}"
+      body:
+        currency: "USD"
+        amount_cents: 1234
+    assert:
+      status: 200
+      jsonpath:
+        - path: "$.id"
+          equals: "{{ order_id }}"
+```
+
+Git hygiene tip: keep the idempotency key generation deterministic per run (for example `run_id`), so parallel CI shards do not collide.
+
+### Partial failures (5)
+
+Partial failure behavior is where “status code only” testing becomes meaningless. You need to validate the error envelope and per-item results.
+
+Reference: [RFC 4918 (207 Multi-Status)](https://www.rfc-editor.org/rfc/rfc4918).
+
+| # | Edge case | What usually breaks | What to assert (contract-level) |
+|---:|----------|---------------------|---------------------------------|
+| 26 | 207 Multi-Status for batch endpoints | Client assumes 2xx means full success | 207 includes per-item status, and each item is correlated to input |
+| 27 | 200 with per-item errors array | “Success” hides failures, monitoring misses it | Response contains explicit `errors`/`failed` section with counts and identifiers |
+| 28 | 500 with JSON body | Infra/proxy injects HTML error pages | On 5xx, content-type remains JSON and includes request ID/correlation ID |
+| 29 | 502/504 with structured body | Gateways vary between empty body, HTML, and JSON | If structured errors are promised, they appear consistently, otherwise tests accept empty but never HTML |
+| 30 | Partial write on server error | 500 returned but side effects happened, leaving orphans | Either transactionality is enforced (no partial writes) or recovery is possible (operation ID to reconcile) |
+
+#### Copy-paste YAML snippet: 207 Multi-Status batch response
+
+This example asserts both the HTTP status and the per-item contract. Adjust JSONPaths to your payload shape.
+
+```yaml
+# flows/batch_partial_failure_207.yaml
+
+env:
+  BASE_URL: ${BASE_URL}
+  API_TOKEN: ${API_TOKEN}
+
+steps:
+  - id: batch
+    request:
+      method: POST
+      url: "${BASE_URL}/v1/widgets:batchGet"
+      headers:
+        Authorization: "Bearer ${API_TOKEN}"
+        Content-Type: "application/json"
+        Accept: "application/json"
+      body:
+        ids:
+          - "known-good-id"
+          - "known-missing-id"
+    assert:
+      status: 207
+      jsonpath:
+        - path: "$.results"
+          exists: true
+        - path: "$.results[0].status"
+          exists: true
+        - path: "$.results[1].status"
+          exists: true
+```
+
+## Why YAML-first matters for these edge cases (and where Postman/Newman/Bruno often struggle)
+
+These cases are not hard because they are conceptually advanced, they are hard because they require **discipline**:
+
+- **Deterministic diffs**: In Postman, you tend to accumulate “test scripts” and implicit collection state. Reviewers rarely catch subtle logic changes. With YAML in Git, a change from `status: 200` to `status: [200, 207]` is explicit.
+- **Request chaining is visible**: Captures (IDs, tokens, cursors) live next to the request that produced them, which makes drift bugs easier to diagnose in PRs.
+- **CI portability**: Newman runs Postman’s model in CI, but you still carry Postman’s collection JSON and scripting conventions. Bruno is local-first, but still uses a custom file format. Native YAML flows are easier to audit, template, and enforce via repo policies.
+
+If you are actively migrating, the most practical approach is: record traffic (HAR), generate a baseline flow, then add the edge-case flows above as small, reviewable YAML files. DevTools supports the HAR to YAML workflow directly (see [Generate a HAR file in Chrome (Safely)](https://dev.tools/guides/generate-har-chrome/) and [HAR to YAML: Generate API Regression Tests for CI](https://dev.tools/blog/har-to-yaml-generate-api-regression-tests-for-ci-github-actions-example/)).
+
+## The “PR gate” version of this checklist
+
+When someone changes an endpoint, require them to answer, in the PR description, which of these categories they validated:
+
+- Auth behavior (including failure modes)
+- Rate limit behavior under concurrency
+- Pagination stability under drift
+- Null vs missing contract
+- Backward compatibility for old clients
+- Idempotency under retries
+- Partial failure envelopes
+
+That is the difference between “we have tests” and “we have regression coverage”.
