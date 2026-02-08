@@ -31,6 +31,7 @@ const components = {
   tr: (props: any) => <tr className="border-b border-white/10" {...props} />,
   th: (props: any) => <th className="px-4 py-3 text-left font-semibold text-white border border-white/10" {...props} />,
   td: (props: any) => <td className="px-4 py-3 text-slate-300 border border-white/10" {...props} />,
+  img: (props: any) => <img className="max-w-full h-auto rounded-lg" {...props} />,
 }
 
 export async function generateStaticParams() {
@@ -65,7 +66,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
   return (
     <div className="mx-auto max-w-6xl px-4 py-16 sm:px-8">
       <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-12">
-        <article>
+        <article className="min-w-0">
           <Link
             href="/blog"
             className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-neon transition mb-8"
