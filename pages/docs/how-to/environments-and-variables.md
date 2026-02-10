@@ -454,11 +454,14 @@ env:
 DevTools supports several built-in variable functions:
 
 ```yaml
-{{ uuid() }}          # Generate UUID v4
-{{ uuid("v4") }}      # Generate UUID v4
-{{ uuid("v7") }}      # Generate UUID v7
-{{ now().unix() }}    # Current Unix timestamp
-{{ now() }}           # Current ISO 8601 datetime
+{{ uuid() }}              # Generate UUID v4
+{{ uuid("v4") }}          # Generate UUID v4
+{{ uuid("v7") }}          # Generate UUID v7
+{{ now() }}               # Current ISO 8601 datetime
+{{ now().Unix() }}        # Current Unix timestamp (seconds)
+{{ now().UnixMilli() }}   # Current Unix timestamp (milliseconds)
+{{ now().UnixMicro() }}   # Current Unix timestamp (microseconds)
+{{ now().UnixNano() }}    # Current Unix timestamp (nanoseconds)
 ```
 
 **Example:**
@@ -466,7 +469,7 @@ DevTools supports several built-in variable functions:
 ```yaml
 headers:
   X-Request-ID: '{{ uuid() }}'
-  X-Timestamp: '{{ now().unix() }}'
+  X-Timestamp: '{{ now().Unix() }}'
 
 body:
   requestId: '{{ uuid() }}'
