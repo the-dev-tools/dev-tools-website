@@ -505,7 +505,7 @@ The CLI automatically starts a Node.js worker when JavaScript nodes are detected
     method: PUT
     url: https://api.example.com/users/{{ProcessUsers.item.id}}
     body:
-      lastProcessed: '{{$timestamp}}'
+      lastProcessed: '{{ now().unix() }}' #timestamp
 ```
 
 ### Conditional Execution

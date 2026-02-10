@@ -250,7 +250,7 @@ Final URL: https://api.example.com/api/v1/users/42
 headers:
   Authorization: Bearer {{ACCESS_TOKEN}}
   X-API-Key: '{{API_KEY}}'
-  X-Request-ID: '{{$uuid}}'
+  X-Request-ID: '{{ uuid() }}' #uuid v4
 ```
 
 ### In Query Parameters
@@ -454,23 +454,23 @@ env:
 DevTools supports several built-in variable functions:
 
 ```yaml
-{{$uuid}}          # Generate UUID v4
-{{$timestamp}}     # Current Unix timestamp
-{{$now}}           # Current ISO 8601 datetime
-{{$random}}        # Random number 0-1000000
+{{ uuid() }}          # Generate UUID v4
+{{ uuid("v4") }}      # Generate UUID v4
+{{ uuid("v7") }}      # Generate UUID v7
+{{ now().unix() }}    # Current Unix timestamp
+{{ now() }}           # Current ISO 8601 datetime
 ```
 
 **Example:**
 
 ```yaml
 headers:
-  X-Request-ID: '{{$uuid}}'
-  X-Timestamp: '{{$timestamp}}'
+  X-Request-ID: '{{ uuid() }}'
+  X-Timestamp: '{{ now().unix() }}'
 
 body:
-  requestId: '{{$uuid}}'
-  createdAt: '{{$now}}'
-  nonce: '{{$random}}'
+  requestId: '{{ uuid() }}'
+  createdAt: '{{ now() }}' 
 ```
 
 ## Variable Mapping System

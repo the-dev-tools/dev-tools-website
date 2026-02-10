@@ -239,7 +239,7 @@ Process each user from a list:
     method: PUT
     url: https://api.example.com/users/{{ProcessUsers.item.id}}
     body:
-      lastProcessed: '{{$timestamp}}'
+      lastProcessed: '{{ now().unix() }}' #timestamp
 ```
 
 ![For‑each node config selecting array items](/docs/assets/flow-node-for-each-config.webp)
@@ -640,7 +640,7 @@ flows:
           method: PUT
           url: '{{BASE_URL}}/users/{{ProcessUsers.item.id}}'
           body:
-            lastSeen: '{{$now}}'
+            lastSeen: '{{ now() }}'
 ```
 
 ### Request Templates (DRY)
