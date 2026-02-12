@@ -1,0 +1,364 @@
+---
+title: "Chrome DevTools Network to YAML Flow: A Repeatable Pipeline"
+date: "2026-02-12"
+slug: "chrome-devtools-network-to-yaml-flow-a-repeatable-pipeline"
+id: "e5ae7d34-cc91-46a1-8938-56e9aff4c364"
+image:
+  url: "https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/e5ae7d34-cc91-46a1-8938-56e9aff4c364/main-image.webp"
+  alt: "Chrome DevTools Network to YAML Flow: A Repeatable Pipeline"
+author:
+  name: "DevTools Team"
+  avatar: "/logo.svg"
+tags: ["har","yaml","workflow","ci","github-actions","api-testing"]
+category: "CI/CD"
+summary: "Turn Chrome DevTools Network captures into a repeatable HAR→YAML flow pipeline for Git and CI, with request chaining, redaction, and stable assertions."
+cta:
+  primary:
+    heading: "Import a HAR and generate a YAML flow"
+    body: "Turn Chrome DevTools Network traffic into a reviewable, runnable YAML flow. Strip browser noise, chain requests, and commit the result to Git."
+    buttonText: "Import HAR"
+    url: "https://dev.tools/docs/how-to/import-har/"
+    secondaryText: "Build flows"
+    secondaryUrl: "https://dev.tools/flows/"
+  secondary:
+    heading: "Run flows in CI (GitHub Actions template)"
+    body: "Add a PR gate that runs your YAML flows on every change and uploads logs/JUnit artifacts."
+    buttonText: "Use GA template"
+    url: "https://dev.tools/templates/github-actions/"
+    secondaryText: "CI integrations"
+    secondaryUrl: "https://dev.tools/docs/how-to/ci-integrations/"
+  badge:
+    text: "HAR → YAML"
+    variant: "neutral"
+---
+
+Browser-driven API coverage is often the fastest way to get realistic regression tests, especially when you are dealing with auth, CSRF, multi-step workflows, and “hidden” headers your frontend adds automatically.
+
+The problem is that a raw Chrome DevTools Network capture (HAR) is not a test suite. It is noisy, it leaks secrets, it encodes incidental behavior (analytics, retries, cache effects), and it is painful to review in Git.
+
+What you want instead is a **repeatable pipeline**:
+
+- Capture the smallest Network slice that proves the workflow.
+- Convert it into a **human-readable YAML flow**.
+- Make dependencies explicit via request chaining.
+- Commit it, review it in PRs, run it locally and in CI.
+
+This article lays out that pipeline as an engineering workflow, not a one-off “recording session”.
+
+## The pipeline mindset: treat Network capture as a build artifact
+
+If your end goal is CI signal, the HAR is an intermediate artifact, like a compiler’s IR. Your durable asset is the YAML.
+
+A useful mental model is: **HAR in, deterministic YAML out**.
+
+| Stage | Input | Output | What gets committed to Git? |
+|------:|-------|--------|-----------------------------|
+| 1. Capture | Chrome DevTools Network | Focused HAR | No |
+| 2. Sanitize | HAR | Redacted HAR (optional) | Usually no |
+| 3. Convert | HAR | Initial YAML flow | Yes |
+| 4. Normalize | YAML flow | Deterministic YAML flow | Yes |
+| 5. Gate | YAML flow + env | CI run (JUnit/logs) | No (artifacts only) |
+
+DevTools fits naturally here because it converts real browser traffic into **native YAML flows** that are readable, diffable, and runnable locally or in CI.
+
+## Stage 1: Capture only what you can defend in a PR
+
+In Chrome DevTools, it is easy to record “everything”. For CI, record **one workflow**.
+
+Define your flow boundary up front:
+
+- Start condition: “unauthenticated user” or “fresh session with cookie X”.
+- End condition: a stable terminal API response you can assert on.
+- Allowed domains: your API and only the minimum required upstreams.
+
+Two practical capture rules that prevent most downstream pain:
+
+- **Keep the workflow short.** If you cannot describe it in one sentence, it is likely multiple flows.
+- **Prefer staging with seeded data.** Determinism starts with data control, not assertions.
+
+If you need a concrete, safe HAR capture procedure (including what to toggle in Chrome and what not to export), use the DevTools guide: [Generate a HAR file in Chrome (Safely)](https://dev.tools/guides/generate-har-chrome/).
+
+![A simple left-to-right pipeline diagram showing: Chrome DevTools Network capture exported as HAR, then a redaction step removing secrets, then conversion into a YAML flow file committed to Git, then a CI run producing JUnit report and logs as build artifacts.](https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/e5ae7d34-cc91-46a1-8938-56e9aff4c364/image-0.webp)
+
+## Stage 2: Sanitize aggressively (assume your HAR will leak)
+
+Experienced teams get burned here once and then never again.
+
+A HAR can contain:
+
+- Authorization headers (Bearer tokens)
+- Cookies (session identifiers)
+- CSRF tokens
+- PII in request or response bodies
+- Internal hostnames
+
+Your goal is to ensure that **the YAML flow is shareable**, and that any sensitive values become environment variables or are derived via chaining.
+
+A sane policy is:
+
+- Do not commit raw HARs.
+- If you must store HARs temporarily for debugging, redact them and keep them out of Git.
+
+For concrete redaction guidance, see: [How to Redact HAR Files Safely (Keep Tests Shareable, Remove Secrets)](https://dev.tools/blog/how-to-redact-har-files-safely-keep-tests-shareable-remove-secrets/).
+
+## Stage 3: Convert HAR to YAML, then immediately delete “browser noise”
+
+Conversion is where you turn “observed traffic” into “executable intent”. DevTools can import HAR traffic and export a YAML flow that you can version in Git.
+
+Right after conversion, do a first-pass cleanup to remove browser-specific and unstable details.
+
+Typical deletions:
+
+- Tracking and analytics calls
+- Third-party requests
+- Cache negotiation headers (`If-None-Match`, `If-Modified-Since`)
+- Headers that change per run (`User-Agent`, many `sec-*` headers)
+- Any baked-in tokens that should be sourced from env or extracted
+
+The objective is not aesthetic. It is to reduce the diff surface and eliminate false failures.
+
+## Stage 4: Make dependencies explicit with request chaining
+
+A browser session is stateful. CI should be explicit.
+
+When you export a YAML flow, you want to express dependencies as captures and references (token from login, ID from create, cursor from list). This is where YAML-first workflows beat UI recordings.
+
+Here are common chaining patterns that produce stable tests. The YAML below is illustrative (adapt keys to your runner’s schema), but the structure is the important part.
+
+### Pattern A: Login, capture token, reuse it
+
+```yaml
+vars:
+  base_url: ${BASE_URL}
+  username: ${E2E_USER}
+  password: ${E2E_PASS}
+
+steps:
+  - id: login
+    request:
+      method: POST
+      url: ${base_url}/auth/login
+      json:
+        username: ${username}
+        password: ${password}
+    capture:
+      - jsonpath: $.access_token
+        as: access_token
+    assert:
+      status: 200
+
+  - id: get_profile
+    request:
+      method: GET
+      url: ${base_url}/me
+      headers:
+        Authorization: "Bearer ${access_token}"
+    assert:
+      status: 200
+      json:
+        - jsonpath: $.id
+          exists: true
+```
+
+What this buys you:
+
+- No static secrets in Git.
+- Reviewable auth behavior.
+- A single place to change auth when it evolves.
+
+### Pattern B: Create resource, capture ID, read it back
+
+```yaml
+steps:
+  - id: create_widget
+    request:
+      method: POST
+      url: ${base_url}/widgets
+      headers:
+        Authorization: "Bearer ${access_token}"
+      json:
+        name: "ci-${RUN_ID}"
+    capture:
+      - header: Location
+        as: widget_url
+    assert:
+      status_in: [201]
+
+  - id: fetch_widget
+    request:
+      method: GET
+      url: ${widget_url}
+      headers:
+        Authorization: "Bearer ${access_token}"
+    assert:
+      status: 200
+      json:
+        - jsonpath: $.name
+          equals: "ci-${RUN_ID}"
+```
+
+This is the CI-friendly alternative to “copy ID from console and paste into next request”. Chaining makes the dependency explicit and prevents brittle fixtures.
+
+### Pattern C: CSRF or anti-forgery tokens
+
+Many “recorded” flows fail in CI because CSRF tokens are generated per session and must be replayed correctly.
+
+The repeatable approach:
+
+- Fetch the page or endpoint that issues CSRF.
+- Capture token from cookie/header/body.
+- Replay it explicitly in subsequent mutating requests.
+
+If you want more concrete examples of chaining extracted values from real HAR traffic, see: [HAR → YAML API Test Flow: Auto-Extract Variables + Chain Requests](https://dev.tools/blog/har-yaml-api-test-flow-auto-extract-variables-chain-requests/).
+
+## Stage 5: Normalize YAML for Git diffs (treat formatting as determinism)
+
+If YAML is your source of truth, you should optimize it for review:
+
+- Stable step IDs (consider them public API for your tests)
+- Stable ordering of keys
+- Sorted headers and query params
+- No inline maps that reformat constantly
+- Environment variables separated from flows
+
+This is not bike-shedding. It is how you keep PRs readable when tests evolve.
+
+For conventions that keep diffs clean, use: [YAML API Test File Structure: Conventions for Readable Git Diffs](https://dev.tools/blog/yaml-api-test-file-structure-conventions-for-readable-git-diffs/).
+
+## Stage 6: Add assertions that survive CI
+
+The fastest way to create flaky tests is to assert exact payloads copied from a single run.
+
+Prefer assertions that express invariants:
+
+- Status codes
+- Presence/type checks
+- Subset matching for objects
+- Normalized timestamps
+- Tolerances for floats
+
+Example invariant-style checks:
+
+```yaml
+steps:
+  - id: list_widgets
+    request:
+      method: GET
+      url: ${base_url}/widgets?limit=25
+      headers:
+        Authorization: "Bearer ${access_token}"
+    assert:
+      status: 200
+      json:
+        - jsonpath: $.items
+          type: array
+        - jsonpath: $.items[*].id
+          every:
+            type: string
+        - jsonpath: $.items[*].created_at
+          every:
+            matches: "^\\d{4}-\\d{2}-\\d{2}T"
+```
+
+If you are fighting flakes, the most effective move is usually to stop snapshotting unstable fields and start normalizing. A focused reference: [Deterministic API Assertions: Stop Flaky JSON Tests in CI](https://dev.tools/blog/deterministic-api-assertions-stop-flaky-json-tests-in-ci/).
+
+## Stage 7: Wire it into GitHub Flow and CI as a merge gate
+
+A repeatable pipeline ends with the flow running in CI, on every PR, against a known environment.
+
+At minimum, you want:
+
+- The YAML flow in Git.
+- Secrets injected via CI secret store.
+- CI produces JUnit and logs as artifacts.
+- Failures are attributable to a specific step ID.
+
+A minimal CI posture is:
+
+- PR checks: smoke suite (fast, high signal)
+- Main branch or nightly: broader regression suite
+
+DevTools already has a practical GitHub Actions template for this approach. Instead of duplicating it here, use: [API regression testing in GitHub Actions](https://dev.tools/guides/api-regression-testing-github-actions/).
+
+One important operational detail: **pin tool versions**. If your runner changes behavior, your tests did not regress, your harness did. For CI hygiene, see: [Pinning GitHub Actions + Tool Versions: Stop CI Breakage (DevTools Included)](https://dev.tools/blog/pinning-github-actions-tool-versions-stop-ci-breakage-devtools-included/).
+
+## What makes this pipeline better than Postman, Newman, or Bruno
+
+The main difference is not “features”. It is **where your truth lives**.
+
+### Postman + Newman
+
+Postman collections are not native YAML. They are a JSON export with Postman-specific structure, plus a lot of state that lives in the app (or in scripts). In practice:
+
+- Reviews are noisy (large JSON diffs, ordering issues).
+- Logic drifts into scripts and pre-request hooks.
+- CI (Newman) works, but test readability and refactoring cost get worse as suites grow.
+
+If you are currently using Newman primarily as a CI runner for collections, DevTools positions itself explicitly as a replacement path, with Git-first YAML flows: [Newman alternative for CI: DevTools CLI](https://dev.tools/guides/newman-alternative-ci/).
+
+### Bruno
+
+Bruno improves the “store requests in Git” story, but it still uses its own file format (`.bru`) rather than plain YAML. That creates a portability trade-off:
+
+- You still have a custom DSL to standardize and teach.
+- Tooling and transforms outside the ecosystem are harder.
+
+### DevTools (YAML-first)
+
+With YAML-first flows:
+
+- Tests are **reviewable as code** in PRs.
+- Request chaining is explicit and diffable.
+- CI wiring is straightforward because the runner consumes a stable text format.
+
+This is why the HAR capture step matters. It gives you realism, then YAML gives you long-term maintainability.
+
+## Common failure modes, and how to design them out
+
+Most “recorded traffic” test suites fail for predictable reasons. Designing your pipeline around them is what makes it repeatable.
+
+| Failure mode | Symptom in CI | Design fix |
+|-------------|----------------|------------|
+| Secrets baked into capture | 401s after token expires, leaks in Git | Replace with env vars or chain login/token |
+| Order-dependent state | Works locally, fails in parallel CI | Create unique resources per run, clean up, avoid shared fixtures |
+| Unstable headers/cookies | Random 403/400 | Capture only necessary headers, model session explicitly |
+| Time-dependent fields | Snapshot diffs, flaky assertions | Normalize, assert patterns and invariants |
+| Rate limits | 429 spikes in CI | Throttle concurrency, backoff policy, isolate test accounts |
+
+If your goal is regression signal, treat each fix as a permanent pipeline rule, not a local tweak.
+
+## A pragmatic repo layout for the pipeline
+
+Keep the contract simple: flows in Git, secrets outside Git.
+
+```text
+repo/
+  flows/
+    auth/
+    widgets/
+  env/
+    staging.env.example
+  fixtures/
+  .github/workflows/
+```
+
+This layout aligns with PR review, CODEOWNERS, and CI artifacts, and it prevents the common drift where “tests” become a mix of exports, screenshots, and tribal knowledge.
+
+![A Git repository tree view showing folders flows/, env/, fixtures/, and .github/workflows/, with a highlighted YAML flow file under flows/ and a PR diff displaying a small change to one step and its assertions.](https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/e5ae7d34-cc91-46a1-8938-56e9aff4c364/image-1.webp)
+
+## Putting it together: the repeatable loop
+
+A pipeline is only real if it can be repeated by someone else on your team.
+
+The loop you want is:
+
+- Developer captures Network traffic for a single workflow in Chrome.
+- Convert to YAML flow.
+- Normalize and chain dependencies.
+- Add invariants as assertions.
+- Open PR, review the YAML diff.
+- CI runs the flow and produces artifacts.
+
+Once that loop is reliable, scaling is just adding flows and sharding execution, not reinventing how tests are authored.
+
+If you already have Postman collections, you can mix the same approach (record HAR or export, then translate into reviewable YAML flows) using the migration guide: [Migrate from Postman to DevTools](https://dev.tools/guides/migrate-from-postman/).
