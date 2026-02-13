@@ -4,7 +4,7 @@ date: "2026-02-12"
 slug: "chrome-devtools-network-to-yaml-flow-a-repeatable-pipeline"
 id: "e5ae7d34-cc91-46a1-8938-56e9aff4c364"
 image:
-  url: "https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/e5ae7d34-cc91-46a1-8938-56e9aff4c364/main-image.webp"
+  url: "https://dev-tools-blog-images.fly.storage.tigris.dev/blog/chrome-devtools-network-to-yaml-flow-a-repeatable-pipeline/main-image.webp"
   alt: "Chrome DevTools Network to YAML Flow: A Repeatable Pipeline"
 author:
   name: "DevTools Team"
@@ -78,7 +78,7 @@ Two practical capture rules that prevent most downstream pain:
 
 If you need a concrete, safe HAR capture procedure (including what to toggle in Chrome and what not to export), use the DevTools guide: [Generate a HAR file in Chrome (Safely)](https://dev.tools/guides/generate-har-chrome/).
 
-![A simple left-to-right pipeline diagram showing: Chrome DevTools Network capture exported as HAR, then a redaction step removing secrets, then conversion into a YAML flow file committed to Git, then a CI run producing JUnit report and logs as build artifacts.](https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/e5ae7d34-cc91-46a1-8938-56e9aff4c364/image-0.webp)
+![A simple left-to-right pipeline diagram showing: Chrome DevTools Network capture exported as HAR, then a redaction step removing secrets, then conversion into a YAML flow file committed to Git, then a CI run producing JUnit report and logs as build artifacts.](https://dev-tools-blog-images.fly.storage.tigris.dev/blog/chrome-devtools-network-to-yaml-flow-a-repeatable-pipeline/image-0.webp)
 
 ## Stage 2: Sanitize aggressively (assume your HAR will leak)
 
@@ -377,7 +377,7 @@ repo/
 
 This layout aligns with PR review, CODEOWNERS, and CI artifacts, and it prevents the common drift where “tests” become a mix of exports, screenshots, and tribal knowledge.
 
-![A Git repository tree view showing folders flows/, env/, fixtures/, and .github/workflows/, with a highlighted YAML flow file under flows/ and a PR diff displaying a small change to one step and its assertions.](https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/e5ae7d34-cc91-46a1-8938-56e9aff4c364/image-1.webp)
+![A Git repository tree view showing folders flows/, env/, fixtures/, and .github/workflows/, with a highlighted YAML flow file under flows/ and a PR diff displaying a small change to one step and its assertions.](https://dev-tools-blog-images.fly.storage.tigris.dev/blog/chrome-devtools-network-to-yaml-flow-a-repeatable-pipeline/image-1.webp)
 
 ## Putting it together: the repeatable loop
 

@@ -4,7 +4,7 @@ date: "2026-02-11"
 slug: "chrome-web-developer-tools-record-requests-for-replayable-tests"
 id: "d68f1cd0-9d58-465b-96f0-1d4cc93bf13a"
 image:
-  url: "https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/d68f1cd0-9d58-465b-96f0-1d4cc93bf13a/main-image.webp"
+  url: "https://dev-tools-blog-images.fly.storage.tigris.dev/blog/chrome-web-developer-tools-record-requests-for-replayable-tests/main-image.webp"
   alt: "Chrome Web Developer Tools: Record Requests for Replayable Tests"
 author:
   name: "DevTools Team"
@@ -80,7 +80,7 @@ In the Network panel, the settings that usually reduce test flake later are:
 
 Also decide whether you want to include response bodies. For most test generation workflows, exporting “with content” is useful because it allows tooling to infer variable extraction candidates and baseline assertions. The security trade-off is real, so treat HARs as sensitive until redacted.
 
-![Chrome DevTools Network panel showing a clean capture setup: Preserve log enabled, Disable cache checked, a domain filter applied, and the export option “Save all as HAR with content”.](https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/d68f1cd0-9d58-465b-96f0-1d4cc93bf13a/image-0.webp)
+![Chrome DevTools Network panel showing a clean capture setup: Preserve log enabled, Disable cache checked, a domain filter applied, and the export option “Save all as HAR with content”.](https://dev-tools-blog-images.fly.storage.tigris.dev/blog/chrome-web-developer-tools-record-requests-for-replayable-tests/image-0.webp)
 
 ### A note on preflights, redirects, and “hidden” requests
 
@@ -289,7 +289,7 @@ Practical conventions that help:
 
 DevTools covers Git-friendly formatting conventions in depth here: [YAML API Test File Structure: Conventions for Readable Git Diffs](https://dev.tools/blog/yaml-api-test-file-structure-conventions-for-readable-git-diffs/).
 
-![A pull request diff view showing a small YAML flow change: one new captured variable added after a POST request and a follow-up GET request updated to reference it. The diff is concise and readable.](https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/d68f1cd0-9d58-465b-96f0-1d4cc93bf13a/image-1.webp)
+![A pull request diff view showing a small YAML flow change: one new captured variable added after a POST request and a follow-up GET request updated to reference it. The diff is concise and readable.](https://dev-tools-blog-images.fly.storage.tigris.dev/blog/chrome-web-developer-tools-record-requests-for-replayable-tests/image-1.webp)
 
 ## Run the same flow locally and in CI
 

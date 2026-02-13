@@ -4,7 +4,7 @@ date: "2026-02-03"
 slug: "deterministic-api-assertions-stop-flaky-json-tests-in-ci"
 id: "5bea1678-359d-45e1-a1a7-abb3f1b7025e"
 image:
-  url: "https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/5bea1678-359d-45e1-a1a7-abb3f1b7025e/main-image.webp"
+  url: "https://dev-tools-blog-images.fly.storage.tigris.dev/blog/deterministic-api-assertions-stop-flaky-json-tests-in-ci/main-image.webp"
   alt: "Deterministic API Assertions: Stop Flaky JSON Tests in CI"
 author:
   name: "DevTools Team"
@@ -181,7 +181,7 @@ jq -S '.items |= sort_by(.id)' response.json > response.normalized.json
 
 `-S` sorts object keys, which makes diffs stable even when serializers reorder fields. Array sorting is on you.
 
-![A simple diagram showing a CI pipeline step that takes raw JSON response, applies normalization (remove dynamic fields, sort arrays, round floats), and then runs assertions and diffs against a Git-tracked expected fixture.](https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/5bea1678-359d-45e1-a1a7-abb3f1b7025e/image-0.webp)
+![A simple diagram showing a CI pipeline step that takes raw JSON response, applies normalization (remove dynamic fields, sort arrays, round floats), and then runs assertions and diffs against a Git-tracked expected fixture.](https://dev-tools-blog-images.fly.storage.tigris.dev/blog/deterministic-api-assertions-stop-flaky-json-tests-in-ci/image-0.webp)
 
 ### YAML example: normalize list responses by projection
 
@@ -426,7 +426,7 @@ You can implement this with `jq` in CI, or via runner-native transforms if avail
 
 If you run in GitHub Actions, keep the run auditable but sanitized. Store YAML in Git, upload logs and reports as artifacts, and redact consistently. See also: [API regression testing in GitHub Actions](https://dev.tools/guides/api-regression-testing-github-actions/) and [Auditable API Test Runs](https://dev.tools/blog/auditable-api-test-runs-what-to-store-junit-logs-har-yaml-artifacts/).
 
-![A pull request view showing a small YAML diff where an assertion changes from exact JSON equality to a regex format check for createdAt and a sorted projection for an array field.](https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/5bea1678-359d-45e1-a1a7-abb3f1b7025e/image-1.webp)
+![A pull request view showing a small YAML diff where an assertion changes from exact JSON equality to a regex format check for createdAt and a sorted projection for an array field.](https://dev-tools-blog-images.fly.storage.tigris.dev/blog/deterministic-api-assertions-stop-flaky-json-tests-in-ci/image-1.webp)
 
 ## A practical checklist for eliminating flaky JSON tests
 

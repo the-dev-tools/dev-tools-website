@@ -4,7 +4,7 @@ date: "2026-01-28"
 slug: "test-file-downloads-in-api-flows-content-length-checksums-headers"
 id: "c0b9820d-04d7-4e75-94b7-0587a8387b68"
 image:
-  url: "https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/c0b9820d-04d7-4e75-94b7-0587a8387b68/main-image.webp"
+  url: "https://dev-tools-blog-images.fly.storage.tigris.dev/blog/test-file-downloads-in-api-flows-content-length-checksums-headers/main-image.webp"
   alt: "Test File Downloads in API Flows: Content-Length, Checksums, Headers"
 author:
   name: "DevTools Team"
@@ -212,7 +212,7 @@ Notes:
 - The example validates a custom checksum header (`x-content-sha256`) in the `js:` node because it is unambiguous. If your API uses `ETag` or another documented header, validate that instead.
 - Values from earlier steps are referenced directly via `{{CreateExport.response.body.exportId}}`, so the data flow is obvious in diffs.
 
-![Diagram showing a three-step API flow: create export (capture expectedBytes and sha256), poll until READY, then download and assert headers like Content-Type, Content-Length, and checksum.](https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/c0b9820d-04d7-4e75-94b7-0587a8387b68/image-0.webp)
+![Diagram showing a three-step API flow: create export (capture expectedBytes and sha256), poll until READY, then download and assert headers like Content-Type, Content-Length, and checksum.](https://dev-tools-blog-images.fly.storage.tigris.dev/blog/test-file-downloads-in-api-flows-content-length-checksums-headers/image-0.webp)
 
 ## Header assertions that catch the most CI flakes
 

@@ -4,7 +4,7 @@ date: "2026-02-05"
 slug: "github-actions-for-yaml-api-tests-parallel-runs-caching-copy-paste-workflow"
 id: "dd8627f2-f836-44f1-822f-2a31174a184c"
 image:
-  url: "https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/dd8627f2-f836-44f1-822f-2a31174a184c/main-image.webp"
+  url: "https://dev-tools-blog-images.fly.storage.tigris.dev/blog/github-actions-for-yaml-api-tests-parallel-runs-caching-copy-paste-workflow/main-image.webp"
   alt: "GitHub Actions for YAML API Tests: Parallel Runs + Caching (Copy-Paste Workflow)"
 author:
   name: "DevTools Team"
@@ -48,7 +48,7 @@ This post gives you a **single, copy-paste GitHub Actions workflow** that:
 
 The net effect is typically going from something like **6m → 2m** for a medium regression suite once you combine sharding and caching.
 
-![A GitHub Actions run page showing four parallel matrix jobs (smoke, regression shard 1, shard 2, shard 3) with successful and failed statuses, plus an artifacts panel listing uploaded JUnit XML and log bundles per shard.](https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/dd8627f2-f836-44f1-822f-2a31174a184c/image-0.webp)
+![A GitHub Actions run page showing four parallel matrix jobs (smoke, regression shard 1, shard 2, shard 3) with successful and failed statuses, plus an artifacts panel listing uploaded JUnit XML and log bundles per shard.](https://dev-tools-blog-images.fly.storage.tigris.dev/blog/github-actions-for-yaml-api-tests-parallel-runs-caching-copy-paste-workflow/image-0.webp)
 
 ## Why YAML tests make parallelization simpler than Postman/Newman
 With Postman, your “test definition” is a collection JSON plus scripts, and parallelization usually means awkward slicing by folders, multiple Newman invocations, or duplicating state setup.
