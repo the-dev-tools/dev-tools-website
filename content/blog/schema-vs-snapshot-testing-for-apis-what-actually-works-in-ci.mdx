@@ -94,55 +94,73 @@ Below is an example of **contract-style checks** expressed as targeted assertion
 
 ```yaml
 # flows/users/get-user.contract.yml
-version: 1
-name: get-user-contract
 
 env:
-  BASE_URL: ${BASE_URL}
+  BASE_URL: '{{BASE_URL}}'
 
-steps:
-  - id: login
-    request:
-      method: POST
-      url: ${BASE_URL}/auth/login
-      headers:
-        content-type: application/json
-      body:
-        email: ${TEST_USER_EMAIL}
-        password: ${TEST_USER_PASSWORD}
-    capture:
-      access_token: $.accessToken
-    assert:
-      - status: 200
-      - jsonpath: $.accessToken
-        exists: true
+flows:
+  - name: GetUserContract
+    variables:
+      - name: TEST_USER_EMAIL
+        value: '{{TEST_USER_EMAIL}}'
+      - name: TEST_USER_PASSWORD
+        value: '{{TEST_USER_PASSWORD}}'
+      - name: TEST_USER_ID
+        value: '{{TEST_USER_ID}}'
+    steps:
+      - request:
+          name: Login
+          method: POST
+          url: '{{BASE_URL}}/auth/login'
+          headers:
+            Content-Type: application/json
+          body:
+            email: '{{TEST_USER_EMAIL}}'
+            password: '{{TEST_USER_PASSWORD}}'
 
-  - id: get_user
-    request:
-      method: GET
-      url: ${BASE_URL}/v1/users/${TEST_USER_ID}
-      headers:
-        authorization: Bearer ${steps.login.access_token}
-    assert:
-      - status: 200
-      - header: content-type
-        matches: "^application/json"
+      - js:
+          name: ValidateLogin
+          code: |
+            export default function(ctx) {
+              const resp = ctx.Login?.response;
+              if (resp?.status !== 200) throw new Error(`Expected 200, got ${resp?.status}`);
+              if (!resp?.body?.accessToken) throw new Error("accessToken missing");
+              return { validated: true };
+            }
+          depends_on: Login
 
-      # Contract stability checks
-      - jsonpath: $.id
-        type: string
-      - jsonpath: $.email
-        type: string
-      - jsonpath: $.createdAt
-        type: string
+      - request:
+          name: GetUser
+          method: GET
+          url: '{{BASE_URL}}/v1/users/{{TEST_USER_ID}}'
+          headers:
+            Authorization: Bearer {{Login.response.body.accessToken}}
+          depends_on: ValidateLogin
 
-      # Guardrail on nested objects without snapshotting the whole body
-      - jsonpath: $.profile
-        type: object
-      - jsonpath: $.profile.displayName
-        type: string
-      - jsonpath: $.flags
-        type: object
+      - js:
+          name: ValidateUserContract
+          code: |
+            export default function(ctx) {
+              const resp = ctx.GetUser?.response;
+              if (resp?.status !== 200) throw new Error(`Expected 200, got ${resp?.status}`);
+
+              // Header check
+              const ct = resp?.headers?.["content-type"];
+              if (!/^application\/json/.test(ct)) throw new Error(`Bad content-type: ${ct}`);
+
+              const body = resp?.body;
+              // Contract stability checks
+              if (typeof body?.id !== 'string') throw new Error("id not string");
+              if (typeof body?.email !== 'string') throw new Error("email not string");
+              if (typeof body?.createdAt !== 'string') throw new Error("createdAt not string");
+
+              // Guardrail on nested objects
+              if (typeof body?.profile !== 'object') throw new Error("profile not object");
+              if (typeof body?.profile?.displayName !== 'string') throw new Error("displayName not string");
+              if (typeof body?.flags !== 'object') throw new Error("flags not object");
+              return { validated: true };
+            }
+          depends_on: GetUser
 ```
 
 Notes:
@@ -200,20 +218,30 @@ Here is an example flow that captures a response, then compares a normalized vie
 
 ```yaml
 # flows/billing/get-entitlements.snapshot.yml
-version: 1
-name: get-entitlements-snapshot
 
-steps:
-  - id: get_entitlements
-    request:
-      method: GET
-      url: ${BASE_URL}/v1/billing/entitlements
-      headers:
-        authorization: Bearer ${ACCESS_TOKEN}
-    capture:
-      raw: $  # capture entire JSON body
-    assert:
-      - status: 200
+env:
+  BASE_URL: '{{BASE_URL}}'
+  ACCESS_TOKEN: '{{ACCESS_TOKEN}}'
+
+flows:
+  - name: EntitlementsSnapshot
+    steps:
+      - request:
+          name: GetEntitlements
+          method: GET
+          url: '{{BASE_URL}}/v1/billing/entitlements'
+          headers:
+            Authorization: Bearer {{ACCESS_TOKEN}}
+
+      - js:
+          name: ValidateAndCapture
+          code: |
+            export default function(ctx) {
+              const resp = ctx.GetEntitlements?.response;
+              if (resp?.status !== 200) throw new Error(`Expected 200, got ${resp?.status}`);
+              return { raw: resp.body };
+            }
+          depends_on: GetEntitlements
 ```
 
 And a CI-side canonicalization + diff step (illustrative):
@@ -226,7 +254,7 @@ And a CI-side canonicalization + diff step (illustrative):
 - name: Canonicalize response and diff snapshot
   run: |
     cat reports/run.json \
-      | jq '.steps[] | select(.id=="get_entitlements") | .response.body' \
+      | jq '.steps[] | select(.name=="GetEntitlements") | .response.body' \
       | jq 'del(.traceId, .generatedAt)
             | .plans |= (sort_by(.planId))' \
       | jq -S . > artifacts/entitlements.canon.json
@@ -273,60 +301,72 @@ Scenario: create an order, fetch it back, ensure the contract is intact, then sn
 
 ```yaml
 # flows/orders/order.hybrid.yml
-version: 1
-name: order-hybrid
 
-steps:
-  - id: create_order
-    request:
-      method: POST
-      url: ${BASE_URL}/v1/orders
-      headers:
-        authorization: Bearer ${ACCESS_TOKEN}
-        content-type: application/json
-      body:
-        currency: USD
-        items:
-          - sku: "SKU-123"
-            qty: 2
-          - sku: "SKU-456"
-            qty: 1
-    capture:
-      order_id: $.id
-    assert:
-      - status: 201
-      - jsonpath: $.id
-        type: string
-      - jsonpath: $.total
-        type: number
+env:
+  BASE_URL: '{{BASE_URL}}'
+  ACCESS_TOKEN: '{{ACCESS_TOKEN}}'
 
-  - id: get_order
-    request:
-      method: GET
-      url: ${BASE_URL}/v1/orders/${steps.create_order.order_id}
-      headers:
-        authorization: Bearer ${ACCESS_TOKEN}
-    capture:
-      order: $
-      line_items: $.lineItems
-    assert:
-      - status: 200
+flows:
+  - name: OrderHybrid
+    steps:
+      - request:
+          name: CreateOrder
+          method: POST
+          url: '{{BASE_URL}}/v1/orders'
+          headers:
+            Authorization: Bearer {{ACCESS_TOKEN}}
+            Content-Type: application/json
+          body:
+            currency: USD
+            items:
+              - sku: "SKU-123"
+                qty: 2
+              - sku: "SKU-456"
+                qty: 1
 
-      # Schema-ish contract checks
-      - jsonpath: $.id
-        equals: ${steps.create_order.order_id}
-      - jsonpath: $.currency
-        equals: "USD"
-      - jsonpath: $.lineItems
-        type: array
+      - js:
+          name: ValidateCreate
+          code: |
+            export default function(ctx) {
+              const resp = ctx.CreateOrder?.response;
+              if (resp?.status !== 201) throw new Error(`Expected 201, got ${resp?.status}`);
+              if (typeof resp?.body?.id !== 'string') throw new Error("id not string");
+              if (typeof resp?.body?.total !== 'number') throw new Error("total not number");
+              return { orderId: resp.body.id };
+            }
+          depends_on: CreateOrder
 
-      # Invariants that should never drift
-      - jsonpath: $.lineItems[*].sku
-        notEmpty: true
-      - jsonpath: $.lineItems[*].qty
-        all:
-          type: number
-          min: 1
+      - request:
+          name: GetOrder
+          method: GET
+          url: '{{BASE_URL}}/v1/orders/{{CreateOrder.response.body.id}}'
+          headers:
+            Authorization: Bearer {{ACCESS_TOKEN}}
+          depends_on: ValidateCreate
+
+      - js:
+          name: ValidateOrderContract
+          code: |
+            export default function(ctx) {
+              const resp = ctx.GetOrder?.response;
+              if (resp?.status !== 200) throw new Error(`Expected 200, got ${resp?.status}`);
+              const body = resp?.body;
+
+              // Schema-ish contract checks
+              if (body?.id !== ctx.CreateOrder?.response?.body?.id) throw new Error("id mismatch");
+              if (body?.currency !== "USD") throw new Error("currency mismatch");
+              if (!Array.isArray(body?.lineItems)) throw new Error("lineItems not array");
+
+              // Invariants that should never drift
+              for (const item of body.lineItems) {
+                if (!item.sku) throw new Error("lineItem missing sku");
+                if (typeof item.qty !== 'number' || item.qty < 1) {
+                  throw new Error(`lineItem bad qty: ${item.qty}`);
+                }
+              }
+              return { lineItems: body.lineItems };
+            }
+          depends_on: GetOrder
 ```
 
 Then snapshot only `lineItems` after canonicalization:
@@ -336,7 +376,7 @@ Then snapshot only `lineItems` after canonicalization:
 - name: Snapshot line items
   run: |
     cat reports/run.json \
-      | jq '.steps[] | select(.id=="get_order") | .captures.line_items' \
+      | jq '.steps[] | select(.name=="GetOrder") | .response.body.lineItems' \
       | jq 'sort_by(.sku) | map(del(.addedAt, .internalId))' \
       | jq -S . > artifacts/order.lineItems.canon.json
 
@@ -417,5 +457,6 @@ If your current setup relies on UI-locked collections or custom formats, you end
 - Start from real traffic: [Generate a HAR file in Chrome (Safely)](https://dev.tools/guides/generate-har-chrome/)
 - Run YAML flows in CI as a Newman replacement: [DevTools CLI guide](https://dev.tools/guides/newman-alternative-ci/)
 - Learn YAML patterns that keep tests deterministic: [Deterministic API Assertions](https://dev.tools/blog/deterministic-api-assertions-stop-flaky-json-tests-in-ci/)
+- Chain schema and snapshot checks into multi-step workflows: [End-to-End API Testing: The Complete Guide](/blog/end-to-end-api-testing-the-complete-guide/)
 
 Try it at [dev.tools](https://dev.tools).

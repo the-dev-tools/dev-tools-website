@@ -50,24 +50,35 @@ Common patterns that reduce false positives:
 - **Assert on redirect behavior** explicitly (either you follow redirects, or you fail on 3xx).
 - **Separate auth failures from functional failures** (401/403 vs 4xx business errors).
 
-Here is a compact YAML pattern for “explicitly allowed statuses”:
+Here is a compact YAML pattern for "explicitly allowed statuses":
 
 ```yaml
-steps:
-  - id: create_widget
-    request:
-      method: POST
-      url: "${BASE_URL}/v1/widgets"
-      headers:
-        content-type: application/json
-      body:
-        name: "example"
-    assert:
-      status:
-        any_of: [200, 201]
+flows:
+  - name: WidgetFlow
+    steps:
+      - request:
+          name: CreateWidget
+          method: POST
+          url: '{{BASE_URL}}/v1/widgets'
+          headers:
+            Content-Type: application/json
+          body:
+            name: "example"
+
+      - js:
+          name: ValidateStatus
+          code: |
+            export default function(ctx) {
+              const status = ctx.CreateWidget?.response?.status;
+              if (status !== 200 && status !== 201) {
+                throw new Error(`Expected 200 or 201, got ${status}`);
+              }
+              return { status };
+            }
+          depends_on: CreateWidget
 ```
 
-If you have endpoints where 202 (Accepted) is valid, do not treat it as “basically success” unless your flow then asserts completion, for example by polling a status endpoint with a bounded retry policy.
+If you have endpoints where 202 (Accepted) is valid, do not treat it as "basically success" unless your flow then validates completion, for example by polling a status endpoint with a bounded retry using a `for:` loop.
 
 ## JSON body assertions with JSONPath: target stable semantics, not incidental structure
 
@@ -87,22 +98,28 @@ Instead of asserting the whole response equals a fixture (fragile), assert a han
 Example:
 
 ```yaml
-steps:
-  - id: get_widget
-    request:
-      method: GET
-      url: "${BASE_URL}/v1/widgets/${WIDGET_ID}"
-    assert:
-      status: 200
-      jsonpath:
-        - path: "$.id"
-          equals: "${WIDGET_ID}"
-        - path: "$.name"
-          equals: "example"
-        - path: "$.createdAt"
-          exists: true
-        - path: "$.tags[*]"
-          contains: "public"
+flows:
+  - name: WidgetContract
+    steps:
+      - request:
+          name: GetWidget
+          method: GET
+          url: '{{BASE_URL}}/v1/widgets/{{WIDGET_ID}}'
+
+      - js:
+          name: ValidateWidget
+          code: |
+            export default function(ctx) {
+              const resp = ctx.GetWidget?.response;
+              if (resp?.status !== 200) throw new Error(`Expected 200, got ${resp?.status}`);
+              const body = resp?.body;
+              if (body?.id !== ctx.WIDGET_ID) throw new Error("id mismatch");
+              if (body?.name !== "example") throw new Error("name mismatch");
+              if (!body?.createdAt) throw new Error("createdAt missing");
+              if (!body?.tags?.includes("public")) throw new Error("tags missing 'public'");
+              return { validated: true };
+            }
+          depends_on: GetWidget
 ```
 
 ### Avoid brittle JSONPath selections
@@ -131,20 +148,29 @@ Remember that header field names are case-insensitive per HTTP semantics (see [R
 Example:
 
 ```yaml
-steps:
-  - id: download_invoice_pdf
-    request:
-      method: GET
-      url: "${BASE_URL}/v1/invoices/${INVOICE_ID}/pdf"
-      headers:
-        accept: application/pdf
-    assert:
-      status: 200
-      headers:
-        content-type:
-          matches: "^application/pdf"
-        content-disposition:
-          contains: "attachment"
+flows:
+  - name: InvoiceDownload
+    steps:
+      - request:
+          name: DownloadInvoicePdf
+          method: GET
+          url: '{{BASE_URL}}/v1/invoices/{{INVOICE_ID}}/pdf'
+          headers:
+            Accept: application/pdf
+
+      - js:
+          name: ValidateDownloadHeaders
+          code: |
+            export default function(ctx) {
+              const resp = ctx.DownloadInvoicePdf?.response;
+              if (resp?.status !== 200) throw new Error(`Expected 200, got ${resp?.status}`);
+              const ct = resp?.headers?.["content-type"];
+              if (!/^application\/pdf/.test(ct)) throw new Error(`Bad content-type: ${ct}`);
+              const cd = resp?.headers?.["content-disposition"];
+              if (!cd?.includes("attachment")) throw new Error("Missing attachment disposition");
+              return { validated: true };
+            }
+          depends_on: DownloadInvoicePdf
 ```
 
 For file downloads, header assertions often beat body assertions in determinism, especially when the body is large or streamed. (If you need deeper patterns, DevTools has a dedicated guide on download assertions, checksums, and `Content-Length` behavior.)
@@ -161,15 +187,26 @@ Two rules keep timing thresholds sane:
 A pragmatic YAML pattern is a per-step “max elapsed” cap with enough headroom to avoid random CI spikes:
 
 ```yaml
-steps:
-  - id: search_widgets
-    request:
-      method: GET
-      url: "${BASE_URL}/v1/widgets?query=exa"
-    assert:
-      status: 200
-      timing:
-        max_ms: 500
+flows:
+  - name: SearchPerformance
+    steps:
+      - request:
+          name: SearchWidgets
+          method: GET
+          url: '{{BASE_URL}}/v1/widgets'
+          query_params:
+            query: exa
+
+      - js:
+          name: ValidateSearchTiming
+          code: |
+            export default function(ctx) {
+              const resp = ctx.SearchWidgets?.response;
+              if (resp?.status !== 200) throw new Error(`Expected 200, got ${resp?.status}`);
+              if (resp?.duration > 500) throw new Error(`Too slow: ${resp?.duration}ms > 500ms`);
+              return { duration: resp?.duration };
+            }
+          depends_on: SearchWidgets
 ```
 
 ### Where timing gates belong in CI
@@ -190,46 +227,59 @@ Request chaining is where YAML flows become either beautifully readable or compl
 
 A pattern that scales is:
 
-- Give each step a stable `id`
-- Keep captures adjacent to the response they come from
-- Assert the response before you use captured values downstream
+- Give each step a clear `name` inside its typed node
+- Validate responses with `js:` nodes before using values downstream
+- Reference upstream values directly with `{{NodeName.response.body.field}}`
 
-Example “login then use token” flow:
+Example "login then use token" flow:
 
 ```yaml
-steps:
-  - id: login
-    request:
-      method: POST
-      url: "${BASE_URL}/auth/login"
-      headers:
-        content-type: application/json
-      body:
-        username: "${USERNAME}"
-        password: "${PASSWORD}"
-    assert:
-      status: 200
-      jsonpath:
-        - path: "$.token"
-          exists: true
-    capture:
-      auth_token:
-        from_jsonpath: "$.token"
+flows:
+  - name: AuthAndListProjects
+    steps:
+      - request:
+          name: Login
+          method: POST
+          url: '{{BASE_URL}}/auth/login'
+          headers:
+            Content-Type: application/json
+          body:
+            username: '{{USERNAME}}'
+            password: '{{PASSWORD}}'
 
-  - id: list_projects
-    request:
-      method: GET
-      url: "${BASE_URL}/v1/projects"
-      headers:
-        authorization: "Bearer ${auth_token}"
-    assert:
-      status: 200
-      headers:
-        content-type:
-          contains: "application/json"
+      - js:
+          name: ValidateLogin
+          code: |
+            export default function(ctx) {
+              const resp = ctx.Login?.response;
+              if (resp?.status !== 200) throw new Error(`Expected 200, got ${resp?.status}`);
+              if (!resp?.body?.token) throw new Error("token missing from login response");
+              return { validated: true };
+            }
+          depends_on: Login
+
+      - request:
+          name: ListProjects
+          method: GET
+          url: '{{BASE_URL}}/v1/projects'
+          headers:
+            Authorization: Bearer {{Login.response.body.token}}
+          depends_on: ValidateLogin
+
+      - js:
+          name: ValidateProjects
+          code: |
+            export default function(ctx) {
+              const resp = ctx.ListProjects?.response;
+              if (resp?.status !== 200) throw new Error(`Expected 200, got ${resp?.status}`);
+              const ct = resp?.headers?.["content-type"];
+              if (!ct?.includes("application/json")) throw new Error(`Bad content-type: ${ct}`);
+              return { validated: true };
+            }
+          depends_on: ListProjects
 ```
 
-This structure makes PR review straightforward: you can see which response field is captured, where it is used, and which invariants are enforced.
+This structure makes PR review straightforward: you can see which response field is referenced, where it is used downstream via `{{Login.response.body.token}}`, and which invariants are enforced in the JS validation nodes.
 
 ## Making YAML assertions Git-friendly (and CI-friendly)
 

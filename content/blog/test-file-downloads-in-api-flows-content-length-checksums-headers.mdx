@@ -123,63 +123,94 @@ The most robust pattern is a two-step contract:
 Below is an illustrative YAML flow structure showing request chaining. Adjust field names to your API and runner conventions, the important part is the pattern: capture expected values, then assert them.
 
 ```yaml
-id: export-report-and-download
-vars:
-  baseUrl: ${ENV.BASE_URL}
-  token: ${ENV.API_TOKEN}
+env:
+  BASE_URL: '{{BASE_URL}}'
+  API_TOKEN: '{{API_TOKEN}}'
 
-steps:
-  - id: createExport
-    request:
-      method: POST
-      url: ${vars.baseUrl}/v1/reports/exports
-      headers:
-        authorization: Bearer ${vars.token}
-        content-type: application/json
-      body:
-        format: pdf
-        reportId: 12345
-    assert:
-      status: 202
-    capture:
-      exportId: $.exportId
-      expectedBytes: $.expectedBytes
-      expectedSha256: $.sha256
+flows:
+  - name: ExportReportAndDownload
+    steps:
+      - request:
+          name: CreateExport
+          method: POST
+          url: '{{BASE_URL}}/v1/reports/exports'
+          headers:
+            Authorization: Bearer {{API_TOKEN}}
+            Content-Type: application/json
+          body:
+            format: pdf
+            reportId: 12345
 
-  - id: waitUntilReady
-    request:
-      method: GET
-      url: ${vars.baseUrl}/v1/reports/exports/${steps.createExport.exportId}
-      headers:
-        authorization: Bearer ${vars.token}
-    assert:
-      status: 200
-      json:
-        - path: $.state
-          equals: READY
+      - js:
+          name: ValidateExportCreated
+          code: |
+            export default function(ctx) {
+              const resp = ctx.CreateExport?.response;
+              if (resp?.status !== 202) throw new Error(`Expected 202, got ${resp?.status}`);
+              if (!resp?.body?.exportId) throw new Error("exportId missing");
+              return {
+                exportId: resp.body.exportId,
+                expectedBytes: resp.body.expectedBytes,
+                expectedSha256: resp.body.sha256,
+              };
+            }
+          depends_on: CreateExport
 
-  - id: download
-    request:
-      method: GET
-      url: ${vars.baseUrl}/v1/reports/exports/${steps.createExport.exportId}/download
-      headers:
-        authorization: Bearer ${vars.token}
-        accept: application/pdf
-        accept-encoding: identity
-    assert:
-      status: 200
-      headers:
-        content-type: application/pdf
-        content-length: ${steps.createExport.expectedBytes}
-        x-content-sha256: ${steps.createExport.expectedSha256}
-        cache-control: no-store
+      - request:
+          name: WaitUntilReady
+          method: GET
+          url: '{{BASE_URL}}/v1/reports/exports/{{CreateExport.response.body.exportId}}'
+          headers:
+            Authorization: Bearer {{API_TOKEN}}
+          depends_on: ValidateExportCreated
+
+      - js:
+          name: ValidateReady
+          code: |
+            export default function(ctx) {
+              const resp = ctx.WaitUntilReady?.response;
+              if (resp?.status !== 200) throw new Error(`Expected 200, got ${resp?.status}`);
+              if (resp?.body?.state !== "READY") throw new Error(`Not ready: ${resp?.body?.state}`);
+              return { ready: true };
+            }
+          depends_on: WaitUntilReady
+
+      - request:
+          name: Download
+          method: GET
+          url: '{{BASE_URL}}/v1/reports/exports/{{CreateExport.response.body.exportId}}/download'
+          headers:
+            Accept: application/pdf
+            Accept-Encoding: identity
+            Authorization: Bearer {{API_TOKEN}}
+          depends_on: ValidateReady
+
+      - js:
+          name: ValidateDownload
+          code: |
+            export default function(ctx) {
+              const resp = ctx.Download?.response;
+              if (resp?.status !== 200) throw new Error(`Expected 200, got ${resp?.status}`);
+              const h = resp?.headers;
+              if (h?.["content-type"] !== "application/pdf") throw new Error("Bad content-type");
+              const expected = ctx.CreateExport?.response?.body;
+              if (h?.["content-length"] !== String(expected?.expectedBytes)) {
+                throw new Error("Content-Length mismatch");
+              }
+              if (h?.["x-content-sha256"] !== expected?.sha256) {
+                throw new Error("Checksum mismatch");
+              }
+              if (h?.["cache-control"] !== "no-store") throw new Error("Bad cache-control");
+              return { validated: true };
+            }
+          depends_on: Download
 ```
 
 Notes:
 
-- The `accept-encoding: identity` request header is a practical trick when you want the byte representation to be consistent across environments.
-- The example asserts a custom checksum header (`x-content-sha256`) because it is unambiguous. If your API uses `ETag` or another documented header, assert that instead.
-- Keep captures close to the step that produces them, so diffs in PRs stay readable.
+- The `Accept-Encoding: identity` request header is a practical trick when you want the byte representation to be consistent across environments.
+- The example validates a custom checksum header (`x-content-sha256`) in the `js:` node because it is unambiguous. If your API uses `ETag` or another documented header, validate that instead.
+- Values from earlier steps are referenced directly via `{{CreateExport.response.body.exportId}}`, so the data flow is obvious in diffs.
 
 ![Diagram showing a three-step API flow: create export (capture expectedBytes and sha256), poll until READY, then download and assert headers like Content-Type, Content-Length, and checksum.](https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/c0b9820d-04d7-4e75-94b7-0587a8387b68/image-0.webp)
 
@@ -288,3 +319,5 @@ The migration mechanics are covered in [Migrate from Postman to DevTools](https:
 File downloads are one of those areas where UI-centric API tools tend to hide important details, and test suites rot into brittle scripts. A YAML-first approach keeps the contract reviewable: headers, sizes, and checksums in plain text, chained explicitly across steps.
 
 If you want to codify these download checks in Git and execute them deterministically in CI, DevTools is designed for that workflow: record real traffic, convert it into readable YAML flows, and run them locally or in your pipeline. Start from https://dev.tools and keep your download behavior under code review, not trapped in a UI export format.
+
+Download testing is often part of a larger [end-to-end API testing workflow](/blog/end-to-end-api-testing-the-complete-guide/): authenticate, trigger the export, download the file, and verify the content. Chaining these steps into a single flow catches integration issues that isolated download tests miss.

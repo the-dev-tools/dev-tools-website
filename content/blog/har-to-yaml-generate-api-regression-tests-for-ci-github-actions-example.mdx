@@ -162,49 +162,63 @@ The major win of “convert HAR to YAML” is that you can turn implicit browser
 
 A typical pattern:
 
-- Request A returns `access_token`
-- Request B uses `Authorization: Bearer <token>`
-- Request C uses an `id` created by Request B
+- Request A (Login) returns `access_token` in the response body
+- Request B references `{{Login.response.body.access_token}}` in its Authorization header
+- Request C uses an `id` from Request B's response: `{{CreateResource.response.body.id}}`
 
-Below is an example of what you want the YAML to express conceptually. Treat it as a shape and intent example (adjust to DevTools’ exact YAML schema in your repo):
+Below is an example using the DevTools YAML format, showing request chaining and validation:
 
 ```yaml
-vars:
-  base_url: ${BASE_URL}
+env:
+  BASE_URL: '{{BASE_URL}}'
 
-steps:
-  - name: login
-    request:
-      method: POST
-      url: ${base_url}/auth/login
-      headers:
-        content-type: application/json
-      body:
-        json:
-          username: ${E2E_USER}
-          password: ${E2E_PASS}
-    extract:
-      access_token: $.access_token
-    assert:
-      status: 200
+flows:
+  - name: UserFlow
+    steps:
+      - request:
+          name: Login
+          method: POST
+          url: '{{BASE_URL}}/auth/login'
+          headers:
+            Content-Type: application/json
+          body:
+            username: '{{E2E_USER}}'
+            password: '{{E2E_PASS}}'
 
-  - name: get_current_user
-    request:
-      method: GET
-      url: ${base_url}/v1/me
-      headers:
-        authorization: Bearer ${access_token}
-    assert:
-      status: 200
-      json:
-        $.id: exists
+      - js:
+          name: ValidateLogin
+          code: |
+            export default function(ctx) {
+              if (ctx.Login?.response?.status !== 200) throw new Error("Login failed");
+              if (!ctx.Login?.response?.body?.access_token) throw new Error("No token");
+              return { validated: true };
+            }
+          depends_on: Login
+
+      - request:
+          name: GetCurrentUser
+          method: GET
+          url: '{{BASE_URL}}/v1/me'
+          headers:
+            Authorization: 'Bearer {{Login.response.body.access_token}}'
+          depends_on: Login
+
+      - js:
+          name: ValidateUser
+          code: |
+            export default function(ctx) {
+              if (ctx.GetCurrentUser?.response?.status !== 200) throw new Error("Expected 200");
+              if (!ctx.GetCurrentUser?.response?.body?.id) throw new Error("Missing id");
+              return { validated: true };
+            }
+          depends_on: GetCurrentUser
 ```
 
 What matters for CI is not the exact key names, it is the discipline:
 
-- **extract once**
+- **reference node outputs directly** (e.g. `{{Login.response.body.access_token}}`)
 - **reuse everywhere**
-- **assert on behavior, not incidental fields**
+- **validate on behavior, not incidental fields** (using `js:` nodes)
 
 ### Assert the right things
 
@@ -292,7 +306,7 @@ jobs:
 - **Rate limits**: set per-job parallelism to match your staging limits.
 - **Flaky dependencies**: if a flow depends on async work, make polling explicit and bounded.
 
-If you are migrating from Newman, the biggest mental shift is that your “collection + environments” becomes “flows + explicit variables”, and the YAML is the unit of review.
+If you are migrating from Newman, the biggest mental shift is that your "collection + environments" becomes "flows + env variables and node output references", and the YAML is the unit of review.
 
 ## What to commit (and what not to commit)
 

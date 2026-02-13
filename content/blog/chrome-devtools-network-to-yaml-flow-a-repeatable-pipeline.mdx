@@ -121,43 +121,56 @@ The objective is not aesthetic. It is to reduce the diff surface and eliminate f
 
 A browser session is stateful. CI should be explicit.
 
-When you export a YAML flow, you want to express dependencies as captures and references (token from login, ID from create, cursor from list). This is where YAML-first workflows beat UI recordings.
+When you export a YAML flow, you want to express dependencies as direct node output references (token from login, ID from create, cursor from list). This is where YAML-first workflows beat UI recordings.
 
-Here are common chaining patterns that produce stable tests. The YAML below is illustrative (adapt keys to your runner’s schema), but the structure is the important part.
+Here are common chaining patterns that produce stable tests. The YAML below uses the DevTools flow format, but the structure is the important part.
 
-### Pattern A: Login, capture token, reuse it
+### Pattern A: Login, use token, reuse it
 
 ```yaml
-vars:
-  base_url: ${BASE_URL}
-  username: ${E2E_USER}
-  password: ${E2E_PASS}
+env:
+  BASE_URL: '{{BASE_URL}}'
+  E2E_USER: '{{E2E_USER}}'
+  E2E_PASS: '{{E2E_PASS}}'
 
 steps:
-  - id: login
-    request:
+  - request:
+      name: Login
       method: POST
-      url: ${base_url}/auth/login
-      json:
-        username: ${username}
-        password: ${password}
-    capture:
-      - jsonpath: $.access_token
-        as: access_token
-    assert:
-      status: 200
-
-  - id: get_profile
-    request:
-      method: GET
-      url: ${base_url}/me
+      url: '{{BASE_URL}}/auth/login'
       headers:
-        Authorization: "Bearer ${access_token}"
-    assert:
-      status: 200
-      json:
-        - jsonpath: $.id
-          exists: true
+        Content-Type: application/json
+      body:
+        username: '{{E2E_USER}}'
+        password: '{{E2E_PASS}}'
+
+  - js:
+      name: ValidateLogin
+      code: |
+        export default function(ctx) {
+          if (ctx.Login?.response?.status !== 200) throw new Error("Login failed");
+          if (!ctx.Login?.response?.body?.access_token) throw new Error("No token");
+          return { validated: true };
+        }
+      depends_on: Login
+
+  - request:
+      name: GetProfile
+      method: GET
+      url: '{{BASE_URL}}/me'
+      headers:
+        Authorization: 'Bearer {{Login.response.body.access_token}}'
+      depends_on: Login
+
+  - js:
+      name: ValidateProfile
+      code: |
+        export default function(ctx) {
+          if (ctx.GetProfile?.response?.status !== 200) throw new Error("Expected 200");
+          if (!ctx.GetProfile?.response?.body?.id) throw new Error("Missing id");
+          return { validated: true };
+        }
+      depends_on: GetProfile
 ```
 
 What this buys you:
@@ -166,38 +179,49 @@ What this buys you:
 - Reviewable auth behavior.
 - A single place to change auth when it evolves.
 
-### Pattern B: Create resource, capture ID, read it back
+### Pattern B: Create resource, read it back by ID
 
 ```yaml
 steps:
-  - id: create_widget
-    request:
+  - request:
+      name: CreateWidget
       method: POST
-      url: ${base_url}/widgets
+      url: '{{BASE_URL}}/widgets'
       headers:
-        Authorization: "Bearer ${access_token}"
-      json:
-        name: "ci-${RUN_ID}"
-    capture:
-      - header: Location
-        as: widget_url
-    assert:
-      status_in: [201]
+        Authorization: 'Bearer {{Login.response.body.access_token}}'
+        Content-Type: application/json
+      body:
+        name: 'ci-{{RUN_ID}}'
 
-  - id: fetch_widget
-    request:
+  - js:
+      name: ValidateCreate
+      code: |
+        export default function(ctx) {
+          if (ctx.CreateWidget?.response?.status !== 201) throw new Error("Expected 201");
+          return { validated: true };
+        }
+      depends_on: CreateWidget
+
+  - request:
+      name: FetchWidget
       method: GET
-      url: ${widget_url}
+      url: '{{BASE_URL}}/widgets/{{CreateWidget.response.body.id}}'
       headers:
-        Authorization: "Bearer ${access_token}"
-    assert:
-      status: 200
-      json:
-        - jsonpath: $.name
-          equals: "ci-${RUN_ID}"
+        Authorization: 'Bearer {{Login.response.body.access_token}}'
+      depends_on: CreateWidget
+
+  - js:
+      name: ValidateFetch
+      code: |
+        export default function(ctx) {
+          if (ctx.FetchWidget?.response?.status !== 200) throw new Error("Expected 200");
+          if (ctx.FetchWidget?.response?.body?.name !== 'ci-' + ctx.RUN_ID) throw new Error("Name mismatch");
+          return { validated: true };
+        }
+      depends_on: FetchWidget
 ```
 
-This is the CI-friendly alternative to “copy ID from console and paste into next request”. Chaining makes the dependency explicit and prevents brittle fixtures.
+This is the CI-friendly alternative to "copy ID from console and paste into next request". Chaining makes the dependency explicit and prevents brittle fixtures.
 
 ### Pattern C: CSRF or anti-forgery tokens
 
@@ -206,16 +230,16 @@ Many “recorded” flows fail in CI because CSRF tokens are generated per sessi
 The repeatable approach:
 
 - Fetch the page or endpoint that issues CSRF.
-- Capture token from cookie/header/body.
-- Replay it explicitly in subsequent mutating requests.
+- Reference the token from the response body or headers of the issuing step.
+- Use it explicitly in subsequent mutating requests via `{{NodeName.response.body.field}}`.
 
-If you want more concrete examples of chaining extracted values from real HAR traffic, see: [HAR → YAML API Test Flow: Auto-Extract Variables + Chain Requests](https://dev.tools/blog/har-yaml-api-test-flow-auto-extract-variables-chain-requests/).
+If you want more concrete examples of chaining node outputs from real HAR traffic, see: [HAR → YAML API Test Flow: Auto-Extract Variables + Chain Requests](https://dev.tools/blog/har-yaml-api-test-flow-auto-extract-variables-chain-requests/).
 
 ## Stage 5: Normalize YAML for Git diffs (treat formatting as determinism)
 
 If YAML is your source of truth, you should optimize it for review:
 
-- Stable step IDs (consider them public API for your tests)
+- Stable step names (consider them public API for your tests)
 - Stable ordering of keys
 - Sorted headers and query params
 - No inline maps that reformat constantly
@@ -237,27 +261,36 @@ Prefer assertions that express invariants:
 - Normalized timestamps
 - Tolerances for floats
 
-Example invariant-style checks:
+Example invariant-style checks using a JS validation node:
 
 ```yaml
 steps:
-  - id: list_widgets
-    request:
+  - request:
+      name: ListWidgets
       method: GET
-      url: ${base_url}/widgets?limit=25
+      url: '{{BASE_URL}}/widgets'
+      query_params:
+        limit: '25'
       headers:
-        Authorization: "Bearer ${access_token}"
-    assert:
-      status: 200
-      json:
-        - jsonpath: $.items
-          type: array
-        - jsonpath: $.items[*].id
-          every:
-            type: string
-        - jsonpath: $.items[*].created_at
-          every:
-            matches: "^\\d{4}-\\d{2}-\\d{2}T"
+        Authorization: 'Bearer {{Login.response.body.access_token}}'
+
+  - js:
+      name: ValidateWidgets
+      code: |
+        export default function(ctx) {
+          const res = ctx.ListWidgets?.response;
+          if (res?.status !== 200) throw new Error("Expected 200");
+          const items = res?.body?.items;
+          if (!Array.isArray(items)) throw new Error("items must be array");
+          for (const item of items) {
+            if (typeof item.id !== 'string') throw new Error("id must be string");
+            if (!/^\d{4}-\d{2}-\d{2}T/.test(item.created_at)) {
+              throw new Error("created_at must be ISO timestamp");
+            }
+          }
+          return { count: items.length };
+        }
+      depends_on: ListWidgets
 ```
 
 If you are fighting flakes, the most effective move is usually to stop snapshotting unstable fields and start normalizing. A focused reference: [Deterministic API Assertions: Stop Flaky JSON Tests in CI](https://dev.tools/blog/deterministic-api-assertions-stop-flaky-json-tests-in-ci/).
@@ -271,7 +304,7 @@ At minimum, you want:
 - The YAML flow in Git.
 - Secrets injected via CI secret store.
 - CI produces JUnit and logs as artifacts.
-- Failures are attributable to a specific step ID.
+- Failures are attributable to a specific step name.
 
 A minimal CI posture is:
 
@@ -355,10 +388,12 @@ The loop you want is:
 - Developer captures Network traffic for a single workflow in Chrome.
 - Convert to YAML flow.
 - Normalize and chain dependencies.
-- Add invariants as assertions.
+- Add invariants as JS validation nodes.
 - Open PR, review the YAML diff.
 - CI runs the flow and produces artifacts.
 
 Once that loop is reliable, scaling is just adding flows and sharding execution, not reinventing how tests are authored.
 
 If you already have Postman collections, you can mix the same approach (record HAR or export, then translate into reviewable YAML flows) using the migration guide: [Migrate from Postman to DevTools](https://dev.tools/guides/migrate-from-postman/).
+
+The YAML flows this pipeline produces are [end-to-end API tests](/blog/end-to-end-api-testing-the-complete-guide/): chained requests with real data flowing between steps. For a deeper look at structuring these multi-step workflows, see the complete guide.

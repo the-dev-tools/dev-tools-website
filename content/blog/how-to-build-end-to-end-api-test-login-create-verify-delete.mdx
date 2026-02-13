@@ -1,0 +1,634 @@
+---
+title: "How to Build an End-to-End API Test: Login, Create, Verify, Delete"
+date: "2026-02-13"
+slug: "how-to-build-end-to-end-api-test-login-create-verify-delete"
+id: "c3d4e5f6-a7b8-9012-cdef-123456789012"
+image:
+  url: "https://dev-tools-blog-images.fly.storage.tigris.dev/blog/how-to-build-e2e-api-test-tutorial.webp"
+  alt: "How to Build an End-to-End API Test: Login, Create, Verify, Delete"
+author:
+  name: "DevTools Team"
+  avatar: "/logo.svg"
+tags: ["end-to-end-testing","api-testing","flows","api-chaining","yaml"]
+category: "Guides"
+summary: "Step-by-step tutorial: build an end-to-end API test that logs in, creates a resource, verifies it, updates it, deletes it, and confirms deletion. Full YAML examples and CI setup included."
+cta:
+  primary:
+    heading: "Build this flow visually in DevTools"
+    body: "Turn this end-to-end test into a visual workflow. Drag request nodes, auto-map variables, and export YAML for Git and CI."
+    buttonText: "Try Flows"
+    url: "https://dev.tools/docs/how-to/working-with-flows/"
+    secondaryText: "Install DevTools"
+    secondaryUrl: "https://dev.tools/docs/start-here/install/"
+  secondary:
+    heading: "Run end-to-end flows in CI"
+    body: "Export your flow to YAML and run it in GitHub Actions with JUnit reports on every PR."
+    buttonText: "CI integrations"
+    url: "https://dev.tools/docs/how-to/ci-integrations/"
+    secondaryText: "GitHub Actions template"
+    secondaryUrl: "https://dev.tools/templates/github-actions/"
+  badge:
+    text: "End-to-End Testing"
+    variant: "neutral"
+---
+
+This tutorial walks through building an end-to-end API test from scratch. By the end, you will have a six-step flow that authenticates, creates a resource, reads it back, updates it, deletes it, and confirms deletion. Every step passes real data to the next.
+
+We will build it twice: first as a YAML flow you can write by hand, then as a visual Flow in DevTools that auto-maps the variables for you.
+
+## The scenario
+
+You have a bookmarks API with these endpoints:
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/auth/login` | POST | Returns an access token |
+| `/api/bookmarks` | POST | Creates a bookmark, returns the object with `id` |
+| `/api/bookmarks/:id` | GET | Returns a single bookmark |
+| `/api/bookmarks/:id` | PUT | Updates a bookmark |
+| `/api/bookmarks/:id` | DELETE | Deletes a bookmark |
+
+The end-to-end test validates the full lifecycle: a user can log in, create a bookmark, verify it exists, update it, delete it, and confirm it is gone.
+
+## Step 1: Authenticate
+
+Every subsequent request needs the access token from login. This is the root dependency in the chain.
+
+```yaml
+flows:
+  - name: BookmarkLifecycle
+    variables:
+      - name: run_id
+        value: 'ci-001'
+    steps:
+      - request:
+          name: Login
+          method: POST
+          url: {{BASE_URL}}/auth/login
+          headers:
+            Content-Type: application/json
+          body:
+            email: 'test@example.com'
+            password: 'password123'
+      - js:
+          name: Auth
+          code: |
+            export default function(ctx) {
+              if (ctx.Login?.response?.status !== 200) throw new Error("Login failed");
+              if (!ctx.Login?.response?.body?.access_token) throw new Error("No token returned");
+              return { token: ctx.Login.response.body.access_token };
+            }
+          depends_on: Login
+```
+
+**What matters here:**
+
+- The JS node `Auth` extracts `access_token` from the Login response and validates the status
+- Every subsequent step will reference `{{Auth.token}}` in its Authorization header
+- If the login fails or returns no token, the JS node throws and the flow stops immediately
+
+If this step fails, every downstream step fails too. That is correct behavior: you want the test to fail fast and clearly, not produce confusing errors from unauthenticated requests.
+
+## Step 2: Create a bookmark
+
+Now use the token to create a resource. Capture the ID for use in later steps.
+
+```yaml
+      - request:
+          name: CreateBookmark
+          method: POST
+          url: {{BASE_URL}}/api/bookmarks
+          headers:
+            Authorization: Bearer {{Auth.token}}
+            Content-Type: application/json
+          body:
+            url: 'https://example.com/e2e-test-{{run_id}}'
+            title: 'E2E Test Bookmark'
+            tags: ['testing', 'ci']
+          depends_on: Auth
+      - js:
+          name: Bookmark
+          code: |
+            export default function(ctx) {
+              const resp = ctx.CreateBookmark?.response;
+              if (resp?.status !== 201) throw new Error("Expected 201, got " + resp?.status);
+              if (!resp?.body?.id) throw new Error("No bookmark ID in response");
+              if (resp?.body?.title !== "E2E Test Bookmark") throw new Error("Title mismatch");
+              return { id: resp.body.id };
+            }
+          depends_on: CreateBookmark
+```
+
+**What matters here:**
+
+- `{{run_id}}` in the URL makes the bookmark unique per test run, avoiding conflicts on shared environments
+- The JS node `Bookmark` extracts the ID (referenced downstream as `{{Bookmark.id}}`) and validates the response
+- Validation checks both the status code and the response content
+
+## Step 3: Verify the bookmark exists
+
+Read the resource back and confirm it matches what we created.
+
+```yaml
+      - request:
+          name: GetBookmark
+          method: GET
+          url: {{BASE_URL}}/api/bookmarks/{{Bookmark.id}}
+          headers:
+            Authorization: Bearer {{Auth.token}}
+          depends_on: Bookmark
+      - js:
+          name: VerifyRead
+          code: |
+            export default function(ctx) {
+              const resp = ctx.GetBookmark?.response;
+              if (resp?.status !== 200) throw new Error("Expected 200, got " + resp?.status);
+              if (resp?.body?.title !== "E2E Test Bookmark") throw new Error("Title mismatch");
+              if (!resp?.body?.url?.includes("e2e-test")) throw new Error("URL mismatch");
+              if (!Array.isArray(resp?.body?.tags)) throw new Error("Tags not an array");
+              return { verified: true };
+            }
+          depends_on: GetBookmark
+```
+
+**What matters here:**
+
+- This step uses both `{{Auth.token}}` (from step 1) and `{{Bookmark.id}}` (from step 2)
+- Validation confirms the resource was actually persisted, not just acknowledged
+- We validate stable values (title, URL pattern) and avoid exact timestamps or generated metadata
+
+This is the step that catches create-then-read consistency bugs. If your API has eventual consistency (caching, replication lag), this is where it surfaces.
+
+## Step 4: Update the bookmark
+
+Modify the resource and verify the changes were applied.
+
+```yaml
+      - request:
+          name: UpdateBookmark
+          method: PUT
+          url: {{BASE_URL}}/api/bookmarks/{{Bookmark.id}}
+          headers:
+            Authorization: Bearer {{Auth.token}}
+            Content-Type: application/json
+          body:
+            url: 'https://example.com/e2e-test-{{run_id}}'
+            title: 'Updated E2E Bookmark'
+            tags: ['testing', 'ci', 'updated']
+          depends_on: VerifyRead
+      - js:
+          name: VerifyUpdate
+          code: |
+            export default function(ctx) {
+              const resp = ctx.UpdateBookmark?.response;
+              if (resp?.status !== 200) throw new Error("Expected 200, got " + resp?.status);
+              if (resp?.body?.title !== "Updated E2E Bookmark") throw new Error("Title not updated");
+              if (resp?.body?.tags?.length !== 3) throw new Error("Expected 3 tags, got " + resp?.body?.tags?.length);
+              return { updated: true };
+            }
+          depends_on: UpdateBookmark
+```
+
+**What matters here:**
+
+- The full body is sent (PUT replaces the resource), not just the changed fields
+- Validation confirms the update took effect in the response
+- We check array length to confirm the new tag was added
+
+If your API uses PATCH for partial updates, adapt accordingly. The important thing is that the validation confirms the change, not just a 200 status.
+
+## Step 5: Delete the bookmark
+
+Remove the resource.
+
+```yaml
+      - request:
+          name: DeleteBookmark
+          method: DELETE
+          url: {{BASE_URL}}/api/bookmarks/{{Bookmark.id}}
+          headers:
+            Authorization: Bearer {{Auth.token}}
+          depends_on: VerifyUpdate
+      - if:
+          name: CheckDelete
+          condition: DeleteBookmark.response.status == 204
+          then: VerifyDeleted
+          else: DeleteFailed
+          depends_on: DeleteBookmark
+```
+
+**What matters here:**
+
+- Most APIs return 204 (no content) for successful deletes. Some return 200 with a body. Adjust the condition to match your API.
+- The `if` node checks the status and routes to the next step or an error handler.
+- This step is also cleanup: by deleting what we created, we leave the environment clean for the next test run.
+
+## Step 6: Confirm deletion
+
+The most commonly skipped step in API tests, and one of the most valuable.
+
+```yaml
+      - request:
+          name: VerifyDeleted
+          method: GET
+          url: {{BASE_URL}}/api/bookmarks/{{Bookmark.id}}
+          headers:
+            Authorization: Bearer {{Auth.token}}
+      - js:
+          name: ConfirmGone
+          code: |
+            export default function(ctx) {
+              if (ctx.VerifyDeleted?.response?.status !== 404) {
+                throw new Error("Expected 404, resource still exists");
+              }
+              return { deleted: true };
+            }
+          depends_on: VerifyDeleted
+      - js:
+          name: DeleteFailed
+          code: |
+            export default function(ctx) {
+              throw new Error("Delete returned " + ctx.DeleteBookmark?.response?.status + ", expected 204");
+            }
+```
+
+**What matters here:**
+
+- This confirms the delete actually worked, not just that the endpoint accepted the request
+- A 404 means the resource is gone. If you get 200, the delete was silently ignored.
+- This step catches soft-delete bugs where the resource is "deleted" but still appears in queries
+
+## The complete flow
+
+Here is the full YAML flow, all six steps together:
+
+```yaml
+workspace_name: Bookmark Lifecycle E2E
+
+run:
+  - flow: BookmarkLifecycle
+
+flows:
+  - name: BookmarkLifecycle
+    variables:
+      - name: run_id
+        value: 'ci-001'
+    steps:
+      - request:
+          name: Login
+          method: POST
+          url: {{BASE_URL}}/auth/login
+          headers:
+            Content-Type: application/json
+          body:
+            email: 'test@example.com'
+            password: 'password123'
+      - js:
+          name: Auth
+          code: |
+            export default function(ctx) {
+              if (ctx.Login?.response?.status !== 200) throw new Error("Login failed");
+              return { token: ctx.Login.response.body.access_token };
+            }
+          depends_on: Login
+      - request:
+          name: CreateBookmark
+          method: POST
+          url: {{BASE_URL}}/api/bookmarks
+          headers:
+            Authorization: Bearer {{Auth.token}}
+            Content-Type: application/json
+          body:
+            url: 'https://example.com/e2e-test-{{run_id}}'
+            title: 'E2E Test Bookmark'
+            tags: ['testing', 'ci']
+          depends_on: Auth
+      - js:
+          name: Bookmark
+          code: |
+            export default function(ctx) {
+              if (ctx.CreateBookmark?.response?.status !== 201) throw new Error("Create failed");
+              return { id: ctx.CreateBookmark.response.body.id };
+            }
+          depends_on: CreateBookmark
+      - request:
+          name: GetBookmark
+          method: GET
+          url: {{BASE_URL}}/api/bookmarks/{{Bookmark.id}}
+          headers:
+            Authorization: Bearer {{Auth.token}}
+          depends_on: Bookmark
+      - js:
+          name: VerifyRead
+          code: |
+            export default function(ctx) {
+              const body = ctx.GetBookmark?.response?.body;
+              if (ctx.GetBookmark?.response?.status !== 200) throw new Error("Read failed");
+              if (body?.title !== "E2E Test Bookmark") throw new Error("Title mismatch");
+              return { verified: true };
+            }
+          depends_on: GetBookmark
+      - request:
+          name: UpdateBookmark
+          method: PUT
+          url: {{BASE_URL}}/api/bookmarks/{{Bookmark.id}}
+          headers:
+            Authorization: Bearer {{Auth.token}}
+            Content-Type: application/json
+          body:
+            url: 'https://example.com/e2e-test-{{run_id}}'
+            title: 'Updated E2E Bookmark'
+            tags: ['testing', 'ci', 'updated']
+          depends_on: VerifyRead
+      - js:
+          name: VerifyUpdate
+          code: |
+            export default function(ctx) {
+              if (ctx.UpdateBookmark?.response?.status !== 200) throw new Error("Update failed");
+              if (ctx.UpdateBookmark?.response?.body?.title !== "Updated E2E Bookmark") throw new Error("Not updated");
+              return { updated: true };
+            }
+          depends_on: UpdateBookmark
+      - request:
+          name: DeleteBookmark
+          method: DELETE
+          url: {{BASE_URL}}/api/bookmarks/{{Bookmark.id}}
+          headers:
+            Authorization: Bearer {{Auth.token}}
+          depends_on: VerifyUpdate
+      - if:
+          name: CheckDelete
+          condition: DeleteBookmark.response.status == 204
+          then: VerifyDeletedReq
+          else: DeleteFailed
+          depends_on: DeleteBookmark
+      - request:
+          name: VerifyDeletedReq
+          method: GET
+          url: {{BASE_URL}}/api/bookmarks/{{Bookmark.id}}
+          headers:
+            Authorization: Bearer {{Auth.token}}
+      - js:
+          name: ConfirmGone
+          code: |
+            export default function(ctx) {
+              if (ctx.VerifyDeletedReq?.response?.status !== 404) throw new Error("Resource still exists");
+              return { deleted: true };
+            }
+          depends_on: VerifyDeletedReq
+      - js:
+          name: DeleteFailed
+          code: |
+            export default function(ctx) {
+              throw new Error("Delete returned " + ctx.DeleteBookmark?.response?.status);
+            }
+```
+
+Six request steps, four JS validation/extraction nodes, one `if` condition. Two key variables flow through the chain: `{{Auth.token}}` and `{{Bookmark.id}}`. One complete lifecycle.
+
+## The dependency graph
+
+The data flow between steps looks like this:
+
+```
+Login
+  │ Auth (extracts: token)
+  ▼
+CreateBookmark (uses: Auth.token)
+  │ Bookmark (extracts: id)
+  ▼
+GetBookmark (uses: Auth.token, Bookmark.id)
+  │ VerifyRead (validates response)
+  ▼
+UpdateBookmark (uses: Auth.token, Bookmark.id)
+  │ VerifyUpdate (validates response)
+  ▼
+DeleteBookmark (uses: Auth.token, Bookmark.id)
+  │ CheckDelete (if: status == 204)
+  ▼
+VerifyDeletedReq (uses: Auth.token, Bookmark.id)
+  │ ConfirmGone (validates 404)
+```
+
+Every step depends on the login token. Steps 3-6 also depend on the bookmark ID from step 2. This is a linear chain, the simplest form of end-to-end test. More complex workflows have branches and parallel paths, but the principle is the same: explicit data flow between steps via `depends_on`.
+
+## Building this visually with Flows
+
+Writing YAML by hand works for a 6-step flow. For longer workflows (10+ steps, conditional branches, loops), a visual builder is faster and less error-prone.
+
+In DevTools Flows, the same test looks like this:
+
+### 1. Create the flow
+
+Open DevTools Studio and click **New Flow**. You start with a canvas and a Start node.
+
+### 2. Add request nodes
+
+Drag six HTTP Request nodes onto the canvas:
+- Login
+- Create Bookmark
+- Get Bookmark
+- Update Bookmark
+- Delete Bookmark
+- Verify Deleted
+
+### 3. Connect them
+
+Draw edges from each node to the next. This sets the execution order via `depends_on`.
+
+### 4. Configure each request
+
+Click each node and fill in the method, URL, headers, and body.
+
+### 5. Auto-map variables
+
+When you type `{{ Login.response.body.access_token }}` in the Authorization header of the Create Bookmark node, the dependency edge is created automatically. The flow graph updates to show that Create Bookmark depends on Login.
+
+Similarly, `{{ CreateBookmark.response.body.id }}` in the Get Bookmark URL creates the data dependency from Create to Get.
+
+### 6. Add validation
+
+Add JS nodes between steps to validate responses and extract values. Or use `if` nodes for simple status checks. Click each node to add validation logic.
+
+### 7. Run it
+
+Click **Run Flow**. Each node executes in order, showing green (pass) or red (fail) status. Click any node to inspect its request, response, and validation results.
+
+### 8. Export to YAML
+
+Right-click the flow and select **Export to YAML**. The result is the same YAML structure shown above, ready for Git commit and CI execution.
+
+The visual graph and the YAML are two representations of the same test. Edit either one.
+
+## Running in CI
+
+Once the YAML is committed to your repo, add it to your CI pipeline.
+
+### Local execution
+
+```bash
+# Run the flow locally
+devtools flow run tests/e2e/bookmarks-lifecycle.yaml
+```
+
+### GitHub Actions
+
+```yaml
+name: E2E API Tests
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install DevTools CLI
+        run: curl -fsSL https://dev.tools/install.sh | sh
+
+      - name: Run bookmark lifecycle test
+        run: devtools flow run tests/e2e/bookmarks-lifecycle.yaml --report junit
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: reports/
+```
+
+The `--report junit` flag generates JUnit XML that GitHub Actions can display inline on the PR.
+
+## Variations and next steps
+
+### Adding error cases
+
+Extend the flow with negative tests after the happy path:
+
+```yaml
+      # After ConfirmGone, try to update the deleted resource
+      - request:
+          name: UpdateDeleted
+          method: PUT
+          url: {{BASE_URL}}/api/bookmarks/{{Bookmark.id}}
+          headers:
+            Authorization: Bearer {{Auth.token}}
+            Content-Type: application/json
+          body:
+            title: 'Should fail'
+          depends_on: ConfirmGone
+      - js:
+          name: VerifyUpdateFails
+          code: |
+            export default function(ctx) {
+              if (ctx.UpdateDeleted?.response?.status !== 404) {
+                throw new Error("Expected 404 for deleted resource, got " + ctx.UpdateDeleted?.response?.status);
+              }
+              return { passed: true };
+            }
+          depends_on: UpdateDeleted
+```
+
+### Testing with different roles
+
+Create a second flow that tests permission boundaries:
+
+```yaml
+  - name: PermissionTest
+    steps:
+      - request:
+          name: UserLogin
+          method: POST
+          url: {{BASE_URL}}/auth/login
+          headers:
+            Content-Type: application/json
+          body:
+            email: 'regular@example.com'
+            password: 'password456'
+      - js:
+          name: UserAuth
+          code: |
+            export default function(ctx) {
+              return { token: ctx.UserLogin?.response?.body?.access_token };
+            }
+          depends_on: UserLogin
+      - request:
+          name: AccessAdmin
+          method: GET
+          url: {{BASE_URL}}/api/admin/users
+          headers:
+            Authorization: Bearer {{UserAuth.token}}
+          depends_on: UserAuth
+      - js:
+          name: VerifyForbidden
+          code: |
+            export default function(ctx) {
+              if (ctx.AccessAdmin?.response?.status !== 403) {
+                throw new Error("Expected 403, got " + ctx.AccessAdmin?.response?.status);
+              }
+              return { passed: true };
+            }
+          depends_on: AccessAdmin
+```
+
+### Adding pagination
+
+If your list endpoint is paginated, add a `for` loop that fetches pages:
+
+```yaml
+      - request:
+          name: ListFirstPage
+          method: GET
+          url: {{BASE_URL}}/api/bookmarks
+          query_params:
+            limit: '10'
+          headers:
+            Authorization: Bearer {{Auth.token}}
+          depends_on: Auth
+      - js:
+          name: PageData
+          code: |
+            export default function(ctx) {
+              const body = ctx.ListFirstPage?.response?.body;
+              if (!Array.isArray(body?.items)) throw new Error("Expected items array");
+              return { cursor: body?.pagination?.next_cursor, count: body?.items?.length };
+            }
+          depends_on: ListFirstPage
+      - for:
+          name: FetchPages
+          iter_count: 5
+          loop: FetchNextPage
+          depends_on: PageData
+```
+
+In DevTools Flows, this becomes a Loop node that iterates until the cursor is null.
+
+### Running multiple flows in parallel
+
+If you have several independent end-to-end flows (bookmarks lifecycle, user settings, search), run them in parallel in CI:
+
+```bash
+devtools flow run tests/e2e/*.yaml --parallel
+```
+
+Or use a GitHub Actions matrix strategy to distribute flows across runners. For the full parallel execution setup, see: [GitHub Actions for YAML API Tests: Parallel Runs + Caching](/blog/github-actions-for-yaml-api-tests-parallel-runs-caching-copy-paste-workflow/).
+
+## Common mistakes
+
+**Forgetting a JS extraction node.** If a request step produces data you need downstream (a token, an ID), you must add a JS node after it to extract the value. Subsequent steps reference the JS node's output (e.g., `{{Auth.token}}`), not the request response directly. Missing this extraction step means the variable is undefined and the flow fails.
+
+**Not validating at every step.** If you only validate at the end, a failure in step 2 produces a cryptic error in step 6. Add a JS validation node or `if` condition after each important request so failures are immediately attributable.
+
+**Using hardcoded IDs.** Replacing `{{Bookmark.id}}` with a hardcoded UUID makes the test pass once and break everywhere else. Always extract IDs from the response that created them via a JS node.
+
+**Skipping the delete step.** If your test creates data and does not clean up, repeated runs accumulate garbage. List endpoints slow down, unique constraints fail, and tests break for environmental reasons. Always clean up.
+
+## Start with one workflow
+
+You do not need a comprehensive end-to-end suite on day one. Pick the single most important workflow in your API: likely the auth + CRUD lifecycle for your core resource. Build the flow, run it in CI, and expand from there.
+
+For the broader strategy on when and how to use end-to-end API tests, see: [End-to-End API Testing: The Complete Guide](/blog/end-to-end-api-testing-the-complete-guide/).
+
+For background on why isolated tests are not enough, see: [Why Single-Request API Tests Miss Real Bugs](/blog/why-single-request-api-tests-miss-real-bugs/).

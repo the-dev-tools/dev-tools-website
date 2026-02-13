@@ -36,7 +36,7 @@ Flaky JSON assertions are rarely “random”. They are deterministic failures c
 
 If you want CI runs you can trust, you need a deterministic assertion strategy: assert invariants, normalize what is inherently unstable, and keep those rules reviewable in Git.
 
-YAML-first workflows (like DevTools flows) are a good fit here because your assertions, capture rules, and normalization decisions are plain text. Reviewers can see exactly what changed in a pull request, instead of spelunking through UI state (Postman) or scattering logic across JS snippets (Newman, Bruno).
+YAML-first workflows (like DevTools flows) are a good fit here because your request definitions, JS validation nodes, and normalization decisions are plain text. Reviewers can see exactly what changed in a pull request, instead of spelunking through UI state (Postman) or scattering logic across disconnected scripts (Newman, Bruno).
 
 ## What “deterministic API assertions” actually means
 
@@ -56,7 +56,7 @@ The biggest anti-pattern in CI is a full JSON equality assertion on a response t
 
 | Flake source | Typical symptom in CI | Deterministic fix (high level) |
 |------------|------------------------|--------------------------------|
-| Time-based fields (`createdAt`, `updatedAt`), UUIDs, server IDs | Snapshot diffs every run | Assert format/type, capture and reuse, or redact before comparison |
+| Time-based fields (`createdAt`, `updatedAt`), UUIDs, server IDs | Snapshot diffs every run | Assert format/type, reference and reuse via node outputs, or redact before comparison |
 | Unordered arrays | Same elements, different order | Compare as sets, or sort canonically before asserting |
 | Floating point | Off by 0.000001 on different machines/data | Use tolerances, ranges, or rounding rules |
 | Pagination | Page boundaries shift, cursors expire, totals change | Seed data, constrain sort, compare stable projections, or walk pages deterministically |
@@ -77,58 +77,67 @@ What you usually want instead:
 - `updatedAt` is present when expected (or absent when it should be)
 - Sometimes: `updatedAt` changes after an update (but do not compare to wall-clock time, compare relative behavior)
 
-### UUIDs: validate shape, then capture
+### UUIDs: validate shape, then reference
 
-For UUIDs, exact equality across runs is nonsense. Validate the shape (or that it is a non-empty string), then capture the actual value and use it for subsequent requests.
+For UUIDs, exact equality across runs is nonsense. Validate the shape (or that it is a non-empty string), then reference the actual value from the response body and use it for subsequent requests.
 
 For UUID structure, see [RFC 4122](https://www.rfc-editor.org/rfc/rfc4122).
 
-### YAML example: capture IDs, assert formats (illustrative)
+### YAML example: validate formats with JS nodes, chain via node outputs
 
-Below is an **illustrative** YAML pattern showing the intent. (Exact keys vary by runner, but the strategy is stable.)
+Below is a YAML flow using the DevTools format. JS validation nodes check format invariants rather than exact values.
 
 ```yaml
-id: user_lifecycle
-vars:
-  baseUrl: ${BASE_URL}
-  runId: ${GITHUB_RUN_ID}
-steps:
-  - id: create_user
-    request:
-      method: POST
-      url: ${baseUrl}/users
-      headers:
-        content-type: application/json
-      body:
-        name: ci-${runId}
-    expect:
-      status: 201
-      json:
-        - path: $.id
-          match: regex
-          value: "^[0-9a-fA-F-]{36}$"
-        - path: $.createdAt
-          match: regex
-          value: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$"
-    capture:
-      userId: $.id
+env:
+  BASE_URL: '{{BASE_URL}}'
+  GITHUB_RUN_ID: '{{GITHUB_RUN_ID}}'
 
-  - id: get_user
-    request:
+steps:
+  - request:
+      name: CreateUser
+      method: POST
+      url: '{{BASE_URL}}/users'
+      headers:
+        Content-Type: application/json
+      body:
+        name: 'ci-{{GITHUB_RUN_ID}}'
+
+  - js:
+      name: ValidateCreate
+      code: |
+        export default function(ctx) {
+          const res = ctx.CreateUser?.response;
+          if (res?.status !== 201) throw new Error("Expected 201");
+          const id = res?.body?.id;
+          if (!/^[0-9a-fA-F-]{36}$/.test(id)) throw new Error("id not UUID format");
+          const ts = res?.body?.createdAt;
+          if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/.test(ts)) {
+            throw new Error("createdAt not ISO format");
+          }
+          return { validated: true };
+        }
+      depends_on: CreateUser
+
+  - request:
+      name: GetUser
       method: GET
-      url: ${baseUrl}/users/${userId}
-    expect:
-      status: 200
-      json:
-        - path: $.id
-          equals: ${userId}
-        - path: $.name
-          equals: ci-${runId}
-        - path: $.updatedAt
-          match: optional
+      url: '{{BASE_URL}}/users/{{CreateUser.response.body.id}}'
+      depends_on: CreateUser
+
+  - js:
+      name: ValidateGet
+      code: |
+        export default function(ctx) {
+          const res = ctx.GetUser?.response;
+          if (res?.status !== 200) throw new Error("Expected 200");
+          if (res?.body?.id !== ctx.CreateUser?.response?.body?.id) throw new Error("ID mismatch");
+          if (res?.body?.name !== 'ci-' + ctx.GITHUB_RUN_ID) throw new Error("Name mismatch");
+          return { validated: true };
+        }
+      depends_on: GetUser
 ```
 
-Key idea: you validate *format* for timestamps/UUIDs and then chain requests using captured values.
+Key idea: you validate *format* for timestamps/UUIDs in JS nodes, then chain requests using node output references like `{{CreateUser.response.body.id}}`.
 
 ### When you do need time determinism
 
@@ -174,26 +183,37 @@ jq -S '.items |= sort_by(.id)' response.json > response.normalized.json
 
 ![A simple diagram showing a CI pipeline step that takes raw JSON response, applies normalization (remove dynamic fields, sort arrays, round floats), and then runs assertions and diffs against a Git-tracked expected fixture.](https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/5bea1678-359d-45e1-a1a7-abb3f1b7025e/image-0.webp)
 
-### YAML example: normalize list responses by projection (illustrative)
+### YAML example: normalize list responses by projection
 
 ```yaml
-id: list_users_projection
 steps:
-  - id: list_users
-    request:
+  - request:
+      name: ListUsers
       method: GET
-      url: ${BASE_URL}/users?limit=50&sort=id
-    expect:
-      status: 200
-      json:
-        - path: $.items
-          match: array
-        - path: $.items[*].id
-          match: all_regex
-          value: "^[0-9a-fA-F-]{36}$"
-        - path: $.items[*].email
-          match: all_regex
-          value: "^[^@]+@[^@]+\\.[^@]+$"
+      url: '{{BASE_URL}}/users'
+      query_params:
+        limit: '50'
+        sort: id
+
+  - js:
+      name: ValidateListUsers
+      code: |
+        export default function(ctx) {
+          const res = ctx.ListUsers?.response;
+          if (res?.status !== 200) throw new Error("Expected 200");
+          const items = res?.body?.items;
+          if (!Array.isArray(items)) throw new Error("items must be array");
+          for (const item of items) {
+            if (!/^[0-9a-fA-F-]{36}$/.test(item.id)) {
+              throw new Error("id not UUID: " + item.id);
+            }
+            if (!/^[^@]+@[^@]+\.[^@]+$/.test(item.email)) {
+              throw new Error("invalid email: " + item.email);
+            }
+          }
+          return { count: items.length };
+        }
+      depends_on: ListUsers
 ```
 
 Notice what we did not do: assert the entire `items` array equals a stored snapshot.
@@ -227,25 +247,33 @@ If business logic allows it, prefer invariants:
 
 If the API returns floats but the domain is currency, consider returning integers (cents) or decimal strings. If you cannot change the API, define rounding rules in your tests.
 
-### YAML example: tolerance matcher (illustrative)
+### YAML example: tolerance check via JS node
 
 ```yaml
-id: invoice_total
 steps:
-  - id: get_invoice
-    request:
+  - request:
+      name: GetInvoice
       method: GET
-      url: ${BASE_URL}/invoices/${invoiceId}
-    expect:
-      status: 200
-      json:
-        - path: $.total
-          match: within
-          target: 12.34
-          tolerance: 0.01
+      url: '{{BASE_URL}}/invoices/{{invoiceId}}'
+
+  - js:
+      name: ValidateInvoiceTotal
+      code: |
+        export default function(ctx) {
+          const res = ctx.GetInvoice?.response;
+          if (res?.status !== 200) throw new Error("Expected 200");
+          const total = res?.body?.total;
+          const expected = 12.34;
+          const tolerance = 0.01;
+          if (Math.abs(total - expected) > tolerance) {
+            throw new Error("Total " + total + " not within " + tolerance + " of " + expected);
+          }
+          return { total };
+        }
+      depends_on: GetInvoice
 ```
 
-If your runner does not support a `within` matcher, do not fall back to string equality. Instead, normalize with a pre-assert step (for example, round using `jq` or compute in a small helper) and compare the normalized outputs.
+JS validation nodes give you full control over tolerance logic. You can use absolute tolerance, relative tolerance, or rounding rules without being limited to a fixed matcher vocabulary.
 
 ## Pattern 4: Pagination without unstable comparisons
 
@@ -280,37 +308,58 @@ Instead of snapshotting each page JSON:
 - Sort the collected IDs
 - Assert against expected IDs (or expected count) for your filtered namespace
 
-### YAML example: stable pagination assertions (illustrative)
+### YAML example: stable pagination assertions
 
 ```yaml
-id: paged_search
-vars:
-  prefix: ci-${GITHUB_RUN_ID}
-steps:
-  - id: page_1
-    request:
-      method: GET
-      url: ${BASE_URL}/users?prefix=${prefix}&limit=20&sort=id
-    expect:
-      status: 200
-      json:
-        - path: $.items
-          match: array
-    capture:
-      cursor: $.nextCursor
-      idsPage1: $.items[*].id
+env:
+  GITHUB_RUN_ID: '{{GITHUB_RUN_ID}}'
 
-  - id: page_2
-    request:
+steps:
+  - request:
+      name: Page1
       method: GET
-      url: ${BASE_URL}/users?prefix=${prefix}&limit=20&sort=id&cursor=${cursor}
-    expect:
-      status: 200
-    capture:
-      idsPage2: $.items[*].id
+      url: '{{BASE_URL}}/users'
+      query_params:
+        prefix: 'ci-{{GITHUB_RUN_ID}}'
+        limit: '20'
+        sort: id
+
+  - js:
+      name: ValidatePage1
+      code: |
+        export default function(ctx) {
+          const res = ctx.Page1?.response;
+          if (res?.status !== 200) throw new Error("Expected 200");
+          if (!Array.isArray(res?.body?.items)) throw new Error("items must be array");
+          return { cursor: res.body.nextCursor, ids: res.body.items.map(i => i.id) };
+        }
+      depends_on: Page1
+
+  - request:
+      name: Page2
+      method: GET
+      url: '{{BASE_URL}}/users'
+      query_params:
+        prefix: 'ci-{{GITHUB_RUN_ID}}'
+        limit: '20'
+        sort: id
+        cursor: '{{ValidatePage1.cursor}}'
+      depends_on: ValidatePage1
+
+  - js:
+      name: ValidatePage2
+      code: |
+        export default function(ctx) {
+          const res = ctx.Page2?.response;
+          if (res?.status !== 200) throw new Error("Expected 200");
+          const page2Ids = res?.body?.items?.map(i => i.id) || [];
+          const allIds = [...ctx.ValidatePage1.ids, ...page2Ids].sort();
+          return { allIds, totalCount: allIds.length };
+        }
+      depends_on: Page2
 ```
 
-If you need a single deterministic comparison, concatenate `idsPage1` and `idsPage2`, sort, and assert on the stable set. If your runner cannot do that in-flow, export the captured IDs as an artifact and normalize in CI.
+The JS nodes let you collect IDs across pages, sort them, and produce a stable set for comparison. This avoids relying on page-boundary stability.
 
 ## Pattern 5: Redaction and masking as part of the assertion contract
 
@@ -350,9 +399,9 @@ A reliable CI setup has two layers:
 
 This is where YAML-first shines. A pull request diff can show:
 
-- Which fields you chose to assert exactly
-- Which fields you chose to assert by format
-- Where you capture and reuse IDs (request chaining)
+- Which fields you chose to assert exactly in JS validation nodes
+- Which fields you chose to assert by format (regex checks)
+- Where you reference and reuse IDs across steps (request chaining via node outputs)
 - What you intentionally ignore (and why)
 
 That is hard to review in Postman (UI state), and often hard to standardize in Newman (JS tests drift per author). Bruno is closer because it is text-based, but it still uses its own format and often pushes logic into scripts, which tends to recreate the same “hidden behavior” problem over time.
@@ -386,7 +435,7 @@ Use this as a review standard for PRs that modify API assertions.
 ### For dynamic fields
 
 - Assert **format/type** for timestamps and UUIDs, not exact values.
-- Capture server-generated IDs and chain requests using captured values.
+- Chain requests by referencing server-generated IDs via `{{NodeName.response.body.id}}`.
 - Treat headers like `Date`, `Set-Cookie`, and trace IDs as non-assertable unless you have a specific contract.
 
 ### For arrays
@@ -416,11 +465,13 @@ Determinism is not a one-time refactor. It is a maintenance discipline.
 
 With YAML-based API testing stored in Git:
 
-- Assertions are visible in diffs.
-- Reviewers can block “full JSON equals” regressions.
-- Chaining rules are explicit (captures next to their use).
+- Validation logic is visible in diffs (JS nodes inline with request steps).
+- Reviewers can block "full JSON equals" regressions.
+- Chaining rules are explicit (node output references next to their use).
 - CI behavior is reproducible because the test definition is just code.
 
 That is the core advantage over UI-locked collections (Postman) and script-heavy runners (Newman, Bruno): you can enforce deterministic conventions the same way you enforce code conventions.
 
 If your current suite is noisy, start by changing only one thing: replace exact snapshot equality with **format assertions + canonical sorting + tolerance rules** where needed. CI will get quieter fast, and failures will start meaning something again.
+
+Deterministic assertions matter even more in [end-to-end API tests](/blog/end-to-end-api-testing-the-complete-guide/) where flakiness in one step cascades through every downstream step. Getting assertions right at each point in the chain is what makes multi-step flows reliable in CI.

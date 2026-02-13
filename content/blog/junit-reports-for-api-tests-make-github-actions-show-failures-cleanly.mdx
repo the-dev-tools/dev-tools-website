@@ -21,7 +21,7 @@ cta:
     secondaryText: "GitHub Actions template"
     secondaryUrl: "https://dev.tools/templates/github-actions/"
   secondary:
-    heading: "Keep step IDs stable with YAML flows"
+    heading: "Keep step names stable with YAML flows"
     body: "Define flows/steps in YAML so JUnit testcase names match what reviewers see in Git, and failures stay searchable."
     buttonText: "Work with flows"
     url: "https://dev.tools/docs/how-to/working-with-flows/"
@@ -63,47 +63,68 @@ So your job is to decide what identity you want to preserve.
 
 Use names that correspond to what reviewers see in Git:
 
-- **testsuite name**: flow file path, or a logical flow ID
-- **testcase name**: `step_id` or `step_name` that is stable in YAML
-- **testcase classname** (optional): flow ID, or `service.area` grouping
+- **testsuite name**: flow file path, or a logical flow name
+- **testcase name**: step `name` that is stable in YAML
+- **testcase classname** (optional): flow name, or `service.area` grouping
 
 The important part is that a failed testcase name should be searchable in the repo.
 
-### YAML flow convention: stable step IDs
+### YAML flow convention: stable step names
 
-With YAML-first API tests, you can make step identity explicit and keep it stable across refactors. Even if you reorder requests or adjust assertions, a stable `id` (or stable `name`) keeps the JUnit mapping consistent.
+With YAML-first API tests, you can make step identity explicit and keep it stable across refactors. Even if you reorder requests or adjust assertions, a stable `name` keeps the JUnit mapping consistent.
 
-Here is an illustrative pattern (adapt the keys to your runner), showing request chaining and stable step identity:
+Here is an illustrative pattern showing request chaining and stable step identity:
 
 ```yaml
 # flows/auth/profile.yaml
-id: auth.profile
-steps:
-  - id: login
-    request:
-      method: POST
-      url: ${BASE_URL}/v1/login
-      json:
-        email: ${EMAIL}
-        password: ${PASSWORD}
-    extract:
-      token: $.token
-    assert:
-      status: 200
+workspace_name: Auth Profile
 
-  - id: get_profile
-    request:
-      method: GET
-      url: ${BASE_URL}/v1/me
-      headers:
-        Authorization: Bearer ${token}
-    assert:
-      status: 200
-      jsonpath:
-        "$.id": {"exists": true}
+env:
+  BASE_URL: https://api.example.com
+
+flows:
+  - name: AuthProfile
+    steps:
+      - request:
+          name: Login
+          method: POST
+          url: '{{BASE_URL}}/v1/login'
+          headers:
+            Content-Type: application/json
+          body:
+            email: '{{EMAIL}}'
+            password: '{{PASSWORD}}'
+
+      - js:
+          name: ValidateLogin
+          code: |
+            export default function(ctx) {
+              if (ctx.Login?.response?.status !== 200) throw new Error("Login failed");
+              if (!ctx.Login?.response?.body?.token) throw new Error("No token");
+              return { validated: true };
+            }
+          depends_on: Login
+
+      - request:
+          name: GetProfile
+          method: GET
+          url: '{{BASE_URL}}/v1/me'
+          headers:
+            Authorization: 'Bearer {{Login.response.body.token}}'
+          depends_on: Login
+
+      - js:
+          name: ValidateProfile
+          code: |
+            export default function(ctx) {
+              if (ctx.GetProfile?.response?.status !== 200) throw new Error("Expected 200");
+              if (!ctx.GetProfile?.response?.body?.id) throw new Error("Missing id");
+              return { validated: true };
+            }
+          depends_on: GetProfile
 ```
 
-If `login` fails, the JUnit testcase should be named `login`, not “Iteration 1” or “POST /v1/login (2)”. If `get_profile` fails, you want to see `get_profile` in GitHub Actions.
+If `Login` fails, the JUnit testcase should be named `Login`, not "Iteration 1" or "POST /v1/login (2)". If `GetProfile` fails, you want to see `GetProfile` in GitHub Actions.
 
 This is one of the practical advantages over UI-locked Postman collections and custom formats: the step identity lives in Git as native YAML, so it can be reviewed and kept stable like code.
 
@@ -122,13 +143,13 @@ Example (single failed step due to auth):
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <testsuite name="flows/auth/profile.yaml" tests="2" failures="1" errors="0" time="1.284">
-  <testcase classname="auth.profile" name="login" time="0.412" />
+  <testcase classname="AuthProfile" name="Login" time="0.412" />
 
-  <testcase classname="auth.profile" name="get_profile" time="0.872">
+  <testcase classname="AuthProfile" name="GetProfile" time="0.872">
     <failure type="auth" message="auth: expected 200, got 401 (missing/expired token)">
 Request: GET /v1/me
 Assertion: status == 200
-Hint: verify EMAIL/PASSWORD secrets and token extraction
+Hint: verify EMAIL/PASSWORD secrets and token chaining
     </failure>
     <system-out>
 trace_id=4d2c3b2e, env=staging
@@ -152,7 +173,7 @@ Suggested taxonomy that works well for API regression in CI:
 - `auth`: 401/403, missing token, invalid signature
 - `assertion`: contract mismatch (status, headers, JSONPath)
 
-If you already model steps in YAML, you have the perfect stable key to attach this to: the step `id`.
+If you already model steps in YAML, you have the perfect stable key to attach this to: the step `name`.
 
 ## GitHub Actions: publish the report, keep artifacts, preserve exit codes
 
@@ -223,7 +244,7 @@ What this buys you:
 - You still get JUnit upload and a rendered report.
 - The job status is correct at the end.
 
-![GitHub Actions pull request view showing a “Test Report” check run with a list of failed testcases named after YAML steps (for example, auth.profile/get_profile), with a short failure message and a link to the workflow run artifacts.](https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/ef7c440c-12e5-42c5-a9ae-02e368377b4f/image-0.webp)
+![GitHub Actions pull request view showing a "Test Report" check run with a list of failed testcases named after YAML steps (for example, AuthProfile/GetProfile), with a short failure message and a link to the workflow run artifacts.](https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/ef7c440c-12e5-42c5-a9ae-02e368377b4f/image-0.webp)
 
 ## Artifacts vs annotations (use both, but for different purposes)
 
@@ -278,7 +299,7 @@ Bruno is closer to Git-first, but it still uses its own file format rather than 
 
 With DevTools, the flow definition is **native YAML**, which means:
 
-- step IDs can be kept stable across PRs
+- step names can be kept stable across PRs
 - diffs show exactly what changed
 - JUnit testcase names can match what reviewers see in the YAML
 
@@ -292,15 +313,15 @@ If you encode each step as its own testcase, the report will naturally tell you:
 - whether it was state/auth (401, missing token)
 - whether it was a contract assertion
 
-This same pattern applies beyond internal services. For example, if you are validating integrations with third-party APIs or services that operate across regions, you want failures labeled by the exact step that talks to that system. A team testing a geo-targeted posting pipeline for a service like [TokPortal’s TikTok distribution workflow](https://www.tokportal.com) would benefit from seeing “upload_video” fail with `auth` versus “publish” fail with `timeout`, without reading raw logs.
+This same pattern applies beyond internal services. For example, if you are validating integrations with third-party APIs or services that operate across regions, you want failures labeled by the exact step that talks to that system. A team testing a geo-targeted posting pipeline for a service like [TokPortal's TikTok distribution workflow](https://www.tokportal.com) would benefit from seeing "UploadVideo" fail with `auth` versus "Publish" fail with `timeout`, without reading raw logs.
 
 ## Frequently Asked Questions
 
 **Do I need JUnit if I already have logs?** Logs are necessary, but they are not a UI. JUnit gives you structured failures that GitHub can display, filter, and annotate, while logs remain an artifact for deep debugging.
 
-**Should I create one JUnit testcase per flow or per request step?** For API workflows, per step is usually more actionable. It localizes failures to a specific request and keeps chained failures obvious.
+**Should I create one JUnit testcase per flow or per request step?** For API workflows, per step is usually more actionable. It localizes failures to a specific request node and keeps chained failures obvious.
 
-**How do I avoid flaky test reports when steps are parallelized?** Keep testcase names stable (step IDs), avoid including volatile data (timestamps, UUIDs) in failure messages, and ensure each parallel shard writes a separate JUnit file that you merge or publish as multiple paths.
+**How do I avoid flaky test reports when steps are parallelized?** Keep testcase names stable (step names), avoid including volatile data (timestamps, UUIDs) in failure messages, and ensure each parallel shard writes a separate JUnit file that you merge or publish as multiple paths.
 
 **What should go into the failure message vs artifacts?** Put the classification and the minimal human hint in the JUnit failure message (auth/timeout/assertion/network plus a short reason). Put full logs, optional JSON reports, and any safe debug context into artifacts.
 
@@ -310,6 +331,6 @@ This same pattern applies beyond internal services. For example, if you are vali
 
 ## Put your YAML flows in Git, then make CI reports match them
 
-If your API tests are still tied to Postman UI state, or JUnit output names that do not correspond to anything in Git, start by fixing identity: stable step IDs in a YAML flow.
+If your API tests are still tied to Postman UI state, or JUnit output names that do not correspond to anything in Git, start by fixing identity: stable step names in a YAML flow.
 
 DevTools is designed around that workflow, record traffic, export native YAML, review changes in PRs, and run locally or in CI with JUnit output. Start with the CI setup in the [Newman alternative guide](https://dev.tools/guides/newman-alternative-ci/) and keep your reports as readable as your flows.

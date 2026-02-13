@@ -68,23 +68,31 @@ Here is a useful mental model for picking the right strictness level:
 Start with the cheap, high-signal checks: status code and content-type, then a small set of JSON invariants.
 
 ```yaml
-- id: get_user
-  request:
-    method: GET
-    url: "${BASE_URL}/v1/users/${USER_ID}"
-    headers:
-      authorization: "Bearer ${TOKEN}"
-  assert:
-    status: 200
-    headers:
-      content-type: "application/json"
-    json:
-      - path: "$['id']"
-        type: string
-      - path: "$['email']"
-        type: string
-      - path: "$['createdAt']"
-        type: string
+flows:
+  - name: UserContract
+    steps:
+      - request:
+          name: GetUser
+          method: GET
+          url: '{{BASE_URL}}/v1/users/{{USER_ID}}'
+          headers:
+            Authorization: Bearer {{TOKEN}}
+
+      - js:
+          name: ValidateUserContract
+          code: |
+            export default function(ctx) {
+              const resp = ctx.GetUser?.response;
+              if (resp?.status !== 200) throw new Error(`Expected 200, got ${resp?.status}`);
+              const ct = resp?.headers?.["content-type"];
+              if (!ct?.includes("application/json")) throw new Error(`Bad content-type: ${ct}`);
+              const body = resp?.body;
+              if (typeof body?.id !== 'string') throw new Error("id not string");
+              if (typeof body?.email !== 'string') throw new Error("email not string");
+              if (typeof body?.createdAt !== 'string') throw new Error("createdAt not string");
+              return { validated: true };
+            }
+          depends_on: GetUser
 ```
 
 Why this works in Git and CI:
@@ -100,21 +108,38 @@ A classic regression is changing `field: null` into a missing field, or vice ver
 Be explicit about what you accept.
 
 ```yaml
-- id: get_project
-  request:
-    method: GET
-    url: "${BASE_URL}/v1/projects/${PROJECT_ID}"
-  assert:
-    status: 200
-    json:
-      - path: "$['archivedAt']"
-        anyOf:
-          - { type: "null" }
-          - { type: "string", matches: "^\\d{4}-\\d{2}-\\d{2}T" }
-      - path: "$['owner']"
-        anyOf:
-          - { type: "string" }
-          - { type: "object" }
+flows:
+  - name: ProjectContract
+    steps:
+      - request:
+          name: GetProject
+          method: GET
+          url: '{{BASE_URL}}/v1/projects/{{PROJECT_ID}}'
+
+      - js:
+          name: ValidateProjectVariants
+          code: |
+            export default function(ctx) {
+              const resp = ctx.GetProject?.response;
+              if (resp?.status !== 200) throw new Error(`Expected 200, got ${resp?.status}`);
+              const body = resp?.body;
+
+              // archivedAt: must be null or an ISO timestamp string
+              const archived = body?.archivedAt;
+              if (archived !== null && archived !== undefined) {
+                if (typeof archived !== 'string' || !/^\d{4}-\d{2}-\d{2}T/.test(archived)) {
+                  throw new Error(`archivedAt bad format: ${archived}`);
+                }
+              }
+
+              // owner: must be a string ID or an object
+              const owner = body?.owner;
+              if (typeof owner !== 'string' && typeof owner !== 'object') {
+                throw new Error(`owner unexpected type: ${typeof owner}`);
+              }
+              return { validated: true };
+            }
+          depends_on: GetProject
 ```
 
 If you do not encode these variants, your tests oscillate between being too strict (false failures) and too loose (missing real contract drift).
@@ -131,20 +156,29 @@ Full response equality is attractive because it is one line, but it is rarely st
 Instead, match a **subset** you care about.
 
 ```yaml
-- id: create_widget
-  request:
-    method: POST
-    url: "${BASE_URL}/v1/widgets"
-    body:
-      name: "ci-smoke"
-      color: "blue"
-  assert:
-    status: 201
-    json:
-      - path: "$"
-        contains:
-          name: "ci-smoke"
-          color: "blue"
+flows:
+  - name: WidgetSubset
+    steps:
+      - request:
+          name: CreateWidget
+          method: POST
+          url: '{{BASE_URL}}/v1/widgets'
+          body:
+            name: "ci-smoke"
+            color: "blue"
+
+      - js:
+          name: ValidateSubset
+          code: |
+            export default function(ctx) {
+              const resp = ctx.CreateWidget?.response;
+              if (resp?.status !== 201) throw new Error(`Expected 201, got ${resp?.status}`);
+              const body = resp?.body;
+              if (body?.name !== "ci-smoke") throw new Error("name mismatch");
+              if (body?.color !== "blue") throw new Error("color mismatch");
+              return { validated: true };
+            }
+          depends_on: CreateWidget
 ```
 
 This pattern is also where YAML-first workflows tend to beat Postman/Newman in practice: Postman collections often push teams into JS test scripts to do partial matching, which then becomes opaque in code review.
@@ -156,37 +190,50 @@ Many “JSON assertions” are really assertions about **relationships across re
 Example: create a resource, capture its ID, fetch it, and assert persistence.
 
 ```yaml
-- id: create_order
-  request:
-    method: POST
-    url: "${BASE_URL}/v1/orders"
-    body:
-      sku: "SKU-123"
-      qty: 2
-  extract:
-    orderId: "$['id']"
-  assert:
-    status: 201
-    json:
-      - path: "$['id']"
-        type: string
+flows:
+  - name: OrderChaining
+    steps:
+      - request:
+          name: CreateOrder
+          method: POST
+          url: '{{BASE_URL}}/v1/orders'
+          body:
+            sku: "SKU-123"
+            qty: 2
 
-- id: get_order
-  request:
-    method: GET
-    url: "${BASE_URL}/v1/orders/${orderId}"
-  assert:
-    status: 200
-    json:
-      - path: "$['sku']"
-        eq: "SKU-123"
-      - path: "$['qty']"
-        eq: 2
+      - js:
+          name: ValidateCreate
+          code: |
+            export default function(ctx) {
+              const resp = ctx.CreateOrder?.response;
+              if (resp?.status !== 201) throw new Error(`Expected 201, got ${resp?.status}`);
+              if (typeof resp?.body?.id !== 'string') throw new Error("id not string");
+              return { orderId: resp.body.id };
+            }
+          depends_on: CreateOrder
+
+      - request:
+          name: GetOrder
+          method: GET
+          url: '{{BASE_URL}}/v1/orders/{{CreateOrder.response.body.id}}'
+          depends_on: ValidateCreate
+
+      - js:
+          name: ValidateOrder
+          code: |
+            export default function(ctx) {
+              const resp = ctx.GetOrder?.response;
+              if (resp?.status !== 200) throw new Error(`Expected 200, got ${resp?.status}`);
+              if (resp?.body?.sku !== "SKU-123") throw new Error("sku mismatch");
+              if (resp?.body?.qty !== 2) throw new Error("qty mismatch");
+              return { validated: true };
+            }
+          depends_on: GetOrder
 ```
 
 Two practical rules for chaining:
 
-- Capture **only what you need** (IDs, tokens, ETags), not entire response fragments.
+- Reference **only what you need** downstream (IDs, tokens, ETags) via `{{NodeName.response.body.field}}`.
 - Keep the dependent request adjacent in the YAML file so the data flow is obvious in diffs.
 
 ## Pattern 5: Array assertions without depending on ordering
@@ -198,32 +245,55 @@ Prefer these strategies, in order:
 ### Assert length bounds, not exact length
 
 ```yaml
-- id: list_events
-  request:
-    method: GET
-    url: "${BASE_URL}/v1/events?limit=50"
-  assert:
-    status: 200
-    json:
-      - path: "$['items']"
-        type: array
-      - path: "$['items'].length()"
-        gte: 1
-        lte: 50
+flows:
+  - name: EventsList
+    steps:
+      - request:
+          name: ListEvents
+          method: GET
+          url: '{{BASE_URL}}/v1/events'
+          query_params:
+            limit: "50"
+
+      - js:
+          name: ValidateEventsList
+          code: |
+            export default function(ctx) {
+              const resp = ctx.ListEvents?.response;
+              if (resp?.status !== 200) throw new Error(`Expected 200, got ${resp?.status}`);
+              const items = resp?.body?.items;
+              if (!Array.isArray(items)) throw new Error("items is not an array");
+              if (items.length < 1) throw new Error("items empty");
+              if (items.length > 50) throw new Error(`Too many items: ${items.length}`);
+              return { count: items.length };
+            }
+          depends_on: ListEvents
 ```
 
 ### Assert membership by key (contains an item with an ID)
 
 ```yaml
-- id: list_widgets
-  request:
-    method: GET
-    url: "${BASE_URL}/v1/widgets"
-  assert:
-    status: 200
-    json:
-      - path: "$['items'][*]['id']"
-        contains: "${widgetId}"
+flows:
+  - name: WidgetMembership
+    steps:
+      - request:
+          name: ListWidgets
+          method: GET
+          url: '{{BASE_URL}}/v1/widgets'
+
+      - js:
+          name: ValidateMembership
+          code: |
+            export default function(ctx) {
+              const resp = ctx.ListWidgets?.response;
+              if (resp?.status !== 200) throw new Error(`Expected 200, got ${resp?.status}`);
+              const ids = resp?.body?.items?.map(i => i.id);
+              if (!ids?.includes(ctx.widgetId)) {
+                throw new Error(`Widget ${ctx.widgetId} not found in list`);
+              }
+              return { found: true };
+            }
+          depends_on: ListWidgets
 ```
 
 ### Canonicalize before asserting deep equality
@@ -242,18 +312,30 @@ If you assert exact floating point values, your tests will fail for reasons unre
 Instead, assert ranges or an epsilon.
 
 ```yaml
-- id: get_quote
-  request:
-    method: GET
-    url: "${BASE_URL}/v1/quote?sku=SKU-123"
-  assert:
-    status: 200
-    json:
-      - path: "$['price']"
-        type: number
-      - path: "$['price']"
-        gte: 9.99
-        lte: 10.01
+flows:
+  - name: QuotePricing
+    steps:
+      - request:
+          name: GetQuote
+          method: GET
+          url: '{{BASE_URL}}/v1/quote'
+          query_params:
+            sku: SKU-123
+
+      - js:
+          name: ValidatePrice
+          code: |
+            export default function(ctx) {
+              const resp = ctx.GetQuote?.response;
+              if (resp?.status !== 200) throw new Error(`Expected 200, got ${resp?.status}`);
+              const price = resp?.body?.price;
+              if (typeof price !== 'number') throw new Error("price is not a number");
+              if (price < 9.99 || price > 10.01) {
+                throw new Error(`Price out of range: ${price}`);
+              }
+              return { price };
+            }
+          depends_on: GetQuote
 ```
 
 In CI, ranges are usually easier to reason about in reviews than “approx” helpers hidden in code.
@@ -271,15 +353,27 @@ Better options:
 Format-only example:
 
 ```yaml
-- id: get_audit_entry
-  request:
-    method: GET
-    url: "${BASE_URL}/v1/audit/${ENTRY_ID}"
-  assert:
-    status: 200
-    json:
-      - path: "$['timestamp']"
-        matches: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"
+flows:
+  - name: AuditTimestamp
+    steps:
+      - request:
+          name: GetAuditEntry
+          method: GET
+          url: '{{BASE_URL}}/v1/audit/{{ENTRY_ID}}'
+
+      - js:
+          name: ValidateTimestamp
+          code: |
+            export default function(ctx) {
+              const resp = ctx.GetAuditEntry?.response;
+              if (resp?.status !== 200) throw new Error(`Expected 200, got ${resp?.status}`);
+              const ts = resp?.body?.timestamp;
+              if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(ts)) {
+                throw new Error(`Bad timestamp format: ${ts}`);
+              }
+              return { timestamp: ts };
+            }
+          depends_on: GetAuditEntry
 ```
 
 If you need deeper time semantics, consider pushing those assertions into a contract test at a lower layer, or inject a fixed clock in test environments.
@@ -291,19 +385,27 @@ Teams often under-test error payloads, then accidentally break clients that rely
 Write explicit assertions for failure modes.
 
 ```yaml
-- id: unauthenticated_request
-  request:
-    method: GET
-    url: "${BASE_URL}/v1/private"
-  assert:
-    status: 401
-    json:
-      - path: "$['error']['code']"
-        eq: "UNAUTHENTICATED"
-      - path: "$['error']['message']"
-        type: string
-      - path: "$['error']['details']"
-        notExists: true
+flows:
+  - name: ErrorContract
+    steps:
+      - request:
+          name: UnauthenticatedRequest
+          method: GET
+          url: '{{BASE_URL}}/v1/private'
+
+      - js:
+          name: ValidateErrorResponse
+          code: |
+            export default function(ctx) {
+              const resp = ctx.UnauthenticatedRequest?.response;
+              if (resp?.status !== 401) throw new Error(`Expected 401, got ${resp?.status}`);
+              const err = resp?.body?.error;
+              if (err?.code !== "UNAUTHENTICATED") throw new Error(`Wrong error code: ${err?.code}`);
+              if (typeof err?.message !== 'string') throw new Error("error.message not string");
+              if (err?.details !== undefined) throw new Error("error.details should not exist");
+              return { validated: true };
+            }
+          depends_on: UnauthenticatedRequest
 ```
 
 These tests are extremely reviewable in YAML, and they often get buried when Postman collections rely on scattered JS snippets per request.
@@ -339,22 +441,37 @@ Normalization usually includes:
 Example pattern:
 
 ```yaml
-- id: get_dashboard
-  request:
-    method: GET
-    url: "${BASE_URL}/v1/dashboard"
-  assert:
-    status: 200
-  normalize:
-    dropPaths:
-      - "$['requestId']"
-      - "$['generatedAt']"
-    sortArraysBy:
-      - path: "$['widgets']"
-        key: "id"
-  snapshot:
-    file: "snapshots/dashboard.json"
+flows:
+  - name: DashboardSnapshot
+    steps:
+      - request:
+          name: GetDashboard
+          method: GET
+          url: '{{BASE_URL}}/v1/dashboard'
+
+      - js:
+          name: NormalizeAndValidate
+          code: |
+            export default function(ctx) {
+              const resp = ctx.GetDashboard?.response;
+              if (resp?.status !== 200) throw new Error(`Expected 200, got ${resp?.status}`);
+              const body = { ...resp?.body };
+
+              // Drop volatile fields
+              delete body.requestId;
+              delete body.generatedAt;
+
+              // Sort widgets by stable key
+              if (Array.isArray(body.widgets)) {
+                body.widgets.sort((a, b) => a.id.localeCompare(b.id));
+              }
+
+              return { normalized: body };
+            }
+          depends_on: GetDashboard
 ```
+
+The `js:` node returns the normalized payload, which you can then compare to a golden snapshot file in CI (for example with `jq` and `diff`).
 
 Even if your exact runner syntax differs, the key is process: normalized snapshots stored in Git are reviewable and deterministic, raw snapshots are not.
 
@@ -401,67 +518,102 @@ If you want more on flake sources and how to neutralize them (timestamps, unorde
 This is the “minimum viable” regression flow many teams converge on: authenticate, create a resource, read it back, validate a stable subset, and assert error behavior.
 
 ```yaml
-- id: login
-  request:
-    method: POST
-    url: "${BASE_URL}/v1/login"
-    body:
-      username: "${USERNAME}"
-      password: "${PASSWORD}"
-  extract:
-    token: "$['token']"
-  assert:
-    status: 200
-    json:
-      - path: "$['token']"
-        type: string
+env:
+  BASE_URL: '{{BASE_URL}}'
 
-- id: create_widget
-  request:
-    method: POST
-    url: "${BASE_URL}/v1/widgets"
-    headers:
-      authorization: "Bearer ${token}"
-    body:
-      name: "ci-${RUN_ID}"
-      color: "blue"
-  extract:
-    widgetId: "$['id']"
-  assert:
-    status: 201
-    json:
-      - path: "$"
-        contains:
-          color: "blue"
+flows:
+  - name: WidgetRegressionFlow
+    variables:
+      - name: USERNAME
+        value: '{{USERNAME}}'
+      - name: PASSWORD
+        value: '{{PASSWORD}}'
+      - name: RUN_ID
+        value: '{{RUN_ID}}'
+    steps:
+      - request:
+          name: Login
+          method: POST
+          url: '{{BASE_URL}}/v1/login'
+          body:
+            username: '{{USERNAME}}'
+            password: '{{PASSWORD}}'
 
-- id: get_widget
-  request:
-    method: GET
-    url: "${BASE_URL}/v1/widgets/${widgetId}"
-    headers:
-      authorization: "Bearer ${token}"
-  assert:
-    status: 200
-    json:
-      - path: "$['id']"
-        eq: "${widgetId}"
-      - path: "$['name']"
-        matches: "^ci-"
-      - path: "$['color']"
-        eq: "blue"
+      - js:
+          name: ValidateLogin
+          code: |
+            export default function(ctx) {
+              const resp = ctx.Login?.response;
+              if (resp?.status !== 200) throw new Error(`Expected 200, got ${resp?.status}`);
+              if (typeof resp?.body?.token !== 'string') throw new Error("token not string");
+              return { validated: true };
+            }
+          depends_on: Login
 
-- id: forbidden_without_token
-  request:
-    method: GET
-    url: "${BASE_URL}/v1/widgets/${widgetId}"
-  assert:
-    status: 401
-    json:
-      - path: "$['error']['code']"
-        eq: "UNAUTHENTICATED"
+      - request:
+          name: CreateWidget
+          method: POST
+          url: '{{BASE_URL}}/v1/widgets'
+          headers:
+            Authorization: Bearer {{Login.response.body.token}}
+          body:
+            name: 'ci-{{RUN_ID}}'
+            color: "blue"
+          depends_on: ValidateLogin
+
+      - js:
+          name: ValidateCreate
+          code: |
+            export default function(ctx) {
+              const resp = ctx.CreateWidget?.response;
+              if (resp?.status !== 201) throw new Error(`Expected 201, got ${resp?.status}`);
+              if (resp?.body?.color !== "blue") throw new Error("color mismatch");
+              return { widgetId: resp.body.id };
+            }
+          depends_on: CreateWidget
+
+      - request:
+          name: GetWidget
+          method: GET
+          url: '{{BASE_URL}}/v1/widgets/{{CreateWidget.response.body.id}}'
+          headers:
+            Authorization: Bearer {{Login.response.body.token}}
+          depends_on: ValidateCreate
+
+      - js:
+          name: ValidateGet
+          code: |
+            export default function(ctx) {
+              const resp = ctx.GetWidget?.response;
+              if (resp?.status !== 200) throw new Error(`Expected 200, got ${resp?.status}`);
+              if (resp?.body?.id !== ctx.CreateWidget?.response?.body?.id) throw new Error("id mismatch");
+              if (!/^ci-/.test(resp?.body?.name)) throw new Error("name should start with ci-");
+              if (resp?.body?.color !== "blue") throw new Error("color mismatch");
+              return { validated: true };
+            }
+          depends_on: GetWidget
+
+      - request:
+          name: ForbiddenWithoutToken
+          method: GET
+          url: '{{BASE_URL}}/v1/widgets/{{CreateWidget.response.body.id}}'
+          depends_on: ValidateGet
+
+      - js:
+          name: ValidateForbidden
+          code: |
+            export default function(ctx) {
+              const resp = ctx.ForbiddenWithoutToken?.response;
+              if (resp?.status !== 401) throw new Error(`Expected 401, got ${resp?.status}`);
+              if (resp?.body?.error?.code !== "UNAUTHENTICATED") {
+                throw new Error(`Wrong error code: ${resp?.body?.error?.code}`);
+              }
+              return { validated: true };
+            }
+          depends_on: ForbiddenWithoutToken
 ```
 
-That flow is short, it chains explicitly, and every assertion is something a reviewer can understand in seconds.
+That flow is explicit: it chains requests via `depends_on`, references values directly with `{{NodeName.response.body.field}}`, and every validation is something a reviewer can understand in seconds.
 
 ## Where to go next
 

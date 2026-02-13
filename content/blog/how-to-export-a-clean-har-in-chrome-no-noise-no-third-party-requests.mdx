@@ -229,51 +229,72 @@ Once you have a clean, domain-scoped HAR, you can convert it into a YAML flow an
 
 - Removing volatile headers
 - Parameterizing secrets via environment variables
-- Explicitly chaining requests (extract then reuse)
+- Explicitly chaining requests (reference node outputs directly via `{{NodeName.response.body.field}}`)
 
 A minimal example of the kind of output you want to end up reviewing in a PR looks like this:
 
 ```yaml
-id: create-and-fetch-project
-steps:
-  - id: login
-    request:
-      method: POST
-      url: ${BASE_URL}/api/login
-      headers:
-        content-type: application/json
-      body:
-        username: ${TEST_USER}
-        password: ${TEST_PASSWORD}
-    extract:
-      token: $.token
-    assert:
-      status: 200
+env:
+  BASE_URL: '{{BASE_URL}}'
+  TEST_USER: '{{TEST_USER}}'
+  TEST_PASSWORD: '{{TEST_PASSWORD}}'
+  PROJECT_NAME: '{{PROJECT_NAME}}'
 
-  - id: create_project
-    request:
-      method: POST
-      url: ${BASE_URL}/api/projects
-      headers:
-        authorization: Bearer ${steps.login.extract.token}
-        content-type: application/json
-      body:
-        name: ${PROJECT_NAME}
-    extract:
-      project_id: $.id
-    assert:
-      status: 201
+flows:
+  - name: CreateAndFetchProject
+    steps:
+      - request:
+          name: Login
+          method: POST
+          url: '{{BASE_URL}}/api/login'
+          headers:
+            Content-Type: application/json
+          body:
+            username: '{{TEST_USER}}'
+            password: '{{TEST_PASSWORD}}'
 
-  - id: get_project
-    request:
-      method: GET
-      url: ${BASE_URL}/api/projects/${steps.create_project.extract.project_id}
-      headers:
-        authorization: Bearer ${steps.login.extract.token}
-    assert:
-      status: 200
-      jsonpath:
-        $.id: ${steps.create_project.extract.project_id}
+      - if:
+          name: CheckLogin
+          condition: 'Login.response.status == 200'
+          then: CreateProject
+          depends_on: Login
+
+      - request:
+          name: CreateProject
+          method: POST
+          url: '{{BASE_URL}}/api/projects'
+          headers:
+            Authorization: 'Bearer {{Login.response.body.token}}'
+            Content-Type: application/json
+          body:
+            name: '{{PROJECT_NAME}}'
+          depends_on: Login
+
+      - if:
+          name: CheckCreate
+          condition: 'CreateProject.response.status == 201'
+          then: GetProject
+          depends_on: CreateProject
+
+      - request:
+          name: GetProject
+          method: GET
+          url: '{{BASE_URL}}/api/projects/{{CreateProject.response.body.id}}'
+          headers:
+            Authorization: 'Bearer {{Login.response.body.token}}'
+          depends_on: CreateProject
+
+      - js:
+          name: ValidateProject
+          code: |
+            export default function(ctx) {
+              if (ctx.GetProject?.response?.status !== 200) throw new Error("Expected 200");
+              if (ctx.GetProject?.response?.body?.id !== ctx.CreateProject?.response?.body?.id) {
+                throw new Error("Project ID mismatch");
+              }
+              return { validated: true };
+            }
+          depends_on: GetProject
 ```
 
 The cleaner the HAR, the less time you spend deleting irrelevant calls and the easier it is to see true dependency chains.

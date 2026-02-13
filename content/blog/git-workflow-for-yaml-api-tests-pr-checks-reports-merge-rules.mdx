@@ -114,7 +114,7 @@ If you are used to Newman, this is the same intent as its reporters, but without
 
 A CI summary that changes ordering every run trains engineers to ignore it. Prefer:
 
-- A fixed ordering (by flow file path, then by step id)
+- A fixed ordering (by flow file path, then by step name)
 - A small “Top failures” section
 - A link to artifacts
 
@@ -159,58 +159,83 @@ DevTools’ YAML-first approach helps because reviewers are reading the same fil
 
 ### Keep request chaining explicit
 
-Request chaining is where UI tools often hide complexity: token capture, ID propagation, correlation, and environment switching. In YAML, you want this explicit so PR reviewers can see the data flow.
+Request chaining is where UI tools often hide complexity: token references, ID propagation, correlation, and environment switching. In YAML, you want this explicit so PR reviewers can see the data flow.
 
-Here is an illustrative (simplified) flow showing the pattern, not a tool-locked script. The important pieces are: capture outputs, reuse them, and assert on stable contracts.
+Here is a flow showing the pattern: reference node outputs directly and validate with `js:` nodes on stable contracts.
 
 ```yaml
-id: payments-smoke
-vars:
-  base_url: ${BASE_URL}
-steps:
-  - id: auth
-    request:
-      method: POST
-      url: ${base_url}/oauth/token
-      json:
-        client_id: ${CLIENT_ID}
-        client_secret: ${CLIENT_SECRET}
-    extract:
-      access_token: $.access_token
-    assert:
-      status: 200
+workspace_name: Payments Smoke
 
-  - id: create_charge
-    request:
-      method: POST
-      url: ${base_url}/charges
-      headers:
-        Authorization: Bearer ${access_token}
-      json:
-        amount: 499
-        currency: USD
-    extract:
-      charge_id: $.id
-    assert:
-      status: 201
-      jsonpath:
-        - path: $.currency
-          equals: USD
+env:
+  BASE_URL: '{{BASE_URL}}'
 
-  - id: get_charge
-    request:
-      method: GET
-      url: ${base_url}/charges/${charge_id}
-      headers:
-        Authorization: Bearer ${access_token}
-    assert:
-      status: 200
-      jsonpath:
-        - path: $.id
-          equals: ${charge_id}
+flows:
+  - name: PaymentsSmoke
+    steps:
+      - request:
+          name: Auth
+          method: POST
+          url: '{{BASE_URL}}/oauth/token'
+          headers:
+            Content-Type: application/json
+          body:
+            client_id: '{{CLIENT_ID}}'
+            client_secret: '{{CLIENT_SECRET}}'
+
+      - js:
+          name: ValidateAuth
+          code: |
+            export default function(ctx) {
+              if (ctx.Auth?.response?.status !== 200) throw new Error("Auth failed");
+              if (!ctx.Auth?.response?.body?.access_token) throw new Error("No token");
+              return { validated: true };
+            }
+          depends_on: Auth
+
+      - request:
+          name: CreateCharge
+          method: POST
+          url: '{{BASE_URL}}/charges'
+          headers:
+            Authorization: 'Bearer {{Auth.response.body.access_token}}'
+            Content-Type: application/json
+          body:
+            amount: 499
+            currency: USD
+          depends_on: Auth
+
+      - js:
+          name: ValidateCharge
+          code: |
+            export default function(ctx) {
+              if (ctx.CreateCharge?.response?.status !== 201) throw new Error("Expected 201");
+              if (ctx.CreateCharge?.response?.body?.currency !== 'USD') throw new Error("Expected USD");
+              return { validated: true };
+            }
+          depends_on: CreateCharge
+
+      - request:
+          name: GetCharge
+          method: GET
+          url: '{{BASE_URL}}/charges/{{CreateCharge.response.body.id}}'
+          headers:
+            Authorization: 'Bearer {{Auth.response.body.access_token}}'
+          depends_on: CreateCharge
+
+      - js:
+          name: ValidateGetCharge
+          code: |
+            export default function(ctx) {
+              if (ctx.GetCharge?.response?.status !== 200) throw new Error("Expected 200");
+              if (ctx.GetCharge?.response?.body?.id !== ctx.CreateCharge?.response?.body?.id) {
+                throw new Error("Charge ID mismatch");
+              }
+              return { validated: true };
+            }
+          depends_on: GetCharge
 ```
 
-Even if your exact schema differs, the review principle stays the same: chaining should be obvious in the diff.
+The review principle stays the same: chaining should be obvious in the diff, and every dependency between steps is visible via `depends_on` and `{{NodeName.response.body.field}}` references.
 
 ### Prefer contract assertions over incidental assertions
 
@@ -225,9 +250,9 @@ Prefer asserting on:
 - status codes
 - required headers (`Content-Type`, caching semantics)
 - schema invariants
-- id propagation (capture once, compare later)
+- id propagation (reference from the creating node, compare later)
 
-This is where YAML flows tend to be clearer than Postman script assertions because the intent is declarative, and reviewers do not have to interpret ad hoc JavaScript.
+This is where YAML flows tend to be clearer than Postman script assertions because request definitions are declarative, validation logic is isolated in `js:` nodes, and reviewers do not have to interpret scattered ad hoc JavaScript.
 
 ## CI integration without tool lock-in
 
@@ -306,9 +331,9 @@ The point is not to “test the vendor”, it’s to lock down your integration 
 
 **Should we use a merge queue for API test repos?** If your main branch sees frequent merges and you get “green PR, red main”, a merge queue is often worth it. It runs checks on the merge commit and reduces integration races.
 
-**How do YAML flows help with code review compared to Postman collections?** YAML is human-readable and produces cleaner diffs. Reviewers can see exactly which request, assertion, or chained variable changed, without reverse-engineering an exported collection.
+**How do YAML flows help with code review compared to Postman collections?** YAML is human-readable and produces cleaner diffs. Reviewers can see exactly which request, validation node, or chained reference changed, without reverse-engineering an exported collection.
 
-**How should we handle secrets in Git workflows for API tests?** Keep secrets out of YAML, inject them via CI secrets or environment variables, and prefer request chaining to fetch short-lived tokens. If your suite starts from HAR captures, redact aggressively before anything leaves a developer machine.
+**How should we handle secrets in Git workflows for API tests?** Keep secrets out of YAML, inject them via CI secrets or environment variables, and prefer request chaining (referencing node outputs via `{{NodeName.response.body.token}}`) to fetch short-lived tokens. If your suite starts from HAR captures, redact aggressively before anything leaves a developer machine.
 
 ## Run API tests like code with DevTools
 

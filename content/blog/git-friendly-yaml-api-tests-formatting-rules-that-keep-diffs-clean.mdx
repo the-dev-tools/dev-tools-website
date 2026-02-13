@@ -46,7 +46,7 @@ Even when the logical behavior is unchanged, diffs get noisy when:
 - Inline collections (`{}` / `[]`) collapse to one line, then expand later.
 - Scalars flip between quoted and unquoted forms.
 - Multi-line bodies switch style (`|` vs `>`), or JSON bodies get minified.
-- You “touch” many steps at once by renaming IDs or moving extraction logic away from where it’s used.
+- You "touch" many steps at once by renaming step names (which cascade through all `{{NodeName...}}` references) or moving validation logic away from where it's used.
 
 UI-locked tools and custom formats often amplify this. Postman collections are JSON with lots of incidental metadata, Newman runs whatever the JSON happens to serialize into, and reviews devolve into “trust me.” Bruno is more Git-friendly than Postman, but it still uses its own `.bru` format rather than native YAML.
 
@@ -106,31 +106,35 @@ Why it helps: inline style invites line-wrapping churn and one-line “touches�
 
 Pick an order and keep it consistent. For API test steps, a common stable order is:
 
-- Step identifier (`id` or `name`)
-- Request definition (`request`, `method`, `url`, `headers`, `query`, `body`)
-- Variable capture (`extract`, `capture`)
-- Assertions (`assert`)
+- Step type (`request:`, `js:`, `if:`, `for_each:`)
+- Inside a `request:` node: `name`, `method`, `url`, `headers`, `query_params`, `body`, `depends_on`
+- Inside a `js:` node: `name`, `code`, `depends_on`
 
 Illustrative example:
 
 ```yaml
-- id: create_user
-  request:
+- request:
+    name: CreateUser
     method: POST
-    url: ${BASE_URL}/users
+    url: '{{BASE_URL}}/users'
     headers:
       Content-Type: application/json
-    body: |
-      {"email":"devtools@example.com"}
-  extract:
-    user_id: $.id
-  assert:
-    - status: 201
+    body:
+      email: devtools@example.com
+
+- js:
+    name: ValidateCreate
+    code: |
+      export default function(ctx) {
+        if (ctx.CreateUser?.response?.status !== 201) throw new Error("Expected 201");
+        return { userId: ctx.CreateUser.response.body.id };
+      }
+    depends_on: CreateUser
 ```
 
 Why it helps: when keys are stable, diffs stay localized. Reordering keys creates fake changes and increases merge conflicts.
 
-Note: `${BASE_URL}` is an example placeholder. Use whatever variable syntax your runner supports, but keep the style consistent across files.
+Note: `{{BASE_URL}}` uses double curly braces, the standard DevTools variable syntax. Keep the style consistent across files.
 
 ### 4) Sort headers and query params alphabetically
 
@@ -142,8 +146,8 @@ Prefer:
 headers:
   Accept: application/json
   Content-Type: application/json
-  X-Request-Id: ${REQUEST_ID}
-query:
+  X-Request-Id: '{{REQUEST_ID}}'
+query_params:
   limit: '50'
   offset: '0'
 ```
@@ -195,47 +199,60 @@ Why it helps: block scalars prevent reflow churn, and pretty JSON makes review p
 
 Avoid folded scalars (`>`) for JSON, they can change whitespace and make copy-paste debugging harder.
 
-### 7) Keep request chaining adjacent (capture near use)
+### 7) Keep request chaining adjacent (references near use)
 
-Request chaining is where API tests become workflows. It is also where diffs become unreadable if captures are far away from the request that uses them.
+Request chaining is where API tests become workflows. It is also where diffs become unreadable if producing steps are far away from the steps that consume their outputs.
 
-Keep the extraction close to the request that produced it, and keep the usage close to the request that consumes it:
+Keep the producing request close to the step that references it, and use `depends_on:` to make the dependency explicit:
 
 ```yaml
-- id: login
-  request:
+- request:
+    name: Login
     method: POST
-    url: ${BASE_URL}/auth/login
-    body: |
-      {"user":"${USER}","pass":"${PASS}"}
-  extract:
-    token: $.token
-  assert:
-    - status: 200
-
-- id: list_projects
-  request:
-    method: GET
-    url: ${BASE_URL}/projects
+    url: '{{BASE_URL}}/auth/login'
     headers:
-      Authorization: 'Bearer ${token}'
-  assert:
-    - status: 200
+      Content-Type: application/json
+    body:
+      user: '{{USER}}'
+      pass: '{{PASS}}'
+
+- js:
+    name: ValidateLogin
+    code: |
+      export default function(ctx) {
+        if (ctx.Login?.response?.status !== 200) throw new Error("Login failed");
+        return { validated: true };
+      }
+    depends_on: Login
+
+- request:
+    name: ListProjects
+    method: GET
+    url: '{{BASE_URL}}/projects'
+    headers:
+      Authorization: 'Bearer {{Login.response.body.token}}'
+    depends_on: Login
+
+- if:
+    name: CheckListProjects
+    condition: 'ListProjects.response.status == 200'
+    then: ListProjects
+    depends_on: ListProjects
 ```
 
-Why it helps: when auth changes, you edit one localized block rather than hunting through the file. Reviewers can see the data dependency chain in the diff.
+Why it helps: when auth changes, you edit one localized block rather than hunting through the file. Reviewers can see the data dependency chain in the diff via `depends_on:` and `{{NodeName.response.body.field}}` references.
 
-### 8) Treat IDs as stable API, not labels
+### 8) Treat step names as stable API, not labels
 
-If later steps reference earlier steps (directly or indirectly via extracted variables), step identifiers become part of your test’s public API.
+If later steps reference earlier steps via `{{NodeName.response.body.field}}` or `depends_on:`, step names become part of your test's public API.
 
 Rules:
 
-- Use stable, machine-friendly IDs (`create_user`, not `Create user step`).
-- Don’t rename IDs for “readability” unless the behavior changed.
-- Don’t reuse an ID for a different behavior.
+- Use stable, PascalCase names (`CreateUser`, not `Create user step`).
+- Don't rename step names for "readability" unless the behavior changed.
+- Don't reuse a name for a different behavior.
 
-Why it helps: renames touch multiple lines across the file and create avoidable conflicts.
+Why it helps: renames touch multiple lines across the file (every `{{OldName.response...}}` reference) and create avoidable conflicts.
 
 ### 9) Avoid YAML anchors for shared request parts (most of the time)
 
@@ -267,11 +284,11 @@ This table works well as a reviewer checklist.
 | 2-space indentation | No tabs, no mixed indent | Prevents whole-block reindent churn |
 | Block style for collections | No `{}` or `[]` | Avoids line wrap and one-line diffs |
 | Stable key ordering | Same key sequence in each step | Localizes diffs and reduces conflicts |
-| Sorted headers/query | Alphabetical keys | Prevents reorder-only changes |
+| Sorted headers/query_params | Alphabetical keys | Prevents reorder-only changes |
 | Consistent quoting | Ambiguous scalars quoted | Avoids parser surprises and quote churn |
-| `|` for multi-line bodies | Pretty JSON, stable whitespace | Reviewable payload changes |
-| Adjacent chaining | Extract next to producer, use next to consumer | Makes dependency changes obvious |
-| Stable IDs | IDs change rarely | Prevents cascading edits |
+| `|` for multi-line bodies | Pretty JSON/code, stable whitespace | Reviewable payload changes |
+| Adjacent chaining | Producer step near consumer, `depends_on:` explicit | Makes dependency changes obvious |
+| Stable step names | PascalCase names change rarely | Prevents cascading edits across `{{NodeName...}}` references |
 
 ## CI/CD: enforce formatting without turning it into a productivity tax
 
@@ -324,9 +341,9 @@ This is the practical argument for YAML-first tooling: not that YAML is trendy, 
 
 **Do we really need to quote so many values in YAML?** In API tests, yes. You care about exact bytes and exact types. Quoting ambiguous scalars prevents YAML’s implicit typing from turning a string into a boolean, number, or date.
 
-**How do we keep request chaining readable as flows grow?** Keep captures adjacent to the producing request, keep the consuming step nearby, and avoid “global” capture sections far from where values are used.
+**How do we keep request chaining readable as flows grow?** Keep producing request steps adjacent to the JS validation or consuming request that references their output, use `depends_on:` to make ordering explicit, and avoid scattering unrelated steps between a producer and its consumer.
 
-**What is the biggest single cause of merge conflicts in YAML tests?** Unstable ordering, especially when different people add headers, assertions, or extract variables in the same step. Sorting keys and keeping one logical change per block reduces conflict probability.
+**What is the biggest single cause of merge conflicts in YAML tests?** Unstable ordering, especially when different people add headers, JS validation nodes, or request steps in the same flow. Sorting keys and keeping one logical change per block reduces conflict probability.
 
 **Can we store generated traffic (HAR) in the repo instead of YAML?** Usually no. HAR files can contain secrets and include lots of noise. Commit the normalized YAML flow, and inject secrets via environment variables in CI.
 

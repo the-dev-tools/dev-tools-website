@@ -121,8 +121,8 @@ The fastest path to a useful test is:
 1. Convert HAR → YAML flow.
 2. Delete irrelevant calls (preflights, third-party, retries, analytics).
 3. Replace secrets with environment variables.
-4. Make dependencies explicit via captures and references.
-5. Add assertions that check invariants, not volatile presentation.
+4. Make dependencies explicit via node output references (`{{NodeName.response.body.field}}`).
+5. Add JS validation nodes that check invariants, not volatile presentation.
 
 If you want the exact mechanics of exporting a HAR safely, DevTools already maintains a dedicated guide: [Generate a HAR file in Chrome (Safely)](https://dev.tools/guides/generate-har-chrome/).
 
@@ -137,93 +137,116 @@ Recorded browser traffic tends to include volatility that looks harmless but wil
 
 The fix is not “retry more”. The fix is to **turn implicit state into explicit YAML state**.
 
-### Pattern 1: Login (or token mint) → capture → reuse
+### Pattern 1: Login (or token mint) → reference → reuse
 
-When a browser is already logged in, your first captured request might include a bearer token that will be invalid in CI. Instead, capture the auth step and chain off it.
+When a browser is already logged in, your first captured request might include a bearer token that will be invalid in CI. Instead, include the auth step in your flow and reference its output directly in subsequent requests.
 
-Illustrative YAML (shape will vary by runner, keep the intent):
+Illustrative YAML using the DevTools flow format:
 
 ```yaml
-name: login-and-fetch-profile
-vars:
-  base_url: ${BASE_URL}
-  username: ${E2E_USERNAME}
-  password: ${E2E_PASSWORD}
+workspace_name: LoginAndFetchProfile
 
-steps:
-  - id: login
-    request:
-      method: POST
-      url: ${base_url}/auth/login
-      headers:
-        content-type: application/json
-      body:
-        username: ${username}
-        password: ${password}
-    capture:
-      access_token: $.access_token
-    assert:
-      - status: 200
-      - jsonpath: $.access_token
-        exists: true
+env:
+  BASE_URL: '{{BASE_URL}}'
+  E2E_USERNAME: '{{E2E_USERNAME}}'
+  E2E_PASSWORD: '{{E2E_PASSWORD}}'
 
-  - id: get-profile
-    request:
-      method: GET
-      url: ${base_url}/me
-      headers:
-        authorization: Bearer ${steps.login.capture.access_token}
-    assert:
-      - status: 200
-      - jsonpath: $.id
-        type: string
-      - jsonpath: $.email
-        matches: "@"
+flows:
+  - name: LoginAndFetchProfile
+    steps:
+      - request:
+          name: Login
+          method: POST
+          url: '{{BASE_URL}}/auth/login'
+          headers:
+            Content-Type: application/json
+          body:
+            username: '{{E2E_USERNAME}}'
+            password: '{{E2E_PASSWORD}}'
+
+      - js:
+          name: ValidateLogin
+          code: |
+            export default function(ctx) {
+              if (ctx.Login?.response?.status !== 200) throw new Error("Login failed");
+              if (!ctx.Login?.response?.body?.access_token) throw new Error("No token");
+              return { validated: true };
+            }
+          depends_on: Login
+
+      - request:
+          name: GetProfile
+          method: GET
+          url: '{{BASE_URL}}/me'
+          headers:
+            Authorization: 'Bearer {{Login.response.body.access_token}}'
+          depends_on: Login
+
+      - js:
+          name: ValidateProfile
+          code: |
+            export default function(ctx) {
+              if (ctx.GetProfile?.response?.status !== 200) throw new Error("Expected 200");
+              if (typeof ctx.GetProfile?.response?.body?.id !== 'string') throw new Error("id not string");
+              if (!/@/.test(ctx.GetProfile?.response?.body?.email)) throw new Error("email missing @");
+              return { validated: true };
+            }
+          depends_on: GetProfile
 ```
 
 What matters:
 
-- The token is produced inside the flow.
+- The token is produced inside the flow and referenced directly via `{{Login.response.body.access_token}}`.
 - The dependency is visible in Git diffs.
-- Assertions check invariants (shape/type), not volatile values.
+- JS validation nodes check invariants (shape/type), not volatile values.
 
 If you need deeper assertion patterns, DevTools has a dedicated guide with examples: [JSON Assertion Patterns for API Tests](https://dev.tools/blog/json-assertion-patterns-for-api-tests-a-practical-guide-with-yaml-examples/).
 
-### Pattern 2: Create → capture ID or Location → fetch
+### Pattern 2: Create → reference ID → fetch
 
-Browser traffic often encodes IDs deep in JSON responses, or relies on follow-up calls that embed the ID in the URL. Make that explicit.
+Browser traffic often encodes IDs deep in JSON responses, or relies on follow-up calls that embed the ID in the URL. Make that explicit by referencing the response body directly.
 
 ```yaml
-name: create-and-fetch-widget
-vars:
-  base_url: ${BASE_URL}
-
 steps:
-  - id: create-widget
-    request:
+  - request:
+      name: CreateWidget
       method: POST
-      url: ${base_url}/widgets
+      url: '{{BASE_URL}}/widgets'
       headers:
-        content-type: application/json
+        Content-Type: application/json
       body:
-        name: "ci-${RUN_ID}"
-    capture:
-      widget_id: $.id
-      location: "@header:Location"
-    assert:
-      - status: 201
+        name: 'ci-{{RUN_ID}}'
 
-  - id: get-widget
-    request:
+  - js:
+      name: ValidateCreate
+      code: |
+        export default function(ctx) {
+          if (ctx.CreateWidget?.response?.status !== 201) throw new Error("Expected 201");
+          if (!ctx.CreateWidget?.response?.body?.id) throw new Error("Missing id");
+          return { validated: true };
+        }
+      depends_on: CreateWidget
+
+  - request:
+      name: GetWidget
       method: GET
-      url: ${base_url}/widgets/${steps.create-widget.capture.widget_id}
-    assert:
-      - status: 200
-      - jsonpath: $.id
-        equals: ${steps.create-widget.capture.widget_id}
+      url: '{{BASE_URL}}/widgets/{{CreateWidget.response.body.id}}'
+      depends_on: CreateWidget
+
+  - js:
+      name: ValidateGet
+      code: |
+        export default function(ctx) {
+          if (ctx.GetWidget?.response?.status !== 200) throw new Error("Expected 200");
+          if (ctx.GetWidget?.response?.body?.id !== ctx.CreateWidget?.response?.body?.id) {
+            throw new Error("ID mismatch");
+          }
+          return { validated: true };
+        }
+      depends_on: GetWidget
 ```
 
-Even if your API returns a `Location` header, capturing both the header and the JSON ID is useful during refactors (you can switch the next request without re-recording).
+The response body of `CreateWidget` is referenced directly via `{{CreateWidget.response.body.id}}` in the next request URL, making the dependency explicit without a separate capture step.
 
 ### Pattern 3: Stop carrying browser-only headers into CI
 
@@ -259,9 +282,9 @@ Replayable tests live or die by reviewability. If every re-generation creates a 
 
 Practical conventions that help:
 
-- Stable step IDs (treat them as public API for your flow)
+- Stable step names (treat them as public API for your flow)
 - Deterministic key ordering and formatting
-- Captures placed adjacent to the request that produces them
+- Node output references placed near the steps that produce and consume them
 - Minimal, sorted headers and query params
 
 DevTools covers Git-friendly formatting conventions in depth here: [YAML API Test File Structure: Conventions for Readable Git Diffs](https://dev.tools/blog/yaml-api-test-file-structure-conventions-for-readable-git-diffs/).
@@ -309,7 +332,7 @@ If your organization’s constraint is “tests must be readable, diffable, and 
 
 ### You recorded a logged-in session, but not the auth mechanism
 
-Fix: re-record starting from token mint or login, then chain everything from captured outputs.
+Fix: re-record starting from token mint or login, then chain everything using node output references.
 
 ### Your capture depends on local browser state
 
@@ -333,8 +356,8 @@ A useful reference on flake sources and deterministic fixes is: [Deterministic A
 
 - **Record** with Chrome Web Developer Tools (Network) against a controlled environment.
 - **Reduce** to the minimal request sequence.
-- **Chain** explicit state (tokens, IDs, CSRF) via captures.
-- **Assert** invariants that matter to your API contract.
+- **Chain** explicit state (tokens, IDs, CSRF) via node output references.
+- **Assert** invariants that matter to your API contract using JS validation nodes.
 - **Gate** merges by running the YAML in CI with reports and artifacts.
 
 That pipeline is what turns “I can reproduce it in my browser” into “we can enforce it on every PR, deterministically.”

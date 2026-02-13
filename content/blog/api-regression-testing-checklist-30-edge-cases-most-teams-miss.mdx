@@ -81,52 +81,77 @@ This pattern avoids conditional logic by using a known expired token fixture (in
 # Purpose: prove the API rejects expired tokens deterministically, and that a fresh login restores access.
 
 env:
-  BASE_URL: ${BASE_URL}
-  EXPIRED_ACCESS_TOKEN: ${EXPIRED_ACCESS_TOKEN}
-  USERNAME: ${USERNAME}
-  PASSWORD: ${PASSWORD}
+  BASE_URL: '{{BASE_URL}}'
+  EXPIRED_ACCESS_TOKEN: '{{EXPIRED_ACCESS_TOKEN}}'
 
-steps:
-  - id: reject_expired
-    request:
-      method: GET
-      url: "${BASE_URL}/v1/me"
-      headers:
-        Authorization: "Bearer ${EXPIRED_ACCESS_TOKEN}"
-        Accept: "application/json"
-    assert:
-      status: 401
+flows:
+  - name: ExpiredTokenFlow
+    variables:
+      - name: USERNAME
+        value: '{{USERNAME}}'
+      - name: PASSWORD
+        value: '{{PASSWORD}}'
+    steps:
+      - request:
+          name: RejectExpired
+          method: GET
+          url: '{{BASE_URL}}/v1/me'
+          headers:
+            Accept: application/json
+            Authorization: Bearer {{EXPIRED_ACCESS_TOKEN}}
 
-  - id: login
-    request:
-      method: POST
-      url: "${BASE_URL}/v1/login"
-      headers:
-        Content-Type: "application/json"
-        Accept: "application/json"
-      body:
-        username: "${USERNAME}"
-        password: "${PASSWORD}"
-    extract:
-      access_token: "$.access_token"
-    assert:
-      status: 200
-      jsonpath:
-        - path: "$.access_token"
-          exists: true
+      - js:
+          name: ValidateRejection
+          code: |
+            export default function(ctx) {
+              const status = ctx.RejectExpired?.response?.status;
+              if (status !== 401) throw new Error(`Expected 401, got ${status}`);
+              return { rejected: true };
+            }
+          depends_on: RejectExpired
 
-  - id: accept_fresh
-    request:
-      method: GET
-      url: "${BASE_URL}/v1/me"
-      headers:
-        Authorization: "Bearer {{ access_token }}"
-        Accept: "application/json"
-    assert:
-      status: 200
-      jsonpath:
-        - path: "$.id"
-          exists: true
+      - request:
+          name: Login
+          method: POST
+          url: '{{BASE_URL}}/v1/login'
+          headers:
+            Accept: application/json
+            Content-Type: application/json
+          body:
+            username: '{{USERNAME}}'
+            password: '{{PASSWORD}}'
+          depends_on: ValidateRejection
+
+      - js:
+          name: ValidateLogin
+          code: |
+            export default function(ctx) {
+              const resp = ctx.Login?.response;
+              if (resp?.status !== 200) throw new Error(`Expected 200, got ${resp?.status}`);
+              if (!resp?.body?.access_token) throw new Error("access_token missing");
+              return { validated: true };
+            }
+          depends_on: Login
+
+      - request:
+          name: AcceptFresh
+          method: GET
+          url: '{{BASE_URL}}/v1/me'
+          headers:
+            Accept: application/json
+            Authorization: Bearer {{Login.response.body.access_token}}
+          depends_on: ValidateLogin
+
+      - js:
+          name: ValidateFreshAccess
+          code: |
+            export default function(ctx) {
+              const resp = ctx.AcceptFresh?.response;
+              if (resp?.status !== 200) throw new Error(`Expected 200, got ${resp?.status}`);
+              if (!resp?.body?.id) throw new Error("id missing from /me response");
+              return { userId: resp.body.id };
+            }
+          depends_on: AcceptFresh
 ```
 
 Notes for Git review:
@@ -211,47 +236,66 @@ This is a regression test you can run against staging without heavy fixtures. It
 # flows/idempotency_post_replay.yaml
 
 env:
-  BASE_URL: ${BASE_URL}
-  API_TOKEN: ${API_TOKEN}
+  BASE_URL: '{{BASE_URL}}'
+  API_TOKEN: '{{API_TOKEN}}'
 
-steps:
-  - id: create_once
-    request:
-      method: POST
-      url: "${BASE_URL}/v1/orders"
-      headers:
-        Authorization: "Bearer ${API_TOKEN}"
-        Content-Type: "application/json"
-        Accept: "application/json"
-        Idempotency-Key: "regression-{{ run_id }}"
-      body:
-        currency: "USD"
-        amount_cents: 1234
-    extract:
-      order_id: "$.id"
-    assert:
-      status: 201
-      jsonpath:
-        - path: "$.id"
-          exists: true
+flows:
+  - name: IdempotencyReplayFlow
+    variables:
+      - name: run_id
+        value: '{{run_id}}'
+    steps:
+      - request:
+          name: CreateOnce
+          method: POST
+          url: '{{BASE_URL}}/v1/orders'
+          headers:
+            Accept: application/json
+            Authorization: Bearer {{API_TOKEN}}
+            Content-Type: application/json
+            Idempotency-Key: 'regression-{{run_id}}'
+          body:
+            currency: "USD"
+            amount_cents: 1234
 
-  - id: replay_same_key
-    request:
-      method: POST
-      url: "${BASE_URL}/v1/orders"
-      headers:
-        Authorization: "Bearer ${API_TOKEN}"
-        Content-Type: "application/json"
-        Accept: "application/json"
-        Idempotency-Key: "regression-{{ run_id }}"
-      body:
-        currency: "USD"
-        amount_cents: 1234
-    assert:
-      status: 200
-      jsonpath:
-        - path: "$.id"
-          equals: "{{ order_id }}"
+      - js:
+          name: ValidateCreate
+          code: |
+            export default function(ctx) {
+              const resp = ctx.CreateOnce?.response;
+              if (resp?.status !== 201) throw new Error(`Expected 201, got ${resp?.status}`);
+              if (!resp?.body?.id) throw new Error("id missing from create response");
+              return { orderId: resp.body.id };
+            }
+          depends_on: CreateOnce
+
+      - request:
+          name: ReplaySameKey
+          method: POST
+          url: '{{BASE_URL}}/v1/orders'
+          headers:
+            Accept: application/json
+            Authorization: Bearer {{API_TOKEN}}
+            Content-Type: application/json
+            Idempotency-Key: 'regression-{{run_id}}'
+          body:
+            currency: "USD"
+            amount_cents: 1234
+          depends_on: ValidateCreate
+
+      - js:
+          name: ValidateReplay
+          code: |
+            export default function(ctx) {
+              const resp = ctx.ReplaySameKey?.response;
+              if (resp?.status !== 200) throw new Error(`Expected 200, got ${resp?.status}`);
+              const originalId = ctx.CreateOnce?.response?.body?.id;
+              if (resp?.body?.id !== originalId) {
+                throw new Error(`Replay returned different id: ${resp?.body?.id} vs ${originalId}`);
+              }
+              return { idempotent: true };
+            }
+          depends_on: ReplaySameKey
 ```
 
 Git hygiene tip: keep the idempotency key generation deterministic per run (for example `run_id`), so parallel CI shards do not collide.
@@ -278,39 +322,46 @@ This example asserts both the HTTP status and the per-item contract. Adjust JSON
 # flows/batch_partial_failure_207.yaml
 
 env:
-  BASE_URL: ${BASE_URL}
-  API_TOKEN: ${API_TOKEN}
+  BASE_URL: '{{BASE_URL}}'
+  API_TOKEN: '{{API_TOKEN}}'
 
-steps:
-  - id: batch
-    request:
-      method: POST
-      url: "${BASE_URL}/v1/widgets:batchGet"
-      headers:
-        Authorization: "Bearer ${API_TOKEN}"
-        Content-Type: "application/json"
-        Accept: "application/json"
-      body:
-        ids:
-          - "known-good-id"
-          - "known-missing-id"
-    assert:
-      status: 207
-      jsonpath:
-        - path: "$.results"
-          exists: true
-        - path: "$.results[0].status"
-          exists: true
-        - path: "$.results[1].status"
-          exists: true
+flows:
+  - name: BatchPartialFailureFlow
+    steps:
+      - request:
+          name: BatchGet
+          method: POST
+          url: '{{BASE_URL}}/v1/widgets:batchGet'
+          headers:
+            Accept: application/json
+            Authorization: Bearer {{API_TOKEN}}
+            Content-Type: application/json
+          body:
+            ids:
+              - "known-good-id"
+              - "known-missing-id"
+
+      - js:
+          name: ValidateBatchResponse
+          code: |
+            export default function(ctx) {
+              const resp = ctx.BatchGet?.response;
+              if (resp?.status !== 207) throw new Error(`Expected 207, got ${resp?.status}`);
+              const results = resp?.body?.results;
+              if (!results) throw new Error("results missing");
+              if (!results[0]?.status) throw new Error("results[0].status missing");
+              if (!results[1]?.status) throw new Error("results[1].status missing");
+              return { resultCount: results.length };
+            }
+          depends_on: BatchGet
 ```
 
 ## Why YAML-first matters for these edge cases (and where Postman/Newman/Bruno often struggle)
 
 These cases are not hard because they are conceptually advanced, they are hard because they require **discipline**:
 
-- **Deterministic diffs**: In Postman, you tend to accumulate “test scripts” and implicit collection state. Reviewers rarely catch subtle logic changes. With YAML in Git, a change from `status: 200` to `status: [200, 207]` is explicit.
-- **Request chaining is visible**: Captures (IDs, tokens, cursors) live next to the request that produced them, which makes drift bugs easier to diagnose in PRs.
+- **Deterministic diffs**: In Postman, you tend to accumulate "test scripts" and implicit collection state. Reviewers rarely catch subtle logic changes. With YAML in Git, a change from checking `status !== 200` to `status !== 200 && status !== 207` in a JS validation node is explicit.
+- **Request chaining is visible**: Node references like `{{Login.response.body.token}}` live next to the request that uses them, which makes drift bugs easier to diagnose in PRs.
 - **CI portability**: Newman runs Postman’s model in CI, but you still carry Postman’s collection JSON and scripting conventions. Bruno is local-first, but still uses a custom file format. Native YAML flows are easier to audit, template, and enforce via repo policies.
 
 If you are actively migrating, the most practical approach is: record traffic (HAR), generate a baseline flow, then add the edge-case flows above as small, reviewable YAML files. DevTools supports the HAR to YAML workflow directly (see [Generate a HAR file in Chrome (Safely)](https://dev.tools/guides/generate-har-chrome/) and [HAR to YAML: Generate API Regression Tests for CI](https://dev.tools/blog/har-to-yaml-generate-api-regression-tests-for-ci-github-actions-example/)).
@@ -327,4 +378,6 @@ When someone changes an endpoint, require them to answer, in the PR description,
 - Idempotency under retries
 - Partial failure envelopes
 
-That is the difference between “we have tests” and “we have regression coverage”.
+That is the difference between "we have tests" and "we have regression coverage".
+
+Many of these edge cases are most effective when tested as part of a multi-step workflow rather than in isolation. For a guide on chaining these checks into full end-to-end API test flows, see: [End-to-End API Testing: The Complete Guide](/blog/end-to-end-api-testing-the-complete-guide/).

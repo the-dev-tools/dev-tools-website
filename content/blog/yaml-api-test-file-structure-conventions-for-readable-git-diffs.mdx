@@ -74,17 +74,17 @@ The exact schema depends on your runner (DevTools, custom harness, etc.). The co
 
 YAML mappings are unordered by spec, but humans (and many serializers) treat them as ordered. Pick an order and keep it consistent.
 
-A practical order for “step-like” objects:
+A practical order for step nodes in DevTools flows:
 
-- `id` (optional but useful)
-- `name`
-- `request` (or `http`)
-- `assert` / `expect`
-- `capture` / `extract`
-- `vars` / `with` (step-scoped vars)
-- `tags` / `meta`
+- Step type (`request:`, `js:`, `if:`, `for:`, `for_each:`)
+- `name` (inside the typed node)
+- `method`, `url` (for requests)
+- `headers`
+- `body` / `query_params`
+- `depends_on`
+- `code` (for `js:` nodes)
 
-Why it matters: reviewers build muscle memory. If the `assert` section always appears after the request, they scan faster and miss less.
+Why it matters: reviewers build muscle memory. If the `headers` always appear after `url`, and `depends_on` always comes last, they scan faster and miss less.
 
 ### 2) Prefer one logical thing per line (avoid inline maps)
 
@@ -93,7 +93,7 @@ Inline maps look compact, but they create ugly diffs.
 Avoid:
 
 ```yaml
-headers: {Authorization: "Bearer ${token}", Accept: application/json}
+headers: {Authorization: "Bearer {{token}}", Accept: application/json}
 ```
 
 Prefer:
@@ -101,7 +101,7 @@ Prefer:
 ```yaml
 headers:
   Accept: application/json
-  Authorization: "Bearer ${token}"
+  Authorization: "Bearer {{token}}"
 ```
 
 That format diff is stable, and a one-header change is a one-line diff.
@@ -121,7 +121,7 @@ query:
 headers:
   Accept: application/json
   Content-Type: application/json
-  X-Request-Id: "${requestId}"
+  X-Request-Id: "{{requestId}}"
 ```
 
 If you do not sort, serializer output or manual edits will reorder fields and cause large diffs.
@@ -133,8 +133,8 @@ When bodies are non-trivial (especially JSON), use `|` to keep line breaks stabl
 ```yaml
 body: |
   {
-    "email": "${email}",
-    "password": "${password}"
+    "email": "{{email}}",
+    "password": "{{password}}"
   }
 ```
 
@@ -161,26 +161,26 @@ headers:
   X-Feature-Flag: "on"
 ```
 
-### 6) Prefer explicit step IDs if your runner supports it
+### 6) Use clear, stable step names
 
-Names change. IDs should not.
-
-If your flow format allows it, use a short, stable `id` (kebab-case), and treat `name` as a human label.
+Step names are how you reference values downstream. Keep them PascalCase, descriptive, and stable.
 
 ```yaml
-- id: create-user
-  name: Create user (happy path)
-  request: ...
+- request:
+    name: CreateUser
+    method: POST
+    url: '{{BASE_URL}}/v1/users'
+    ...
 ```
 
-IDs improve:
+Clear step names improve:
 
-- references between steps
+- references between steps (via `{{CreateUser.response.body.id}}`)
 - targeted retries
 - selective execution
-- stable diffs when you rename steps
+- stable diffs when you refactor flows
 
-If your tool does not support IDs, keep names stable and avoid “churny” prefixes (like ticket numbers) in step names.
+Keep names PascalCase and descriptive. Avoid "churny" prefixes (like ticket numbers) in step names.
 
 ### 7) Keep step-local variables close to where they are used
 
@@ -188,12 +188,11 @@ The most common readability failure in chained API tests is hidden state. Keep c
 
 A good pattern is:
 
-- request
-- assert
-- capture
-- next request consumes capture
+- request node
+- `js:` validation node (validates response and optionally returns computed values)
+- next request node references upstream values via `{{NodeName.response.body.field}}`
 
-This makes the data dependency obvious in review.
+This makes the data dependency obvious in review, and `depends_on` makes the execution order explicit.
 
 ## Request chaining: conventions for clarity and debuggability
 
@@ -204,64 +203,83 @@ Chaining is where API tests become workflows. It is also where many suites becom
 Prefer a single auth step early, then explicitly reference the token in later steps.
 
 ```yaml
-- id: login
-  name: Login and capture access token
-  request:
-    method: POST
-    url: "${baseUrl}/auth/login"
-    headers:
-      Accept: application/json
-      Content-Type: application/json
-    body: |
-      {"email":"${email}","password":"${password}"}
-  expect:
-    status: 200
-  capture:
-    accessToken: "$.access_token"
+flows:
+  - name: AuthAndProfile
+    steps:
+      - request:
+          name: Login
+          method: POST
+          url: '{{BASE_URL}}/auth/login'
+          headers:
+            Accept: application/json
+            Content-Type: application/json
+          body:
+            email: '{{email}}'
+            password: '{{password}}'
 
-- id: get-profile
-  name: Fetch profile
-  request:
-    method: GET
-    url: "${baseUrl}/me"
-    headers:
-      Accept: application/json
-      Authorization: "Bearer ${accessToken}"
-  expect:
-    status: 200
+      - js:
+          name: ValidateLogin
+          code: |
+            export default function(ctx) {
+              const resp = ctx.Login?.response;
+              if (resp?.status !== 200) throw new Error(`Expected 200, got ${resp?.status}`);
+              if (!resp?.body?.access_token) throw new Error("access_token missing");
+              return { validated: true };
+            }
+          depends_on: Login
+
+      - request:
+          name: GetProfile
+          method: GET
+          url: '{{BASE_URL}}/me'
+          headers:
+            Accept: application/json
+            Authorization: Bearer {{Login.response.body.access_token}}
+          depends_on: ValidateLogin
+
+      - if:
+          name: CheckProfileStatus
+          condition: GetProfile.response.status == 200
+          then: NextStep
+          else: HandleError
+          depends_on: GetProfile
 ```
 
 Notes:
 
-- The JSONPath-like syntax is illustrative. Use whatever your runner supports.
-- Keep token naming consistent (`accessToken`, `refreshToken`). Avoid `t`, `token1`, etc.
+- Values from earlier steps are referenced directly via `{{Login.response.body.access_token}}`.
+- Keep naming consistent (`Login`, `GetProfile`). Avoid abbreviations like `L`, `GP`, etc.
 
 ### Pattern: correlation IDs and traceability
 
 When debugging CI failures, correlation IDs save time. Generate one per flow run and attach it to every request if your stack supports it.
 
 ```yaml
-vars:
-  requestId: "${uuid()}"
-
-- name: List projects
-  request:
-    method: GET
-    url: "${baseUrl}/projects"
-    headers:
-      X-Request-Id: "${requestId}"
+flows:
+  - name: TracedRequests
+    variables:
+      - name: requestId
+        value: '{{uuid()}}'
+    steps:
+      - request:
+          name: ListProjects
+          method: GET
+          url: '{{BASE_URL}}/projects'
+          headers:
+            X-Request-Id: '{{requestId}}'
 ```
 
 Even if assertions fail, your logs and server traces line up.
 
-### Pattern: capture only what you need
+### Pattern: reference only what you need
 
-Capturing entire response objects into variables creates huge state surfaces and makes diffs meaningless.
+Passing entire response objects through `js:` return values creates huge state surfaces and makes diffs meaningless.
 
 Prefer:
 
-- capture `userId`, `etag`, `nextCursor`
-- avoid capturing “response” unless you are snapshot testing
+- reference specific fields: `{{CreateUser.response.body.id}}`, `{{GetProfile.response.headers.etag}}`
+- use `js:` nodes to compute derived values when necessary
+- avoid returning entire response bodies from `js:` nodes unless you are snapshot testing
 
 If you must snapshot, store snapshots under `fixtures/` and keep the flow YAML referencing them.
 
@@ -301,11 +319,14 @@ commonHeaders: &commonHeaders
   Accept: application/json
   Content-Type: application/json
 
-- name: Create item
-  request:
-    headers:
-      <<: *commonHeaders
-      Authorization: "Bearer ${accessToken}"
+steps:
+  - request:
+      name: CreateItem
+      method: POST
+      url: '{{BASE_URL}}/v1/items'
+      headers:
+        <<: *commonHeaders
+        Authorization: Bearer {{Login.response.body.token}}
 ```
 
 If your runner or linter does not fully support anchors, skip them and duplicate explicitly. Readability and portability beat cleverness.
@@ -316,8 +337,8 @@ If your runner or linter does not fully support anchors, skip them and duplicate
 |-------------|----------------|---------------------------|
 | Many lines change when one header changes | inline maps, unsorted keys | multi-line headers + alphabetical sort |
 | Large “reformat” diffs in request bodies | YAML auto-wrapping or reserialization | block scalars for bodies (`|`) |
-| Renaming steps breaks references | names used as identifiers | stable `id` fields |
-| Reviewers cannot see data dependencies | captures declared far away | keep capture adjacent to usage |
+| Renaming steps breaks references | names used as identifiers | stable PascalCase `name` fields |
+| Reviewers cannot see data dependencies | references declared far from source | keep `js:` validation adjacent to the request it validates |
 
 ## CI/CD integration: keep flows portable and deterministic
 
@@ -390,7 +411,7 @@ The rest is execution details.
 - Sort `headers` and `query` keys.
 - Use block scalars for non-trivial bodies.
 - Quote ambiguous scalars.
-- Keep `capture` close to the consuming step.
+- Keep `js:` validation nodes close to the request they validate.
 - Split environments and secrets from flows.
 - Format YAML the same way locally and in CI.
 
@@ -402,7 +423,7 @@ The rest is execution details.
 
 **Are YAML anchors a good idea for API test files?** Use anchors only for stable, shared blocks (like common headers). Overusing anchors makes reviews harder and reduces portability if some runners or linters do not support merges consistently.
 
-**What is the biggest mistake teams make with request chaining?** Hidden state. Capturing data far away from where it is used, or capturing entire responses, makes flows hard to review and brittle. Capture only what you need and keep it adjacent to its usage.
+**What is the biggest mistake teams make with request chaining?** Hidden state. Referencing data from steps that are far away, or passing entire response objects through `js:` nodes, makes flows hard to review and brittle. Reference only what you need via `{{NodeName.response.body.field}}` and keep validation adjacent to the request.
 
 **How does this differ from Postman/Newman workflows?** Postman collections are JSON in a tool-specific structure, and Newman executes that same structure in CI. YAML-first flows tend to be more readable, diffable, and reviewable as code when conventions are enforced.
 

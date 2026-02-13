@@ -32,12 +32,12 @@ cta:
     variant: "neutral"
 ---
 
-If you can reproduce a user workflow in the browser, you can usually capture the underlying HTTP traffic. The hard part is turning that capture into a deterministic, reviewable API test that survives refactors, runs in CI, and does not embed secrets.
+If you can reproduce a user workflow in the browser, you can usually capture the underlying HTTP traffic. The hard part is turning that capture into a deterministic, reviewable API test that survives refactors, runs in CI, and does not embed secrets. In effect, you are building an [end-to-end API test](/blog/end-to-end-api-testing-the-complete-guide/): a chained sequence of real requests where each step's output feeds the next.
 
 A good HAR → YAML pipeline does two things well:
 
-- **Auto-extract variables** (tokens, IDs, CSRF values, cursors) so the flow is runnable, not just a static replay.
-- **Chain requests explicitly** so every dependency is visible in Git diffs and PR review.
+- **Auto-map variables** (tokens, IDs, CSRF values, cursors) so the flow is runnable, not just a static replay. These become `{{NodeName.response.body.field}}` references.
+- **Chain requests explicitly** with `depends_on` so every dependency is visible in Git diffs and PR review.
 
 DevTools is built around that model: import real browser traffic (HAR), generate a Git-friendly YAML flow, then run it locally or in CI.
 
@@ -87,7 +87,7 @@ Auto-extraction is valuable when it reduces manual wiring without hiding the log
 | Pagination cursor | JSON body | Query param for next-page calls | Cursor depends on sort/filter, so keep those deterministic |
 | ETag / version | Response header | `If-Match` / optimistic concurrency header | Weak vs strong ETag semantics differ across servers |
 
-The key is: **prefer chaining from the API response that “created” the value**, not from a later request where it merely appeared.
+The key is: **prefer referencing the node output closest to the source of truth** (e.g., `{{CreateWidget.response.body.id}}`), not from a later request where the value merely appeared.
 
 ### What you generally should not auto-extract
 
@@ -106,83 +106,111 @@ If you want patterns for assertions that avoid flakiness, this pairs well with: 
 
 Once you have a generated YAML flow, the most important work is making each dependency explicit and reviewable. This is where YAML-first shines: reviewers can see what changed without opening a UI or diffing a giant collection export.
 
-Below are examples showing the *shape* of common chaining patterns. Use them as a template for structuring your flow, and adapt field names to the exact DevTools YAML schema you are using.
+Below are examples showing common chaining patterns in the DevTools YAML format. Use them as a template for structuring your flow.
 
-### Pattern 1: Login → capture token → authenticated calls
+### Pattern 1: Login → reference token → authenticated calls
 
 ```yaml
-# flow.yaml (simplified)
-vars:
-  base_url: ${BASE_URL}
+# flow.yaml
+env:
+  BASE_URL: '{{BASE_URL}}'
 
-steps:
-  - id: login
-    request:
-      method: POST
-      url: ${base_url}/auth/login
-      headers:
-        content-type: application/json
-      body:
-        username: ${USERNAME}
-        password: ${PASSWORD}
-    extract:
-      access_token: $.access_token
-    assert:
-      status: 200
+flows:
+  - name: AuthenticatedFlow
+    steps:
+      - request:
+          name: Login
+          method: POST
+          url: '{{BASE_URL}}/auth/login'
+          headers:
+            Content-Type: application/json
+          body:
+            username: '{{USERNAME}}'
+            password: '{{PASSWORD}}'
 
-  - id: get_profile
-    request:
-      method: GET
-      url: ${base_url}/api/me
-      headers:
-        authorization: Bearer ${access_token}
-    assert:
-      status: 200
-      json:
-        - path: $.id
-          exists: true
+      - js:
+          name: ValidateLogin
+          code: |
+            export default function(ctx) {
+              if (ctx.Login?.response?.status !== 200) throw new Error("Login failed");
+              if (!ctx.Login?.response?.body?.access_token) throw new Error("No token");
+              return { validated: true };
+            }
+          depends_on: Login
+
+      - request:
+          name: GetProfile
+          method: GET
+          url: '{{BASE_URL}}/api/me'
+          headers:
+            Authorization: 'Bearer {{Login.response.body.access_token}}'
+          depends_on: Login
+
+      - js:
+          name: ValidateProfile
+          code: |
+            export default function(ctx) {
+              if (ctx.GetProfile?.response?.status !== 200) throw new Error("Expected 200");
+              if (!ctx.GetProfile?.response?.body?.id) throw new Error("Missing id");
+              return { validated: true };
+            }
+          depends_on: GetProfile
 ```
 
 What to look for in PR review:
 
-- Token capture is adjacent to the login step.
-- Downstream steps reference the token via a single variable.
-- Assertions validate contract-level behavior (status, presence), not a full response snapshot.
+- Token reference uses `{{Login.response.body.access_token}}` directly from the Login step's output.
+- Downstream steps declare `depends_on: Login` to make the dependency explicit.
+- Validation logic lives in `js:` nodes that check contract-level behavior (status, presence), not a full response snapshot.
 
-### Pattern 2: Create resource → capture ID from `Location` → fetch
+### Pattern 2: Create resource → reference ID from response → fetch
 
-Many APIs return the canonical URL for the created resource in a `Location` header. This is ideal for chaining because it decouples your test from response-body shape changes.
+Many APIs return the created resource's ID in the response body (or a canonical URL in the `Location` header). This is ideal for chaining because it decouples your test from response-body shape changes.
 
 ```yaml
+# Continuation of a flow with an authenticated Login step
 steps:
-  - id: create_widget
-    request:
+  - request:
+      name: CreateWidget
       method: POST
-      url: ${base_url}/api/widgets
+      url: '{{BASE_URL}}/api/widgets'
       headers:
-        authorization: Bearer ${access_token}
-        content-type: application/json
+        Authorization: 'Bearer {{Login.response.body.access_token}}'
+        Content-Type: application/json
       body:
-        name: "ci-${RUN_ID}"
-    extract:
-      widget_id:
-        from: header
-        name: location
-        regex: "/widgets/([^/?#]+)$"
-    assert:
-      status: 201
+        name: 'ci-{{RUN_ID}}'
+      depends_on: Login
 
-  - id: fetch_widget
-    request:
+  - js:
+      name: ValidateCreate
+      code: |
+        export default function(ctx) {
+          if (ctx.CreateWidget?.response?.status !== 201) throw new Error("Expected 201");
+          if (!ctx.CreateWidget?.response?.body?.id) throw new Error("Missing widget ID");
+          return { validated: true };
+        }
+      depends_on: CreateWidget
+
+  - request:
+      name: FetchWidget
       method: GET
-      url: ${base_url}/api/widgets/${widget_id}
+      url: '{{BASE_URL}}/api/widgets/{{CreateWidget.response.body.id}}'
       headers:
-        authorization: Bearer ${access_token}
-    assert:
-      status: 200
-      json:
-        - path: $.name
-          equals: "ci-${RUN_ID}"
+        Authorization: 'Bearer {{Login.response.body.access_token}}'
+      depends_on: CreateWidget
+
+  - js:
+      name: ValidateFetch
+      code: |
+        export default function(ctx) {
+          if (ctx.FetchWidget?.response?.status !== 200) throw new Error("Expected 200");
+          const expected = 'ci-' + ctx.RUN_ID;
+          if (ctx.FetchWidget?.response?.body?.name !== expected) {
+            throw new Error("Name mismatch");
+          }
+          return { validated: true };
+        }
+      depends_on: FetchWidget
 ```
 
 What to keep deterministic:
@@ -217,8 +245,8 @@ HAR-derived flows tend to start noisy. The fastest way to make them team-owned i
 
 Practical rules that pay off immediately:
 
-- **Stable step IDs** that do not change when you re-record (avoid auto-generated names that reorder).
-- **Adjacent capture**: capture variables right after the response that introduces them.
+- **Stable step names** (PascalCase) that do not change when you re-record (avoid auto-generated names that reorder).
+- **Adjacent references**: reference node outputs (e.g., `{{Login.response.body.token}}`) close to where they are used, keeping the data flow obvious.
 - **Sorted headers and query params** to prevent reorder-only churn.
 - **Block scalars** for large JSON bodies so diffs are line-oriented.
 
@@ -279,9 +307,9 @@ For patterns and examples, see: [API Assertions in YAML: Status, JSON Paths, Hea
 
 **Do I commit HAR files to the repo?** No. Treat raw HAR files as sensitive local artifacts. Commit the sanitized, deterministic YAML flow instead, and keep any necessary per-run artifacts in CI.
 
-**How does auto-extract variable mapping actually help?** It turns “replayed traffic” into an executable chain by detecting values that originate in one response and are reused later (tokens, IDs, CSRF). You still review and tighten the mapping so it is explicit and stable.
+**How does auto-extract variable mapping actually help?** It turns "replayed traffic" into an executable chain by detecting values that originate in one response and are referenced later (tokens, IDs, CSRF) via `{{NodeName.response.body.field}}` syntax. You still review and tighten the mapping so it is explicit and stable.
 
-**Should I rely on cookies or pass tokens explicitly?** For API regression tests, explicit chaining (capture token, set header) is usually easier to review and debug than implicit cookie state. Cookies can still be useful, but keep the dependency visible in YAML.
+**Should I rely on cookies or pass tokens explicitly?** For API regression tests, explicit chaining (reference the token from the auth node's response body, set the header) is usually easier to review and debug than implicit cookie state. Cookies can still be useful, but keep the dependency visible in YAML.
 
 **Can this work for GraphQL?** Yes, if the HAR includes the GraphQL HTTP calls, you can convert them like any other request. The determinism work is the same: capture tokens/IDs, parameterize inputs, and assert on stable parts of the response.
 

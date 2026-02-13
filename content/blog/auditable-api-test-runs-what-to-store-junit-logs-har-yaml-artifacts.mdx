@@ -129,7 +129,7 @@ A good default “audit packet” is:
 
 Practical advice:
 
-- Name test cases using **stable identifiers** (step IDs, flow names). This makes diffs in historical runs meaningful.
+- Name test cases using **stable identifiers** (step names, flow names). This makes diffs in historical runs meaningful.
 - Keep failure messages short but specific (assertion + relevant field).
 
 ### 2) Runner logs (human-readable, redactable)
@@ -138,7 +138,7 @@ Logs are still the fastest way to understand “what happened,” especially wit
 
 Log output should include:
 
-- Flow name and step ID
+- Flow name and step name
 - Target base URL / environment label
 - HTTP method + path (avoid full URLs if they embed secrets)
 - Assertion failures with expected vs actual
@@ -151,7 +151,7 @@ This is the piece many teams miss. Add a small JSON or YAML file that pins “wh
 
 ```yaml
 run:
-  git_sha: "${GITHUB_SHA}"
+  git_sha: "{{GITHUB_SHA}}"
   workflow: "api-regression"
   runner: "devtools-cli"
   runner_version: "<fill from CLI>"
@@ -215,35 +215,52 @@ Chained workflows (auth then resource creation then retrieval) are where audit t
 
 Two practical rules help:
 
-### Use stable step IDs and name captured variables
+### Use stable step names and reference node outputs directly
 
 Your outputs (JUnit and logs) should reference stable identifiers.
 
 A representative YAML excerpt for a chained flow looks like this:
 
 ```yaml
-# Illustrative structure (names vary by runner)
-steps:
-  - id: auth_token
-    request:
-      method: POST
-      url: "${BASE_URL}/oauth/token"
-    extract:
-      access_token: "$.access_token"
-    assert:
-      status: 200
+flows:
+  - name: AuditableChain
+    steps:
+      - request:
+          name: AuthToken
+          method: POST
+          url: '{{BASE_URL}}/oauth/token'
+          headers:
+            Content-Type: application/json
 
-  - id: get_profile
-    request:
-      method: GET
-      url: "${BASE_URL}/me"
-      headers:
-        Authorization: "Bearer ${access_token}"
-    assert:
-      status: 200
+      - js:
+          name: ValidateAuth
+          code: |
+            export default function(ctx) {
+              if (ctx.AuthToken?.response?.status !== 200) throw new Error("Auth failed");
+              if (!ctx.AuthToken?.response?.body?.access_token) throw new Error("No token");
+              return { validated: true };
+            }
+          depends_on: AuthToken
+
+      - request:
+          name: GetProfile
+          method: GET
+          url: '{{BASE_URL}}/me'
+          headers:
+            Authorization: 'Bearer {{AuthToken.response.body.access_token}}'
+          depends_on: AuthToken
+
+      - js:
+          name: ValidateProfile
+          code: |
+            export default function(ctx) {
+              if (ctx.GetProfile?.response?.status !== 200) throw new Error("Expected 200");
+              return { validated: true };
+            }
+          depends_on: GetProfile
 ```
 
-The audit advantage is that a failure can be described as “`get_profile` returned 401” rather than “request #17 failed.”
+The audit advantage is that a failure can be described as "`GetProfile` returned 401" rather than "request #17 failed."
 
 ### Record the chain boundary in the logs
 
@@ -330,7 +347,7 @@ In other words: you do not need your CI artifacts to explain what ran, because G
 
 **What is the minimum set of artifacts for an auditable run?** JUnit XML, runner logs, and a small run manifest (commit SHA, runner version, environment label). Everything else is optional.
 
-**How do we keep artifacts useful without leaking data?** Keep logs high-signal (step IDs, status codes, assertion diffs) and make deep HTTP traces opt-in with automated redaction.
+**How do we keep artifacts useful without leaking data?** Keep logs high-signal (step names, status codes, assertion diffs) and make deep HTTP traces opt-in with automated redaction.
 
 **How does YAML help auditability compared to Postman/Newman?** YAML in Git gives you reviewable, diffable test definitions independent of a UI. CI artifacts can then focus on evidence of execution rather than re-explaining the test.
 

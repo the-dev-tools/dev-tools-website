@@ -1,0 +1,539 @@
+---
+title: "End-to-End API Testing: The Complete Guide"
+date: "2026-02-14"
+slug: "end-to-end-api-testing-the-complete-guide"
+id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+image:
+  url: "https://dev-tools-blog-images.fly.storage.tigris.dev/blog/end-to-end-api-testing-complete-guide.webp"
+  alt: "End-to-End API Testing: The Complete Guide"
+author:
+  name: "DevTools Team"
+  avatar: "/logo.svg"
+tags: ["end-to-end-testing","api-testing","flows","api-workflows","ci"]
+category: "Guides"
+summary: "End-to-end API testing validates complete workflows, not isolated endpoints. Learn how to chain requests, pass variables, handle auth, and run multi-step API tests in CI."
+cta:
+  primary:
+    heading: "Build end-to-end API tests visually"
+    body: "Turn multi-step API workflows into visual Flows with auto-mapped variables. Export to YAML, run in CI."
+    buttonText: "Try Flows"
+    url: "https://dev.tools/docs/how-to/working-with-flows/"
+    secondaryText: "Install DevTools"
+    secondaryUrl: "https://dev.tools/docs/start-here/install/"
+  secondary:
+    heading: "Run end-to-end flows in CI"
+    body: "Export your flow to YAML and run it in GitHub Actions with JUnit reports and parallel execution."
+    buttonText: "CI integrations"
+    url: "https://dev.tools/docs/how-to/ci-integrations/"
+    secondaryText: "GitHub Actions template"
+    secondaryUrl: "https://dev.tools/templates/github-actions/"
+  badge:
+    text: "End-to-End Testing"
+    variant: "neutral"
+---
+
+Testing a single endpoint tells you that one endpoint works. It does not tell you that your login flow issues a token, your create endpoint accepts that token, and your read endpoint returns the thing you just created. That is the gap end-to-end API testing fills.
+
+This guide covers the full picture: what end-to-end API testing is, why isolated tests miss real bugs, how to structure multi-step test flows, and how to run them in CI without flakiness.
+
+## What is end-to-end API testing?
+
+End-to-end API testing validates a complete workflow by executing a sequence of dependent API calls, where the output of one request feeds into the next. The goal is to verify that the system works as a whole, not just one piece at a time.
+
+A typical end-to-end API test looks like this:
+
+1. **Authenticate** (POST `/auth/login`) and capture the token
+2. **Create a resource** (POST `/items`) using the token, capture the ID
+3. **Read the resource** (GET `/items/:id`) and assert the body matches
+4. **Update the resource** (PUT `/items/:id`) and verify changes
+5. **Delete the resource** (DELETE `/items/:id`)
+6. **Confirm deletion** (GET `/items/:id`) and assert 404
+
+Every step depends on data from a previous step: the token, the ID, the state of the resource. This chain of dependencies is exactly what isolated endpoint tests skip.
+
+### How it differs from other API test types
+
+| Test type | Scope | Dependencies | When to run |
+|---|---|---|---|
+| **Unit / contract** | Single endpoint shape | None | Every commit |
+| **Integration** | Two services talking | Mocked or real, one hop | Every commit |
+| **End-to-end** | Full multi-step workflow | Real services, real data flow | PRs and merge to main |
+
+End-to-end tests are slower and more complex than unit tests. That is the point. They catch the bugs that only appear when real services interact across a real workflow.
+
+## Why isolated endpoint tests miss real bugs
+
+An API can pass every single-endpoint test and still break in production. Here are the failure modes that only surface when you test the full chain.
+
+### Stale or invalid tokens
+
+Your `/login` endpoint returns a valid token. Your `/items` endpoint accepts any well-formed token. Both pass individual tests. But in production, the token format changed last sprint and the items service rejects it. An end-to-end test that chains login into items catches this immediately.
+
+### Resource lifecycle bugs
+
+Your create endpoint returns 201. Your read endpoint returns 200 for a known ID. Both pass. But the create endpoint writes to a cache that the read endpoint does not check, so freshly created resources return 404 for 30 seconds. Only the chained create-then-read test reveals this.
+
+### Side effects across services
+
+Your payment endpoint charges the card and returns 200. Your order endpoint marks orders as paid. Both pass individually. But the payment service emits an event that the order service mishandles, leaving orders in a stuck state. The end-to-end flow (create order, pay, verify order status) is the only test that catches this.
+
+### State assumptions
+
+Endpoints that assume prior state, such as "user has completed onboarding" or "cart is non-empty", work fine when you set up the state manually in each test. End-to-end tests force you to create that state through the actual API, which is how real users do it.
+
+## Anatomy of a real end-to-end API test
+
+Let us walk through a concrete example: testing a task management API.
+
+### The workflow
+
+```
+Login → Create Project → Create Task → Assign Task → Complete Task → Verify Project Stats
+```
+
+Six requests. Each one depends on data from a previous step.
+
+### The YAML flow
+
+```yaml
+workspace_name: Task Management E2E
+
+run:
+  - flow: TaskLifecycle
+
+flows:
+  - name: TaskLifecycle
+    variables:
+      - name: run_id
+        value: 'ci-001'
+    steps:
+      - request:
+          name: Login
+          method: POST
+          url: {{BASE_URL}}/auth/login
+          headers:
+            Content-Type: application/json
+          body:
+            email: 'test@example.com'
+            password: 'password123'
+      - js:
+          name: Auth
+          code: |
+            export default function(ctx) {
+              if (ctx.Login?.response?.status !== 200) throw new Error("Login failed");
+              return {
+                token: ctx.Login.response.body.access_token,
+                user_id: ctx.Login.response.body.user.id
+              };
+            }
+          depends_on: Login
+      - request:
+          name: CreateProject
+          method: POST
+          url: {{BASE_URL}}/api/projects
+          headers:
+            Authorization: Bearer {{Auth.token}}
+            Content-Type: application/json
+          body:
+            name: 'CI Test Project {{run_id}}'
+          depends_on: Auth
+      - js:
+          name: Project
+          code: |
+            export default function(ctx) {
+              if (ctx.CreateProject?.response?.status !== 201) throw new Error("Create project failed");
+              return { id: ctx.CreateProject.response.body.id };
+            }
+          depends_on: CreateProject
+      - request:
+          name: CreateTask
+          method: POST
+          url: {{BASE_URL}}/api/projects/{{Project.id}}/tasks
+          headers:
+            Authorization: Bearer {{Auth.token}}
+            Content-Type: application/json
+          body:
+            title: 'Verify deployment'
+            priority: 'high'
+          depends_on: Project
+      - js:
+          name: Task
+          code: |
+            export default function(ctx) {
+              if (ctx.CreateTask?.response?.status !== 201) throw new Error("Create task failed");
+              return { id: ctx.CreateTask.response.body.id };
+            }
+          depends_on: CreateTask
+      - request:
+          name: AssignTask
+          method: PUT
+          url: {{BASE_URL}}/api/tasks/{{Task.id}}/assign
+          headers:
+            Authorization: Bearer {{Auth.token}}
+            Content-Type: application/json
+          body:
+            assignee_id: '{{Auth.user_id}}'
+          depends_on: Task
+      - js:
+          name: VerifyAssignment
+          code: |
+            export default function(ctx) {
+              const body = ctx.AssignTask?.response?.body;
+              if (body?.assignee?.id !== ctx.Auth?.user_id) throw new Error("Assignee mismatch");
+              return { verified: true };
+            }
+          depends_on: AssignTask
+      - request:
+          name: CompleteTask
+          method: PUT
+          url: {{BASE_URL}}/api/tasks/{{Task.id}}/status
+          headers:
+            Authorization: Bearer {{Auth.token}}
+            Content-Type: application/json
+          body:
+            status: 'completed'
+          depends_on: VerifyAssignment
+      - request:
+          name: VerifyProjectStats
+          method: GET
+          url: {{BASE_URL}}/api/projects/{{Project.id}}/stats
+          headers:
+            Authorization: Bearer {{Auth.token}}
+          depends_on: CompleteTask
+      - js:
+          name: ValidateStats
+          code: |
+            export default function(ctx) {
+              const stats = ctx.VerifyProjectStats?.response?.body;
+              if (stats?.total_tasks !== 1) throw new Error("Expected 1 total task");
+              if (stats?.completed_tasks !== 1) throw new Error("Expected 1 completed task");
+              return { passed: true };
+            }
+          depends_on: VerifyProjectStats
+```
+
+Every JS node serves a dual purpose: it extracts values for downstream steps (referenced as `{{Auth.token}}`, `{{Project.id}}`, `{{Task.id}}`) and validates the response at that point in the workflow. If any step throws, the flow stops with a clear error message.
+
+### What to extract vs. what to validate
+
+**Extract** (via JS nodes) the values you need downstream: tokens, IDs, cursors. Keep extraction minimal. If you extract 20 values but only use 3, the flow is harder to read.
+
+**Validate** the contract at each step, not the full response body. Status codes, the presence of key fields, and business invariants (assignee matches, counts are correct). Avoid asserting on timestamps, generated IDs, or other non-deterministic values.
+
+## Variable passing between steps
+
+Variable passing is the core mechanic of end-to-end API testing. Every chain depends on it, and most flakiness comes from getting it wrong.
+
+### Common variable types
+
+| Variable | Source | Used by | Pitfall |
+|---|---|---|---|
+| Auth token | Login response body | Every subsequent request header | Token expiration during long test suites |
+| Resource ID | Create response body or Location header | Read, update, delete requests | Nested IDs vs. top-level IDs |
+| Pagination cursor | List response body | Next page request query param | Cursor depends on sort order |
+| CSRF token | Bootstrap response header or body | Mutation request header | Token rotates per session |
+| Upload URL | Presigned URL response | File upload request | URL expires quickly |
+
+### How passing works in DevTools YAML flows
+
+In tools like Postman, variable passing happens through `pm.environment.set()` in pre-request scripts, which is a side effect hidden inside a JavaScript tab. In DevTools YAML flows, the pattern is explicit: a JS node extracts values and subsequent steps reference them:
+
+```yaml
+# JS node extracts the token from the login response
+- js:
+    name: Auth
+    code: |
+      export default function(ctx) {
+        return { token: ctx.Login?.response?.body?.access_token };
+      }
+    depends_on: Login
+
+# Subsequent request references the extracted value
+- request:
+    name: GetProfile
+    method: GET
+    url: {{BASE_URL}}/api/me
+    headers:
+      Authorization: Bearer {{Auth.token}}
+    depends_on: Auth
+```
+
+The extraction (JS node) and consumption (`{{Auth.token}}` in the header) are both visible in the YAML. A reviewer can trace the data flow without opening a UI.
+
+### Auto-mapping with Flows
+
+DevTools Flows auto-detects when a value from one response appears in a subsequent request. When you import a HAR or build a flow visually, the variable references are created automatically using the `{{ NodeName.response.body.field }}` syntax. You review and adjust them rather than wiring everything by hand.
+
+This matters most for complex workflows with 10+ steps, where manual wiring is error-prone and time-consuming.
+
+## Validation in end-to-end flows
+
+End-to-end tests need validation at multiple points, not just at the end.
+
+### Validate at every step
+
+Do not wait until the last step to check if things worked. If step 3 of 6 silently returns an error, steps 4-6 will fail with confusing messages. Use JS nodes or `if` conditions to validate the basics at every step:
+
+```yaml
+- js:
+    name: ValidateCreate
+    code: |
+      export default function(ctx) {
+        const resp = ctx.CreateTask?.response;
+        if (resp?.status !== 201) throw new Error("Expected 201, got " + resp?.status);
+        if (!resp?.body?.id) throw new Error("Missing task ID in response");
+        if (resp?.body?.title !== "Verify deployment") throw new Error("Title mismatch");
+        return { task_id: resp.body.id };
+      }
+    depends_on: CreateTask
+```
+
+Or use an `if` node for simple status checks:
+
+```yaml
+- if:
+    name: CheckCreate
+    condition: CreateTask.response.status == 201
+    then: AssignTask
+    else: HandleError
+    depends_on: CreateTask
+```
+
+### Contract validation vs. snapshot validation
+
+**Contract validation** checks structure and invariants: status code, field presence, types, business rules. It survives minor API changes (new optional fields, reordered keys).
+
+**Snapshot validation** checks the exact response body. It breaks on every change, which is useful for detecting unintended regressions but noisy for evolving APIs.
+
+For end-to-end tests, prefer contract validation. You want to catch broken workflows, not fail because someone added an optional `updated_at` field.
+
+For a deeper treatment of assertion strategies, see: [JSON Assertion Patterns for API Tests: A Practical Guide (with YAML Examples)](/blog/json-assertion-patterns-for-api-tests-a-practical-guide-with-yaml-examples/).
+
+### Timing validation
+
+End-to-end flows are a natural place to add performance budgets via JS nodes:
+
+```yaml
+- js:
+    name: CheckSearchTiming
+    code: |
+      export default function(ctx) {
+        const elapsed = ctx.Search?.response?.elapsed_ms;
+        if (elapsed > 500) throw new Error("Search took " + elapsed + "ms, budget is 500ms");
+        return { elapsed };
+      }
+    depends_on: Search
+```
+
+If the search step takes longer than 500ms, the flow fails. This catches performance regressions that single-endpoint tests might miss because the endpoint is fast in isolation but slow when preceded by auth and data setup.
+
+## Running end-to-end API tests in CI
+
+End-to-end tests belong in CI, but they need more care than unit tests.
+
+### When to run them
+
+- **On every PR**: Run the core end-to-end flows. Catch regressions before merge.
+- **On merge to main**: Run the full suite. Gate deployments on passing results.
+- **On schedule (optional)**: Run against staging or production to catch environment drift.
+
+Do not run end-to-end tests on every commit to a feature branch. They are slower than unit tests and you do not want them blocking rapid iteration.
+
+### Environment setup
+
+End-to-end tests need a real (or realistic) backend. Options:
+
+- **Dedicated test environment**: A staging instance that resets nightly. Simplest option.
+- **Ephemeral environment**: Spun up per PR via Docker Compose or similar. Most isolated.
+- **Shared staging**: Works if tests use unique data (run IDs, timestamps) to avoid conflicts.
+
+Inject environment-specific values through environment references in your flow variables. Use `#env:VAR_NAME` to read from OS environment variables at runtime:
+
+```yaml
+flows:
+  - name: MyFlow
+    variables:
+      - name: api_key
+        value: '#env:SECRET_API_KEY'
+      - name: run_id
+        value: 'ci-20260214'
+      - name: test_email
+        value: 'test@example.com'
+```
+
+### GitHub Actions example
+
+```yaml
+name: End-to-End API Tests
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  e2e-api-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install DevTools CLI
+        run: curl -fsSL https://dev.tools/install.sh | sh
+
+      - name: Run end-to-end flows
+        run: devtools flow run tests/e2e/*.yaml --report junit
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: reports/
+```
+
+For the full CI setup including parallel execution, caching, and artifact management, see: [GitHub Actions for YAML API Tests: Parallel Runs + Caching](/blog/github-actions-for-yaml-api-tests-parallel-runs-caching-copy-paste-workflow/).
+
+### Dealing with flakiness
+
+End-to-end tests are more flaky than unit tests because they touch real services. Common causes and fixes:
+
+| Cause | Fix |
+|---|---|
+| Token expiration during long suites | Refresh tokens between flows, or use short-lived test credentials |
+| Shared data conflicts | Use unique identifiers per run (`RUN_ID` in resource names) |
+| Race conditions | Add explicit waits or polling steps for async operations |
+| Environment drift | Pin dependency versions, use consistent seed data |
+| Network timeouts | Set reasonable timeouts per step, not just globally |
+
+The goal is not zero flakiness. The goal is that every failure maps to a real bug or a fixable environmental issue.
+
+## Building end-to-end tests with Flows
+
+Flows are visual, graph-based API test workflows. Instead of writing YAML by hand or scripting pre-request hooks, you build the workflow visually and let the tool handle variable wiring.
+
+### Why graphs work for end-to-end testing
+
+A multi-step API test is a directed acyclic graph (DAG): some steps depend on others, some can run in parallel, and data flows from producers to consumers. A list of requests with scripts is an approximation. A graph is the actual structure.
+
+In DevTools Flows:
+
+- **Nodes** are steps: HTTP requests, conditions, loops, JavaScript transforms
+- **Edges** are dependencies: explicit connections showing execution order via `depends_on`
+- **Variables** are auto-mapped: when you reference `{{ Login.response.body.token }}` in a request header, the dependency edge is created automatically
+
+### What this looks like in practice
+
+1. **Import a HAR** from a real browser session, or build from scratch
+2. **The flow graph appears** with requests as nodes and dependencies as edges
+3. **Auto-mapped variables** show which values flow between requests
+4. **Add validation** via JS nodes or `if` conditions at each step
+5. **Add conditions or loops** for retry logic, pagination, or error handling
+6. **Export to YAML** for Git review and CI execution
+7. **Run locally or in CI** with the DevTools CLI
+
+The visual graph and the YAML file are two views of the same test. Edit either one.
+
+### Parallel execution
+
+Flows analyze the dependency graph and automatically parallelize independent branches. If your auth flow produces a token, and then you need to test both the "create project" and "list templates" endpoints (which do not depend on each other), Flows runs them concurrently:
+
+```
+Login
+  ├── Create Project (parallel)
+  └── List Templates (parallel)
+        └── Verify Project Stats (waits for Create Project)
+```
+
+This cuts execution time without manual parallelization logic.
+
+### Conditions and loops
+
+Real workflows are not always linear. DevTools YAML flows support these as first-class step types:
+
+- **Conditions** (`if`): If the create endpoint returns 409 (already exists), skip to the read step instead of failing
+- **Loops** (`for`): Repeat a step N times, such as polling a status endpoint until the job completes
+- **For-each** (`for_each`): Iterate over a list of items and validate each one
+
+```yaml
+- if:
+    name: CheckExists
+    condition: CreateItem.response.status == 409
+    then: GetItem
+    else: HandleNew
+    depends_on: CreateItem
+
+- for:
+    name: PollStatus
+    iter_count: 10
+    loop: CheckStatus
+    depends_on: StartJob
+
+- for_each:
+    name: ValidateItems
+    items: '[1, 2, 3, 4, 5]'
+    loop: FetchItem
+    depends_on: ListItems
+```
+
+These are first-class node types in Flows, not scripted workarounds.
+
+## Common pitfalls in end-to-end API testing
+
+### Testing too much in one flow
+
+A 30-step flow that covers login, CRUD, search, admin operations, and cleanup is hard to debug when it fails. Split workflows by business domain and use `run` with `depends_on` to orchestrate them:
+
+```yaml
+run:
+  - flow: AuthFlow
+  - flow: CrudFlow
+    depends_on: AuthFlow
+  - flow: SearchFlow
+    depends_on: CrudFlow
+```
+
+Each flow should be independently runnable and independently debuggable.
+
+### Hardcoding test data
+
+Hardcoded IDs, emails, and names will collide when tests run in parallel or on shared environments. Use:
+
+- Run-specific identifiers: `'CI Test {{run_id}}'`
+- Environment variables for credentials
+- Setup steps that create fresh data and teardown steps that clean up
+
+### Skipping cleanup
+
+If your test creates resources and does not delete them, the test environment accumulates garbage. Eventually, list endpoints slow down, unique constraints fail, and tests break for reasons unrelated to code changes.
+
+Add teardown steps. Include delete requests at the end of each flow that remove the resources created during the test.
+
+### Validating non-deterministic values
+
+Timestamps, auto-incremented IDs, and random UUIDs will differ on every run. Validate in JS nodes using:
+
+- Presence and type: `if (!body?.created_at) throw new Error("missing created_at")`
+- Pattern matching: `if (!/^[0-9a-f-]{36}$/.test(body?.id)) throw new Error("invalid UUID")`
+- Relative values: compare `updated_at` is after `created_at`
+
+Not exact values.
+
+For detailed patterns, see: [Deterministic API Assertions: Stop Flaky JSON Tests in CI](/blog/deterministic-api-assertions-stop-flaky-json-tests-in-ci/).
+
+## FAQ
+
+**How many end-to-end API tests should I have?** Fewer than you think. Cover the critical user journeys: authentication, the core CRUD workflow, payment (if applicable), and the most common multi-step paths. Five to ten well-designed e2e flows catch more bugs than fifty isolated endpoint tests.
+
+**Should end-to-end tests hit real services or mocks?** Real services. The whole point is testing the integration. If you mock the dependencies, you are writing integration tests, not end-to-end tests. Use a dedicated test environment instead.
+
+**How do I handle async operations (webhooks, queues)?** Add polling steps using a `for` loop. Make a request, then use a `for` node to poll a status endpoint with a timeout. This is more reliable than fixed-duration sleeps and more realistic than skipping the async part entirely.
+
+**What if my API changes frequently?** Validate contracts (status codes, field presence, types) in JS nodes instead of exact body snapshots. End-to-end tests should verify behavior, not exact payloads. If a new optional field appears, your tests should not break.
+
+**Can I generate end-to-end tests from browser traffic?** Yes. Record a browser session, export the HAR, import it into DevTools, and the auto-generated flow gives you a starting point. You then refine the variable mapping and add validation.
+
+## Start testing workflows, not just endpoints
+
+If your API tests pass but your users still hit bugs, the gap is almost always in the spaces between endpoints: the token that expires, the ID that does not carry over, the side effect that never fires.
+
+End-to-end API testing closes that gap. Chain requests, pass real data between steps, validate at every point, and run the whole workflow in CI.
+
+DevTools Flows makes this visual: build the graph, auto-map the variables, export to YAML, run in CI. Try it at [dev.tools](https://dev.tools).
