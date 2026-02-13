@@ -113,6 +113,10 @@ export async function getPostsByTag(tag: string): Promise<BlogPost[]> {
   return posts.filter(post => post.tags.includes(tag))
 }
 
+export function slugifyAuthor(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+}
+
 export async function getAllAuthors(): Promise<string[]> {
   const posts = await getAllPosts()
   const authors = new Set<string>()
@@ -120,6 +124,11 @@ export async function getAllAuthors(): Promise<string[]> {
     if (post.author?.name) authors.add(post.author.name)
   })
   return Array.from(authors).sort()
+}
+
+export async function getPostsByAuthorSlug(slug: string): Promise<BlogPost[]> {
+  const posts = await getAllPosts()
+  return posts.filter(post => slugifyAuthor(post.author?.name || '') === slug)
 }
 
 export async function getPostsByAuthor(authorName: string): Promise<BlogPost[]> {

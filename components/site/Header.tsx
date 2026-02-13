@@ -22,7 +22,7 @@ export default function Header() {
           <ProductMenu />
           <CompareMenu />
           <Link href="/docs" className="px-0 py-0 text-slate-100 transition hover:text-neon">Docs</Link>
-          <Link href="/guides" className="px-0 py-0 text-slate-100 transition hover:text-neon">Learn</Link>
+          <Link href="/guides" className="px-0 py-0 text-slate-100 transition hover:text-neon">Guides</Link>
           <Link href="/pricing" className="px-0 py-0 text-slate-100 transition hover:text-neon">Pricing</Link>
         </nav>
 

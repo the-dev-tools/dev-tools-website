@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { MDXRemote } from 'next-mdx-remote/rsc'
 import remarkGfm from 'remark-gfm'
-import { getPost, getAllPosts } from '@/lib/blog'
+import { getPost, getAllPosts, slugifyAuthor } from '@/lib/blog'
 import type { Metadata } from 'next'
 import BlogSidebar from '@/components/BlogSidebar'
 
@@ -98,7 +98,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
 
               {post.author && (
                 <Link
-                  href={`/blog/author/${encodeURIComponent(post.author.name)}`}
+                  href={`/blog/author/${slugifyAuthor(post.author.name)}`}
                   className="flex items-center gap-2 hover:text-neon transition"
                 >
                   {post.author.avatar && (

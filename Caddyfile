@@ -27,5 +27,9 @@
   redir /docs/guides/06-cicd-integration /docs/how-to/ci-integrations 301
   redir /docs/guides/07-examples-and-best-practices /docs/cookbook/examples-and-best-practices 301
   redir /docs/guides/writing-docs /docs/contributing/writing-docs 301
+
+  # Author URL migration (spaces to slugified)
+  redir "/blog/author/DevTools%20Team" /blog/author/devtools-team 301
+  redir "/blog/author/DevTools Team" /blog/author/devtools-team 301
 }
 

@@ -1,25 +1,23 @@
 import Link from 'next/link'
-import { getPostsByAuthor, getAllAuthors } from '@/lib/blog'
+import { getPostsByAuthorSlug, getAllAuthors, slugifyAuthor } from '@/lib/blog'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 
 export async function generateStaticParams() {
   const authors = await getAllAuthors()
-  return authors.map(author => ({ author: encodeURIComponent(author) }))
+  return authors.map(author => ({ author: slugifyAuthor(author) }))
 }
 
 export function generateMetadata({ params }: { params: { author: string } }): Metadata {
-  const author = decodeURIComponent(params.author)
   return {
-    title: `${author} – DevTools Blog`,
-    description: `Articles written by ${author}.`,
+    title: `Author – DevTools Blog`,
+    description: `Articles by this author.`,
     alternates: { canonical: `/blog/author/${params.author}/` },
   }
 }
 
 export default async function AuthorPage({ params }: { params: { author: string } }) {
-  const authorName = decodeURIComponent(params.author)
-  const posts = await getPostsByAuthor(authorName)
+  const posts = await getPostsByAuthorSlug(params.author)
 
   if (posts.length === 0) {
     notFound()
