@@ -748,4 +748,4 @@ SECRET_KEY=myvalue devtools flow run test.yaml
 
 ---
 
-**Next:** Learn how to use the [CLI Tool](./05-cli-tool.md) to run flows from the command line and integrate with CI/CD pipelines.
+**Next:** Learn how to use the [CLI Tool](/docs/reference/cli) to run flows from the command line and integrate with CI/CD pipelines.

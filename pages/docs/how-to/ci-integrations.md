@@ -824,4 +824,4 @@ devtools version
 
 ---
 
-**Next:** Explore [Examples & Best Practices](./07-examples-and-best-practices.md) for real-world usage patterns and advanced techniques.
+**Next:** Explore [Examples & Best Practices](/docs/cookbook/examples-and-best-practices) for real-world usage patterns and advanced techniques.

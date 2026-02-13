@@ -39,7 +39,7 @@ A **Flow** is a visual representation of an API testing workflow. It consists of
 
 ### Method 2: Auto-Generate from HAR Import
 
-When you [import a HAR file](./02-importing-har-files.md), DevTools automatically creates a Flow showing:
+When you [import a HAR file](/docs/how-to/import-har), DevTools automatically creates a Flow showing:
 - Request execution order
 - Data dependencies between requests
 - Variable extraction points
@@ -431,7 +431,7 @@ Every node automatically creates output variables. Access them from subsequent n
 
 ![JavaScript node editor and output](/docs/assets/flow-node-js-config.webp)
 
-See the [Environments & Variables](./04-environments-and-variables.md) guide for more details.
+See the [Environments & Variables](/docs/how-to/environments-and-variables) guide for more details.
 
 ## Dependencies and Execution Order
 
@@ -775,4 +775,4 @@ Don't build a 20-node flow without testing!
 
 ---
 
-**Next:** Learn about [Environments & Variables](./04-environments-and-variables.md) to manage configurations across different deployment stages.
+**Next:** Learn about [Environments & Variables](/docs/how-to/environments-and-variables) to manage configurations across different deployment stages.

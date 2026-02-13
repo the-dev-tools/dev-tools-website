@@ -200,7 +200,7 @@ flows:
 
 ### Complete Example
 
-See [Examples & Best Practices](./07-examples-and-best-practices.md) for full examples.
+See [Examples & Best Practices](/docs/cookbook/examples-and-best-practices) for full examples.
 
 ## Environment Variables
 
@@ -261,7 +261,7 @@ test:
     API_BASE_URL: https://api-staging.example.com
 ```
 
-See [CI/CD Integration](./06-cicd-integration.md) for complete examples.
+See [CI/CD Integration](/docs/how-to/ci-integrations) for complete examples.
 
 ## Output Formats
 
@@ -701,4 +701,4 @@ Validate responses explicitly:
 
 ---
 
-**Next:** Learn how to integrate DevTools CLI into your [CI/CD Pipeline](./06-cicd-integration.md).
+**Next:** Learn how to integrate DevTools CLI into your [CI/CD Pipeline](/docs/how-to/ci-integrations).

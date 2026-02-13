@@ -275,7 +275,7 @@ Use case: Share with browser debugging tools
 Right-click flow → Export → YAML
 ```
 
-Use case: Version control, CI/CD (see [CLI Tool](./05-cli-tool.md))
+Use case: Version control, CI/CD (see [CLI Tool](/docs/reference/cli))
 
 ### Export to cURL
 ```
@@ -317,4 +317,4 @@ Use case: Share individual requests for terminal execution
 
 ---
 
-**Next:** Learn how to create and customize [Visual Flows](./03-working-with-flows.md) to build complex API test scenarios.
+**Next:** Learn how to create and customize [Visual Flows](/docs/how-to/working-with-flows) to build complex API test scenarios.

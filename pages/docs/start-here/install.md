@@ -136,10 +136,10 @@ After sending a request:
 
 Now that you have DevTools installed and understand the basics:
 
-1. **Import Real Requests**: Learn how to [import HAR files](./02-importing-har-files.md) from browser recordings
-2. **Create Flows**: Build visual test workflows with the [Flow Builder](./03-working-with-flows.md)
-3. **Manage Environments**: Set up [environments and variables](./04-environments-and-variables.md) for different configurations
-4. **Automate Tests**: Integrate with CI/CD using the [CLI tool](./05-cli-tool.md)
+1. **Import Real Requests**: Learn how to [import HAR files](/docs/how-to/import-har) from browser recordings
+2. **Create Flows**: Build visual test workflows with the [Flow Builder](/docs/how-to/working-with-flows)
+3. **Manage Environments**: Set up [environments and variables](/docs/how-to/environments-and-variables) for different configurations
+4. **Automate Tests**: Integrate with CI/CD using the [CLI tool](/docs/reference/cli)
 
 ## Common First-Time Questions
 
@@ -158,7 +158,7 @@ DevTools supports:
 - cURL commands
 - OpenAPI/Swagger specs (coming soon)
 
-See [Importing HAR Files](./02-importing-har-files.md) for details.
+See [Importing HAR Files](/docs/how-to/import-har) for details.
 
 ### Does DevTools support authentication?
 
@@ -171,7 +171,7 @@ Yes, DevTools supports all standard authentication methods:
 
 ### Can I use DevTools in my CI/CD pipeline?
 
-Absolutely! The CLI tool is designed for CI/CD integration. See [CI/CD Integration](./06-cicd-integration.md) for examples with GitHub Actions, GitLab CI, Jenkins, and more.
+Absolutely! The CLI tool is designed for CI/CD integration. See [CI/CD Integration](/docs/how-to/ci-integrations) for examples with GitHub Actions, GitLab CI, Jenkins, and more.
 
 ### Is DevTools free?
 
@@ -179,4 +179,4 @@ Yes, DevTools is **open source under the Apache-2.0 license** and free to use. T
 
 ---
 
-**Ready to import real API requests?** Continue to [Importing HAR Files](./02-importing-har-files.md).
+**Ready to import real API requests?** Continue to [Importing HAR Files](/docs/how-to/import-har).
