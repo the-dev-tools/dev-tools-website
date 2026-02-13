@@ -37,9 +37,9 @@ Test a complete user journey:
 workspace_name: E-commerce API Tests
 
 env:
-  BASE_URL: '#env:API_BASE_URL'
+  BASE_URL: '{{#env:API_BASE_URL}}'
   ADMIN_EMAIL: admin@example.com
-  ADMIN_PASSWORD: '#env:ADMIN_PASSWORD'
+  ADMIN_PASSWORD: '{{#env:ADMIN_PASSWORD}}'
 
 run:
   - flow: AuthenticationFlow
@@ -224,7 +224,7 @@ if (Math.abs(actualTotal - expectedTotal) > 0.01) {
 
 **4. Environment Flexibility**: Switch between dev/staging/prod
 ```yaml
-BASE_URL: '#env:API_BASE_URL'
+BASE_URL: '{{#env:API_BASE_URL}}'
 ```
 
 ## Authentication Patterns
@@ -257,7 +257,7 @@ flows:
 
 ```yaml
 env:
-  API_KEY: '#env:SECRET_API_KEY'
+  API_KEY: '{{#env:SECRET_API_KEY}}'
 
 flows:
   - name: APIKeyFlow
@@ -277,9 +277,9 @@ flows:
   - name: OAuth2Flow
     variables:
       - name: client_id
-        value: '#env:OAUTH_CLIENT_ID'
+        value: '{{#env:OAUTH_CLIENT_ID}}'
       - name: client_secret
-        value: '#env:OAUTH_CLIENT_SECRET'
+        value: '{{#env:OAUTH_CLIENT_SECRET}}'
     steps:
       - request:
           name: GetAccessToken
@@ -805,7 +805,7 @@ flows:
 - Use environment variables for config
 - Reference node outputs directly
 - Document sensitive variables
-- Use `#env:` for secrets
+- Use `{{#env:}}` for secrets
 
 ❌ **Don't:**
 - Hardcode URLs, API keys, or credentials

@@ -558,7 +558,7 @@ Never hardcode secrets:
 ```yaml
 # ✅ Good
 env:
-  API_KEY: '#env:SECRET_API_KEY'
+  API_KEY: '{{#env:SECRET_API_KEY}}'
 
 # ❌ Bad
 env:
@@ -816,10 +816,10 @@ devtools version
    env:
      API_KEY: ${{ secrets.API_KEY }}
    ```
-4. YAML uses `#env:` reference:
+4. YAML uses `{{#env:}}` reference:
    ```yaml
    env:
-     API_KEY: '#env:API_KEY'
+     API_KEY: '{{#env:API_KEY}}'
    ```
 
 ---

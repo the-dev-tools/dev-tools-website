@@ -212,9 +212,9 @@ In your YAML:
 
 ```yaml
 env:
-  API_KEY: '#env:SECRET_API_KEY'
-  DB_PASSWORD: '#env:DB_PASSWORD'
-  BASE_URL: '#env:API_BASE_URL'
+  API_KEY: '{{#env:SECRET_API_KEY}}'
+  DB_PASSWORD: '{{#env:DB_PASSWORD}}'
+  BASE_URL: '{{#env:API_BASE_URL}}'
 ```
 
 Run with environment variables:
@@ -620,7 +620,7 @@ Never commit secrets:
 ```yaml
 # ✅ Good - uses environment variable
 env:
-  API_KEY: '#env:SECRET_API_KEY'
+  API_KEY: '{{#env:SECRET_API_KEY}}'
 
 # ❌ Bad - hardcoded secret
 env:

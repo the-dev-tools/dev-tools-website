@@ -89,7 +89,7 @@ When writing DevTools YAML flow examples in blog posts, use the **real DevTools 
 Key rules:
 - **Variables**: `{{VARIABLE_NAME}}` (double curly braces) — NOT `${VARIABLE_NAME}`
 - **Node output refs**: `{{NodeName.response.body.field}}` for request outputs, `{{JsNodeName.field}}` for JS outputs
-- **Environment refs**: `#env:VAR_NAME` in variable values
+- **Environment refs**: `{{#env:VAR_NAME}}` in variable values — NOT bare `#env:VAR_NAME`
 - **Built-in functions**: `{{ uuid() }}`, `{{ now() }}`
 - **No `extract:`, `capture:`, or `assert:` blocks** — these don't exist in the real format
 - **Assertions**: Use `js:` nodes that `throw new Error()` on failure

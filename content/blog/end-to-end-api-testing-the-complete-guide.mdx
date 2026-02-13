@@ -12,6 +12,7 @@ author:
 tags: ["end-to-end-testing","api-testing","flows","api-workflows","ci"]
 category: "Guides"
 summary: "End-to-end API testing validates complete workflows, not isolated endpoints. Learn how to chain requests, pass variables, handle auth, and run multi-step API tests in CI."
+canonical: "/guides/end-to-end-api-testing/"
 cta:
   primary:
     heading: "Build end-to-end API tests visually"
@@ -347,14 +348,14 @@ End-to-end tests need a real (or realistic) backend. Options:
 - **Ephemeral environment**: Spun up per PR via Docker Compose or similar. Most isolated.
 - **Shared staging**: Works if tests use unique data (run IDs, timestamps) to avoid conflicts.
 
-Inject environment-specific values through environment references in your flow variables. Use `#env:VAR_NAME` to read from OS environment variables at runtime:
+Inject environment-specific values through environment references in your flow variables. Use `{{#env:VAR_NAME}}` to read from OS environment variables at runtime:
 
 ```yaml
 flows:
   - name: MyFlow
     variables:
       - name: api_key
-        value: '#env:SECRET_API_KEY'
+        value: '{{#env:SECRET_API_KEY}}'
       - name: run_id
         value: 'ci-20260214'
       - name: test_email

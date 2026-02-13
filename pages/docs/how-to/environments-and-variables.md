@@ -419,10 +419,10 @@ Read from OS environment variables:
 ```yaml
 variables:
   - name: API_SECRET
-    value: '#env:SECRET_API_KEY'
+    value: '{{#env:SECRET_API_KEY}}'
 ```
 
-**Syntax:** `#env:ENV_VAR_NAME`
+**Syntax:** `{{#env:ENV_VAR_NAME}}`
 
 **Use Cases:**
 - Secrets in CI/CD (GitHub Actions, GitLab CI)
@@ -445,8 +445,8 @@ steps:
 Flow file:
 ```yaml
 env:
-  API_KEY: '#env:SECRET_API_KEY'
-  DB_PASS: '#env:DB_PASSWORD'
+  API_KEY: '{{#env:SECRET_API_KEY}}'
+  DB_PASS: '{{#env:DB_PASSWORD}}'
 ```
 
 ### Built-in Functions
@@ -677,8 +677,8 @@ Use environment references in version control:
 ```yaml
 # ✅ Safe to commit
 env:
-  API_KEY: '#env:SECRET_API_KEY'
-  DB_PASSWORD: '#env:DB_PASSWORD'
+  API_KEY: '{{#env:SECRET_API_KEY}}'
+  DB_PASSWORD: '{{#env:DB_PASSWORD}}'
 
 # ❌ NEVER do this
 env:
@@ -730,7 +730,7 @@ const token = context.Login?.response?.body?.token;
 
 ### Environment Variable Not Loading
 
-**Error:** `#env:SECRET_KEY` resolves to empty string
+**Error:** `{{#env:SECRET_KEY}}` resolves to empty string
 
 **Check:**
 1. Environment variable is set in the shell/CI

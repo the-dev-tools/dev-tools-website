@@ -26,10 +26,30 @@ export default function GuidesIndex() {
       href: '/guides/generate-har-chrome',
       title: 'Generate a HAR file (Chrome) safely',
       desc: 'Record real traffic and handle sensitive data locally.'
+    },
+    {
+      href: '/guides/end-to-end-api-testing',
+      title: 'End-to-End API Testing: The Complete Guide',
+      desc: 'What e2e API testing is, how to chain requests, pass variables, validate, and run in CI.'
+    },
+    {
+      href: '/guides/yaml-native-api-testing',
+      title: 'YAML-Native API Testing: Define, Version, and Run Tests as Code',
+      desc: 'Declarative YAML test definitions: syntax patterns, variable passing, assertions, environments, and Git workflows.'
+    },
+    {
+      href: '/guides/api-testing-ci-cd',
+      title: 'API Testing in CI/CD: From Manual Clicks to Automated Pipelines',
+      desc: 'Move API tests from GUI tools into CI/CD pipelines: suite structure, GitHub Actions, parallelization, secrets, and reporting.'
+    },
+    {
+      href: '/guides/api-workflow-automation',
+      title: 'API Workflow Automation: Testing Multi-Step Business Logic',
+      desc: 'Test multi-step API workflows: CRUD lifecycles, data passing, conditional branching, error handling, and visual Flow building.'
     }
   ]
   return (
-    <main className="mx-auto max-w-6xl px-4 py-16 sm:px-8">
+    <main className="mx-auto max-w-6xl px-4 py-10 sm:px-8">
       <h1 className="text-5xl font-bold text-white mb-4">Guides</h1>
       <p className="text-lg text-slate-400 mb-10">Practical, copy‑pastable steps for migrations and CI.</p>
       <div className="grid gap-6 md:grid-cols-2">

@@ -1,10 +1,21 @@
 import Link from 'next/link'
+import StickyTOC from '@/components/ui/StickyTOC'
 
 export const metadata = {
   title: 'Newman Alternative for CI: DevTools CLI (JUnit/JSON, Exit Codes)',
   description:
     'Run YAML API test flows in CI as a faster Newman alternative. Install DevTools CLI, run flows in parallel, output JUnit/JSON, and fail builds with proper exit codes.',
 }
+
+const tocItems = [
+  { id: 'quickstart', label: 'Quickstart' },
+  { id: 'github-actions', label: 'GitHub Actions' },
+  { id: 'secrets', label: 'Secrets & base URLs' },
+  { id: 'reports', label: 'Reports & exit codes' },
+  { id: 'migration', label: 'Migration path' },
+  { id: 'troubleshooting', label: 'Troubleshooting' },
+  { id: 'faq', label: 'FAQ' },
+]
 
 export default function GuideNewmanAlternativeCI() {
   const faqJsonLd = {
@@ -35,7 +46,7 @@ export default function GuideNewmanAlternativeCI() {
         acceptedAnswer: {
           '@type': 'Answer',
           text:
-            "Set CI environment variables from your secret store (e.g., GitHub Secrets), then reference them in flows using #env:, e.g., API_KEY: '#env:SECRET_API_KEY' and BASE_URL: '#env:API_BASE_URL'.",
+            "Set CI environment variables from your secret store (e.g., GitHub Secrets), then reference them in flows using {{#env:}}, e.g., API_KEY: '{{#env:SECRET_API_KEY}}' and BASE_URL: '{{#env:API_BASE_URL}}'.",
         },
       },
       {
@@ -60,8 +71,9 @@ export default function GuideNewmanAlternativeCI() {
   }
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-16 sm:px-8">
-      <article className="prose prose-invert prose-slate max-w-none">
+    <main className="mx-auto max-w-6xl px-4 py-10 sm:px-8">
+      <div className="lg:grid lg:grid-cols-[1fr_260px] lg:gap-12">
+      <article className="prose prose-invert prose-slate max-w-none min-w-0">
         <header className="mb-10 not-prose">
           <h1 className="text-4xl font-bold text-white sm:text-5xl">
             Newman alternative for CI: DevTools CLI
@@ -76,7 +88,7 @@ export default function GuideNewmanAlternativeCI() {
         </header>
 
         <section className="mb-12">
-          <h2 className="text-3xl font-bold text-white">Quickstart (local)</h2>
+          <h2 id="quickstart" className="text-3xl font-bold text-white">Quickstart (local)</h2>
           <p className="text-slate-300">
             Install, verify, then run a flow with both JUnit and JSON reports. See the{' '}
             <Link href="/docs/reference/cli" className="text-neon hover:underline">CLI reference</Link> for all
@@ -96,7 +108,7 @@ export default function GuideNewmanAlternativeCI() {
         </section>
 
         <section className="mb-12">
-          <h2 className="text-3xl font-bold text-white">GitHub Actions (real pipeline)</h2>
+          <h2 id="github-actions" className="text-3xl font-bold text-white">GitHub Actions (real pipeline)</h2>
           <p className="text-slate-300">
             Runs on push and pull_request, passes secrets via <code className="bg-slate-900/50 px-1 rounded">env</code>,
             and uploads artifacts even on failure. See templates for more variants:{' '}
@@ -157,7 +169,7 @@ jobs:
         </section>
 
         <section className="mb-12">
-          <h2 className="text-3xl font-bold text-white">Passing secrets and base URLs</h2>
+          <h2 id="secrets" className="text-3xl font-bold text-white">Passing secrets and base URLs</h2>
           <p className="text-slate-300">
             Reference CI environment variables using <code className="bg-slate-900/50 px-1 rounded">#env:</code>.
             Keep secrets out of YAML. Full details in{' '}
@@ -170,8 +182,8 @@ jobs:
               <div className="text-slate-400 mb-2"># tests.yaml (excerpt)</div>
               <code>{`name: Smoke tests
 env:
-  API_KEY: '#env:SECRET_API_KEY'
-  BASE_URL: '#env:API_BASE_URL'
+  API_KEY: '{{#env:SECRET_API_KEY}}'
+  BASE_URL: '{{#env:API_BASE_URL}}'
 
 steps:
   - name: Login
@@ -196,7 +208,7 @@ steps:
         </section>
 
         <section className="mb-12">
-          <h2 className="text-3xl font-bold text-white">Reports + exit codes</h2>
+          <h2 id="reports" className="text-3xl font-bold text-white">Reports + exit codes</h2>
           <ul className="text-slate-300">
             <li>
               <strong>JUnit</strong> for CI test reporting. Add{' '}
@@ -225,7 +237,7 @@ steps:
         </section>
 
         <section className="mb-12">
-          <h2 className="text-3xl font-bold text-white">Migration path (Newman users)</h2>
+          <h2 id="migration" className="text-3xl font-bold text-white">Migration path (Newman users)</h2>
           <ul className="text-slate-300">
             <li>
               If you have Postman collections, migrate/rebuild them as DevTools YAML flows. See the{' '}
@@ -248,7 +260,7 @@ steps:
         </section>
 
         <section className="mb-12">
-          <h2 className="text-3xl font-bold text-white">Troubleshooting</h2>
+          <h2 id="troubleshooting" className="text-3xl font-bold text-white">Troubleshooting</h2>
           <div className="not-prose space-y-3">
             <div className="rounded-xl border border-white/10 bg-white/5 p-4">
               <h3 className="text-lg font-semibold text-white mb-1">Flow file not found</h3>
@@ -275,7 +287,7 @@ steps:
         </section>
 
         <section className="mb-12">
-          <h2 className="text-3xl font-bold text-white">Frequently Asked Questions</h2>
+          <h2 id="faq" className="text-3xl font-bold text-white">Frequently Asked Questions</h2>
           <div className="not-prose space-y-4">
             <div className="rounded-xl border border-white/10 bg-white/5 p-5">
               <h3 className="text-lg font-semibold text-white mb-2">Is this a Newman replacement?</h3>
@@ -293,7 +305,7 @@ steps:
               <h3 className="text-lg font-semibold text-white mb-2">How do I pass secrets in CI?</h3>
               <p className="text-sm text-slate-300">
                 Map CI secrets to env vars (e.g., GitHub Secrets) and reference them in YAML with
-                <code className="ml-1">#env:</code> (e.g., <code>API_KEY: '#env:SECRET_API_KEY'</code>).
+                <code className="ml-1">{'{{#env:}}'}</code> (e.g., <code>{"API_KEY: '{{#env:SECRET_API_KEY}}'"}</code>).
               </p>
             </div>
             <div className="rounded-xl border border-white/10 bg-white/5 p-5">
@@ -347,6 +359,38 @@ steps:
           </p>
         </footer>
       </article>
+
+      <div className="hidden lg:block">
+        <aside className="space-y-6 sticky top-8">
+          <StickyTOC items={tocItems} />
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+            <span className="inline-block px-2 py-1 text-xs font-medium rounded mb-3 bg-slate-700 text-slate-300">
+              Newman replacement
+            </span>
+            <h3 className="text-lg font-semibold text-white mb-3">
+              Run YAML flows in CI
+            </h3>
+            <p className="text-sm text-slate-300 mb-4">
+              JUnit/JSON reports, proper exit codes, no npm install required.
+            </p>
+            <div className="space-y-3">
+              <Link
+                href="https://dev.tools/docs/how-to/ci-integrations/"
+                className="block w-full text-center px-4 py-2.5 bg-neon text-black font-medium rounded-lg hover:bg-neon/90 transition"
+              >
+                Set Up CI
+              </Link>
+              <Link
+                href="/guides/migrate-from-postman"
+                className="block w-full text-center px-4 py-2 text-neon hover:underline text-sm"
+              >
+                Migrate from Postman
+              </Link>
+            </div>
+          </div>
+        </aside>
+      </div>
+      </div>
     </main>
   )
 }

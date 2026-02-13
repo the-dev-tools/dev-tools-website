@@ -36,6 +36,7 @@ export interface BlogPost {
     alt: string
   }
   cta?: BlogCTAConfig
+  canonical?: string
   content: string
 }
 
@@ -67,6 +68,7 @@ export async function getAllPosts(): Promise<BlogPost[]> {
         category: data.category,
         image: data.image,
         cta: data.cta,
+        canonical: data.canonical,
         content
       }
     })
@@ -91,6 +93,7 @@ export async function getPost(slug: string): Promise<BlogPost | null> {
       category: data.category,
       image: data.image,
       cta: data.cta,
+      canonical: data.canonical,
       content
     }
   } catch {
