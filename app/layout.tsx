@@ -6,15 +6,15 @@ import CookieConsent from '@/components/ui/CookieConsent'
 
 export const metadata = {
   metadataBase: new URL('https://dev.tools'),
-  title: 'DevTools – Local-First API Testing & Flow Automation',
-  description: 'Free, open-source API client and flow runner. Record browser traffic, turn it into executable YAML flows with auto-mapped variables, and run at multithreaded Go speed locally or in CI.',
-  keywords: 'API testing, API client, flow automation, HAR import, YAML flows, API development, local-first, open source, CI/CD, REST API, HTTP client',
+  title: 'DevTools – Open Source API Testing Tool | Multi-Step API Tests in CI',
+  description: 'Open-source API testing tool that chains multi-step requests into reusable YAML workflows. Record real traffic, auto-map variables between steps, and run end-to-end API tests in CI with parallel execution and JUnit reports.',
+  keywords: 'API testing tool, multi-step API testing, end-to-end API testing, API test automation, YAML API tests, CI CD API testing, open source API testing, HAR import, REST API testing, HTTP client',
   authors: [{ name: 'DevTools' }],
   openGraph: {
     type: 'website',
     url: 'https://dev.tools',
-    title: 'DevTools – Local-First API Testing & Flow Automation',
-    description: 'Free, open-source API client and flow runner. Record browser traffic, turn it into executable YAML flows, and run at Go speed locally or in CI.',
+    title: 'DevTools – Open Source API Testing Tool | Multi-Step API Tests in CI',
+    description: 'Open-source API testing tool that chains multi-step requests into reusable YAML workflows. Record real traffic, auto-map variables, and run end-to-end API tests in CI.',
     siteName: 'DevTools',
     images: [
       {
@@ -26,8 +26,8 @@ export const metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'DevTools – Local-First API Testing & Flow Automation',
-    description: 'Free, open-source API client and flow runner. Record browser traffic, turn it into executable YAML flows, and run at Go speed locally or in CI.',
+    title: 'DevTools – Open Source API Testing Tool | Multi-Step API Tests in CI',
+    description: 'Open-source API testing tool that chains multi-step requests into reusable YAML workflows. Record real traffic, auto-map variables, and run end-to-end API tests in CI.',
     images: ['https://dev.tools/assets/devtools-main-ss-1400w.webp'],
   },
 }
@@ -53,9 +53,15 @@ export default function RootLayout({
               applicationCategory: 'DeveloperApplication',
               operatingSystem: 'Windows, macOS, Linux',
               description:
-                'Local-first API testing and flow automation tool. Record browser traffic, turn it into executable YAML flows with auto-mapped variables, and run at multithreaded Go speed.',
+                'Open-source API testing tool that chains multi-step requests into reusable YAML workflows. Record real traffic, auto-map variables between steps, and run end-to-end API tests in CI with parallel execution.',
               url: 'https://dev.tools',
+              downloadUrl: 'https://dev.tools/download',
               image: 'https://dev.tools/assets/devtools-main-ss-1400w.webp',
+              offers: {
+                '@type': 'Offer',
+                price: '0',
+                priceCurrency: 'USD',
+              },
               author: {
                 '@type': 'Organization',
                 name: 'DevTools',

@@ -6,9 +6,9 @@ export default function Flows() {
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 sm:px-8">
         <div className="max-w-3xl">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs uppercase tracking-wide text-slate-300">How it works</span>
-          <h2 className="mt-4 text-3xl font-bold text-white sm:text-4xl">Record → Flow → YAML → CI</h2>
+          <h2 className="mt-4 text-3xl font-bold text-white sm:text-4xl">Build multi-step API tests in four steps</h2>
           <p className="mt-3 text-base text-slate-300">
-            Quick mental model: visual API workflows with Git‑native YAML export. Flows you can review and run in CI.
+            Record real traffic, chain requests with auto-mapped variables, export to YAML, and run end-to-end API tests in CI.
           </p>
         </div>
 
@@ -29,8 +29,8 @@ export default function Flows() {
               </div>
             </figure>
             <div className="order-2 md:col-span-4">
-              <h3 className="text-2xl font-semibold text-white">Record real traffic</h3>
-              <p className="mt-3 text-slate-300">Capture a HAR from your browser or proxy and drag it into DevTools. We’ll parse requests and auth headers automatically.</p>
+              <h3 className="text-2xl font-semibold text-white">1. Capture API traffic from your browser</h3>
+              <p className="mt-3 text-slate-300">Record a HAR from Chrome DevTools or a proxy and import it. DevTools parses every request, header, and auth token automatically.</p>
               <ul className="mt-4 space-y-2 text-sm text-slate-300">
                 <li>• Chrome DevTools → Save all as HAR</li>
                 <li>• Sensitive data safe: process happens locally</li>
@@ -46,8 +46,8 @@ export default function Flows() {
           {/* Row 2: Text left, image right */}
           <div className="grid items-center gap-8 md:grid-cols-12">
             <div className="order-2 md:order-1 md:col-span-4">
-              <h3 className="text-2xl font-semibold text-white">Map variables across steps</h3>
-              <p className="mt-3 text-slate-300">Extract tokens and IDs from responses and map them to subsequent requests. Fine‑tune with JSONPath‑based overrides.</p>
+              <h3 className="text-2xl font-semibold text-white">2. Chain requests with auto-mapped variables</h3>
+              <p className="mt-3 text-slate-300">DevTools extracts tokens and IDs from responses and maps them to subsequent requests. Fine‑tune variable passing with JSONPath‑based overrides.</p>
               <ul className="mt-4 space-y-2 text-sm text-slate-300">
                 <li>• Auto‑mapped variables from responses</li>
                 <li>• Override rules per step</li>
@@ -85,8 +85,8 @@ export default function Flows() {
               </div>
             </figure>
             <div className="order-2 md:col-span-4">
-              <h3 className="text-2xl font-semibold text-white">Build and refine flows</h3>
-              <p className="mt-3 text-slate-300">Use a visual canvas to organize requests, set assertions, and add flow‑level logic. Keep reviews clean with YAML export.</p>
+              <h3 className="text-2xl font-semibold text-white">3. Build multi-step test flows visually</h3>
+              <p className="mt-3 text-slate-300">Use a visual canvas to organize API requests, add assertions, and set dependencies between steps. Export clean YAML for code review.</p>
               <div className="mt-4 text-sm">
                 <Link href="/docs/how-to/working-with-flows" className="underline decoration-dotted underline-offset-2 hover:text-white">Learn how flows work</Link>
               </div>
@@ -96,8 +96,8 @@ export default function Flows() {
           {/* Row 4: Text left, image right */}
           <div className="grid items-center gap-8 md:grid-cols-12">
             <div className="order-2 md:order-1 md:col-span-4">
-              <h3 className="text-2xl font-semibold text-white">Export to YAML and run in CI</h3>
-              <p className="mt-3 text-slate-300">YAML‑native by design: export human‑readable flows for Git review, then run locally or in CI with clear exit codes and reports.</p>
+              <h3 className="text-2xl font-semibold text-white">4. Export YAML and run API tests in CI</h3>
+              <p className="mt-3 text-slate-300">Export human-readable YAML for Git review, then run end-to-end API tests in CI with parallel execution, JUnit reports, and clear exit codes.</p>
               <ul className="mt-4 space-y-2 text-sm text-slate-300">
                 <li>• Git‑reviewable flow definitions</li>
                 <li>• CLI reports (JUnit/JSON, exit codes)</li>

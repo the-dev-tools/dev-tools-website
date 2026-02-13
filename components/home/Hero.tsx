@@ -37,21 +37,18 @@ export default function Hero() {
         </div>
 
         <h1 className="text-center text-4xl font-extrabold leading-tight text-white sm:text-5xl md:text-left md:text-6xl">
-          From real traffic to CI-ready API workflows.
+          Record traffic. Test in CI. Ship faster.
         </h1>
 
         <p className="mt-6 max-w-xl text-center text-lg text-slate-300 md:text-left">
-          Import a HAR → generate a flow → export YAML → run in CI.
-        </p>
-
-        <p className="mt-3 max-w-xl text-center text-base text-slate-300 md:text-left">
-          Local-first. Git-reviewable. CI-ready.
+          Capture browser traffic, auto-generate multi-step YAML test workflows, and run them in any pipeline with a single Go binary.{' '}
+          <Link href="/guides/generate-har-chrome" className="text-neon text-sm hover:underline whitespace-nowrap">How to record traffic →</Link>
         </p>
 
         <ul className="mt-4 max-w-xl list-disc space-y-1 pl-5 text-sm text-slate-300 md:text-base md:pl-6">
-          <li>HAR → flow steps + mapping</li>
-          <li>YAML export for PR review</li>
-          <li>CLI reports (JUnit/JSON, exit codes)</li>
+          <li>Record real traffic → auto-generate multi-step API tests</li>
+          <li>YAML export for Git review and CI/CD pipelines</li>
+          <li>Parallel execution with JUnit/JSON reports</li>
         </ul>
 
         <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -106,20 +103,20 @@ export default function Hero() {
         <dl className="mt-8 grid grid-cols-3 gap-6 text-center">
           <div className="flex flex-col items-center text-center">
             <dd className="mt-2 text-white">
-              <span className="block text-2xl font-extrabold text-neon">Parallel</span>
-              <span className="mt-1 block text-sm font-semibold uppercase tracking-wide">By default</span>
+              <span className="block text-2xl font-extrabold text-neon">Multi-step</span>
+              <span className="mt-1 block text-sm font-semibold uppercase tracking-wide">API tests</span>
             </dd>
           </div>
           <div className="flex flex-col items-center text-center">
             <dd className="mt-2 text-white">
-              <span className="block text-2xl font-extrabold text-neon">CI outputs</span>
-              <span className="mt-1 block text-sm font-semibold uppercase tracking-wide">JUnit/JSON</span>
+              <span className="block text-2xl font-extrabold text-neon">CI-ready</span>
+              <span className="mt-1 block text-sm font-semibold uppercase tracking-wide">JUnit reports</span>
             </dd>
           </div>
           <div className="flex flex-col items-center text-center">
             <dd className="mt-2 text-white">
-              <span className="block text-2xl font-extrabold text-neon">Local-first</span>
-              <span className="mt-1 block text-sm font-semibold uppercase tracking-wide">No cloud</span>
+              <span className="block text-2xl font-extrabold text-neon">Open source</span>
+              <span className="mt-1 block text-sm font-semibold uppercase tracking-wide">Local-first</span>
             </dd>
           </div>
         </dl>

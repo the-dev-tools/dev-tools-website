@@ -75,8 +75,12 @@ export default function GuideGenerateHarChrome() {
                       <li>Right click → Inspect</li>
                       <li>Open the Network panel</li>
                     </ul>
-                    {/* TODO: screenshot → /public/media/chrome-network-tab.png
-                        Alt: Chrome DevTools Network tab open */}
+                    <img
+                      src="/docs/assets/chrome-devtools-open-settings-gear.webp"
+                      alt="Open DevTools settings from the Network panel toolbar"
+                      className="mt-4 rounded-lg border border-white/10"
+                      loading="lazy"
+                    />
                   </div>
                 </div>
               </div>
@@ -90,8 +94,12 @@ export default function GuideGenerateHarChrome() {
                       <li>Network toolbar → gear icon</li>
                       <li>Preferences → Network → Allow to generate HAR with sensitive data</li>
                     </ul>
-                    {/* TODO: screenshot → /public/media/chrome-allow-har-sensitive-data.png
-                        Alt: Chrome setting 'Allow to generate HAR with sensitive data' enabled */}
+                    <img
+                      src="/docs/assets/chrome-devtools-allow-har-with-sensitive-data.webp"
+                      alt="Enable 'Allow to generate HAR with sensitive data' in Chrome DevTools preferences"
+                      className="mt-4 rounded-lg border border-white/10"
+                      loading="lazy"
+                    />
                   </div>
                 </div>
               </div>
@@ -107,8 +115,6 @@ export default function GuideGenerateHarChrome() {
                       <li>Click the clear icon to start clean</li>
                       <li>Perform the workflow (login, click, submit, etc.)</li>
                     </ul>
-                    {/* TODO: GIF → /public/media/chrome-preserve-log-clear.gif
-                        Alt: Chrome Network: Preserve log and Clear, then capturing a user flow */}
                   </div>
                 </div>
               </div>
@@ -123,8 +129,12 @@ export default function GuideGenerateHarChrome() {
                       <li>Or right‑click request list → Save all as HAR with content</li>
                     </ul>
                     <p className="text-slate-400 text-sm mt-2">Suggested names: login-create-order.har, checkout-flow.har</p>
-                    {/* TODO: screenshot → /public/media/chrome-save-har-with-content.png
-                        Alt: Right-click menu 'Save all as HAR with content' in Chrome Network */}
+                    <img
+                      src="/docs/assets/chrome-devtools-export-har-button-menu.webp"
+                      alt="Export HAR from the Network tab toolbar — choose 'with sensitive data'"
+                      className="mt-4 rounded-lg border border-white/10"
+                      loading="lazy"
+                    />
                   </div>
                 </div>
               </div>
@@ -152,16 +162,23 @@ export default function GuideGenerateHarChrome() {
                   <li>Open DevTools Studio → Import → HAR File</li>
                   <li>Select your <code>.har</code></li>
                 </ol>
+                <img
+                  src="/docs/assets/import-dialog-select-har.webp"
+                  alt="Import dialog selecting HAR file in DevTools Studio"
+                  className="mt-4 rounded-lg border border-white/10"
+                  loading="lazy"
+                />
               </div>
 
               <div className="rounded-xl border border-white/10 bg-white/5 p-6">
                 <h3 className="text-lg font-semibold text-white mb-2">Filter and map domains</h3>
                 <p className="text-slate-300 text-sm">Remove analytics/fonts/CDNs; map domains to variables (e.g., BASE_URL).</p>
-                {/* TODO: screenshots
-                    1. /public/media/devtools-import-har-domain-filter.png
-                       Alt: DevTools import HAR: domain filter checklist
-                    2. /public/media/devtools-domain-to-variable.png
-                       Alt: Map domain to {{BASE_URL}} variable in DevTools */}
+                <img
+                  src="/docs/assets/import-map-domain-to-base-url.webp"
+                  alt="Map domain to {{BASE_URL}} variable in DevTools"
+                  className="mt-4 rounded-lg border border-white/10"
+                  loading="lazy"
+                />
               </div>
             </div>
           </section>
@@ -172,8 +189,12 @@ export default function GuideGenerateHarChrome() {
               <div className="rounded-xl border border-white/10 bg-white/5 p-6">
                 <h3 className="text-lg font-semibold text-white mb-2">Review flow + dependencies</h3>
                 <p className="text-slate-300 text-sm">Check the generated sequence and auto‑detected variable chaining.</p>
-                {/* TODO: screenshot → /public/media/devtools-flow-dependencies.png
-                    Alt: DevTools flow dependencies visual with token chaining */}
+                <img
+                  src="/docs/assets/flow-canvas-overview.webp"
+                  alt="Flow canvas overview showing request sequence and dependencies"
+                  className="mt-4 rounded-lg border border-white/10"
+                  loading="lazy"
+                />
               </div>
 
               <div className="rounded-xl border border-white/10 bg-white/5 p-6">
@@ -186,11 +207,6 @@ export default function GuideGenerateHarChrome() {
               <div className="rounded-xl border border-white/10 bg-white/5 p-6">
                 <h3 className="text-lg font-semibold text-white mb-2">Export YAML and commit</h3>
                 <p className="text-slate-300 text-sm">Run once locally, then export to YAML and commit to your repo.</p>
-                {/* TODO: screenshots
-                    1. /public/media/devtools-export-yaml.png
-                       Alt: Export flow to YAML in DevTools
-                    2. /public/media/git-diff-yaml-flow.png
-                       Alt: PR diff showing readable YAML flow changes */}
               </div>
             </div>
           </section>

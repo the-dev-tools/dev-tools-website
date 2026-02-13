@@ -31,6 +31,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/cli" className="transition hover:text-neon">
+                  CLI
+                </Link>
+              </li>
+              <li>
                 <Link href="/download" className="transition hover:text-neon">
                   Download
                 </Link>
@@ -46,11 +51,6 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/guides" className="transition hover:text-neon">
-                  Guides
-                </Link>
-              </li>
-              <li>
                 <Link href="/templates" className="transition hover:text-neon">
                   Templates
                 </Link>
@@ -58,15 +58,47 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Resources Column */}
+          {/* Features Column */}
           <div>
-            <h3 className="text-xs uppercase tracking-wide text-slate-400">Resources</h3>
+            <h3 className="text-xs uppercase tracking-wide text-slate-400">Features</h3>
             <ul className="mt-3 space-y-2 text-slate-300">
+              <li>
+                <Link href="/features/multi-step-api-testing" className="transition hover:text-neon">
+                  Multi-step API testing
+                </Link>
+              </li>
+              <li>
+                <Link href="/features/ci-cd-integration" className="transition hover:text-neon">
+                  CI/CD integration
+                </Link>
+              </li>
+              <li>
+                <Link href="/guides" className="transition hover:text-neon">
+                  Guides
+                </Link>
+              </li>
               <li>
                 <Link href="/docs" className="transition hover:text-neon">
                   Docs
                 </Link>
               </li>
+              <li>
+                <Link href="/blog" className="transition hover:text-neon">
+                  Blog
+                </Link>
+              </li>
+              <li>
+                <Link href="/changelog" className="transition hover:text-neon">
+                  Changelog
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Compare Column */}
+          <div>
+            <h3 className="text-xs uppercase tracking-wide text-slate-400">Compare</h3>
+            <ul className="mt-3 space-y-2 text-slate-300">
               <li>
                 <Link href="/postman-alternative" className="transition hover:text-neon">
                   Postman alternative
@@ -79,22 +111,12 @@ export default function Footer() {
               </li>
               <li>
                 <Link href="/postman-cli-alternative" className="transition hover:text-neon">
-                  Newman (Postman CLI) alternative
-                </Link>
-              </li>
-              <li>
-                <Link href="/blog" className="transition hover:text-neon">
-                  Blog
+                  Newman alternative
                 </Link>
               </li>
               <li>
                 <Link href="/subscribe" className="transition hover:text-neon">
                   Subscribe
-                </Link>
-              </li>
-              <li>
-                <Link href="/changelog" className="transition hover:text-neon">
-                  Changelog
                 </Link>
               </li>
             </ul>
@@ -120,13 +142,6 @@ export default function Footer() {
                   Our Story
                 </Link>
               </li>
-            </ul>
-          </div>
-
-          {/* Legal Column */}
-          <div>
-            <h3 className="text-xs uppercase tracking-wide text-slate-400">Legal</h3>
-            <ul className="mt-3 space-y-2 text-slate-300">
               <li>
                 <a href="https://github.com/the-dev-tools/dev-tools/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" className="transition hover:text-neon">
                   License: Apache-2.0

@@ -1,9 +1,9 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Postman Alternative – DevTools (Local‑First, YAML Flows, CI‑Ready)',
+  title: 'Postman Alternative – Open Source API Testing with Multi-Step Flows & CI/CD',
   description:
-    'DevTools is a local‑first Postman alternative: import HAR → generate visual flows → export YAML → run in CI with JUnit/JSON.',
+    'DevTools is an open-source Postman alternative for multi-step API testing. Chain requests, auto-map variables, export YAML, and run API tests in CI with JUnit reports.',
 }
 
 export default function PostmanAlternativePage() {
@@ -16,23 +16,44 @@ export default function PostmanAlternativePage() {
         </p>
       </header>
 
-      <section className="grid gap-6 md:grid-cols-2 mb-12">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-          <h2 className="text-xl font-semibold text-white">Why teams switch from Postman</h2>
-          <ul className="mt-3 list-disc space-y-2 pl-5 text-slate-300">
-            <li>Cloud friction for simple local workflows</li>
-            <li>Script‑heavy collections that are hard to review</li>
-            <li>Painful or slow CI runs, flaky exit codes</li>
-            <li>Team drift between exported collections and reality</li>
-          </ul>
+      <section className="mb-12">
+        <h2 className="text-2xl font-semibold text-white mb-4">Why developers are switching from Postman</h2>
+        <div className="grid gap-6 md:grid-cols-2">
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+            <h3 className="text-lg font-semibold text-white">Cloud lock-in and forced accounts</h3>
+            <p className="mt-2 text-slate-300 text-sm">Postman increasingly requires cloud accounts for basic workflows. DevTools is 100% local-first — no login, no sync, no cloud dependency.</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+            <h3 className="text-lg font-semibold text-white">Script-heavy collections</h3>
+            <p className="mt-2 text-slate-300 text-sm">Postman collections rely on pre/post-request scripts that are hard to review and maintain. DevTools chains requests visually with auto-mapped variables — no scripts needed.</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+            <h3 className="text-lg font-semibold text-white">Slow CI runs</h3>
+            <p className="mt-2 text-slate-300 text-sm">Newman (Postman CLI) runs sequentially with a heavier runtime. DevTools CLI is Go-based with parallel execution by default, producing JUnit/JSON reports with clean exit codes.</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+            <h3 className="text-lg font-semibold text-white">No Git-reviewable format</h3>
+            <p className="mt-2 text-slate-300 text-sm">Postman collections are large JSON blobs. DevTools exports clean YAML that works in pull request diffs and is easy for teams to review.</p>
+          </div>
         </div>
+      </section>
+
+      <section className="grid gap-6 md:grid-cols-2 mb-12">
         <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
           <h2 className="text-xl font-semibold text-white">What DevTools does differently</h2>
           <ul className="mt-3 list-disc space-y-2 pl-5 text-slate-300">
-            <li>HAR → flow → YAML → CI (reviewable and portable)</li>
+            <li>Record real traffic → auto-generate multi-step API tests</li>
             <li>Automatic variable mapping with JSONPath overrides</li>
             <li>Go‑based runner: parallel by default, JUnit/JSON reports</li>
-            <li>Local‑first, no account required</li>
+            <li>Local‑first, open source, no account required</li>
+          </ul>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+          <h2 className="text-xl font-semibold text-white">Getting started</h2>
+          <ul className="mt-3 list-disc space-y-2 pl-5 text-slate-300">
+            <li><Link href="/download" className="underline decoration-dotted underline-offset-2">Download DevTools Studio</Link> (free, open source)</li>
+            <li><Link href="/guides/migrate-from-postman" className="underline decoration-dotted underline-offset-2">Migrate from Postman guide</Link></li>
+            <li><Link href="/guides/end-to-end-api-testing" className="underline decoration-dotted underline-offset-2">End-to-end API testing guide</Link></li>
           </ul>
         </div>
       </section>

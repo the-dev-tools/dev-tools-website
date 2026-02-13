@@ -4,8 +4,8 @@ export default function Scale() {
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-8">
         <div className="max-w-3xl">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-wide text-slate-300">Roadmap</span>
-          <h2 className="mt-4 text-3xl font-bold text-white sm:text-4xl">Scale when you're ready</h2>
-          <p className="mt-3 text-base text-slate-300">Run flows locally and in CI for free. When your suite needs more, scale with DevTools Cloud <span className="opacity-80">(Roadmap)</span> or self‑host executors.</p>
+          <h2 className="mt-4 text-3xl font-bold text-white sm:text-4xl">Scale your API testing when you're ready</h2>
+          <p className="mt-3 text-base text-slate-300">Run API tests locally and in CI for free. When your test suite needs more, scale with DevTools Cloud <span className="opacity-80">(Roadmap)</span> or self‑host executors.</p>
 
           <div className="mt-6 grid gap-6 md:grid-cols-2">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5">

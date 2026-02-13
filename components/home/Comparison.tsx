@@ -3,17 +3,19 @@ export default function Comparison() {
     <section id="comparison" className="relative border-b border-white/5 bg-slate-950/70 py-16">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 sm:px-8">
         <div className="max-w-3xl">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs uppercase tracking-wide text-slate-300">Comparison</span>
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs uppercase tracking-wide text-slate-300">API testing tools compared</span>
           <h2 className="mt-4 text-3xl font-bold text-white sm:text-4xl">DevTools vs Bruno vs Postman</h2>
           <p className="mt-3 text-base text-slate-300">
-            See how the tooling stacks up when you care about local-first flows, Git-friendly exports, and speed.
+            Compare API testing tools on multi-step flows, YAML export, CI/CD integration, and open-source availability.
           </p>
         </div>
-        <div className="text-sm text-slate-300">
-          <a href="/postman-alternative" className="underline decoration-dotted underline-offset-2 mr-4">Postman alternative →</a>
-          <a href="/bruno-alternative" className="underline decoration-dotted underline-offset-2 mr-4">Bruno alternative →</a>
-          <a href="/compare/devtools-vs-postman" className="underline decoration-dotted underline-offset-2 mr-4">DevTools vs Postman →</a>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-300">
+          <a href="/postman-alternative" className="underline decoration-dotted underline-offset-2">Postman alternative →</a>
+          <a href="/bruno-alternative" className="underline decoration-dotted underline-offset-2">Bruno alternative →</a>
+          <a href="/compare/devtools-vs-postman" className="underline decoration-dotted underline-offset-2">DevTools vs Postman →</a>
           <a href="/compare/devtools-vs-bruno" className="underline decoration-dotted underline-offset-2">DevTools vs Bruno →</a>
+          <a href="/features/multi-step-api-testing" className="underline decoration-dotted underline-offset-2">Multi-step API testing →</a>
+          <a href="/features/ci-cd-integration" className="underline decoration-dotted underline-offset-2">CI/CD integration →</a>
         </div>
 
         <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5 shadow-[0_25px_60px_-35px_rgba(15,23,42,0.75)]">

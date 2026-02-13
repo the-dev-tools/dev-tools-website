@@ -3,8 +3,8 @@ import CodeBlock from '@/components/ui/CodeBlock'
 import CommandCard from '@/components/cli/CommandCard'
 
 export const metadata = {
-  title: 'DevTools CLI – Run YAML API workflows in CI (JUnit/JSON, exit codes)',
-  description: 'Run exported YAML flows in parallel with a Go runner. Get JUnit/JSON reports and clean exit codes designed for pipelines.',
+  title: 'DevTools CLI – Run Multi-Step API Tests in CI/CD Pipelines',
+  description: 'Run multi-step API tests in CI with a Go-based CLI. Parallel execution, JUnit/JSON reports, clean exit codes. Works with GitHub Actions, GitLab CI, Jenkins, and any pipeline.',
 }
 
 export default function CLIPage() {
@@ -161,9 +161,9 @@ export default function CLIPage() {
       {/* CTA Section */}
       <section className="relative border-t border-white/5 bg-[linear-gradient(160deg,rgba(12,22,51,0.55),rgba(42,27,78,0.4))] py-16">
         <div className="mx-auto w-full max-w-4xl px-4 text-center sm:px-8">
-          <h2 className="text-3xl font-bold text-white sm:text-4xl">Ready to run flows in CI?</h2>
+          <h2 className="text-3xl font-bold text-white sm:text-4xl">Ready to run API tests in CI?</h2>
           <p className="mt-4 text-lg text-slate-300">
-            Install DevTools CLI and integrate with GitHub Actions, GitLab CI, Jenkins, or any pipeline.
+            Install DevTools CLI and run multi-step API tests in GitHub Actions, GitLab CI, Jenkins, or any pipeline.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link
@@ -178,6 +178,11 @@ export default function CLIPage() {
             >
               View CI Templates
             </Link>
+          </div>
+          <div className="mt-6 flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm text-slate-400">
+            <Link href="/features/ci-cd-integration" className="underline decoration-dotted underline-offset-2 hover:text-neon">API testing in CI/CD →</Link>
+            <Link href="/features/multi-step-api-testing" className="underline decoration-dotted underline-offset-2 hover:text-neon">Multi-step API testing →</Link>
+            <Link href="/guides/api-testing-ci-cd" className="underline decoration-dotted underline-offset-2 hover:text-neon">CI/CD guide →</Link>
           </div>
         </div>
       </section>
