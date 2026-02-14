@@ -1,0 +1,815 @@
+---
+title: "API Chain Testing: How to Test Multi-Request Sequences Automatically"
+date: "2026-02-14"
+slug: "api-chain-testing-how-to-test-multi-request-sequences-automatically"
+id: "f2a13878-07ec-47bd-b105-de1a6fc803d9"
+image:
+  url: "https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/f2a13878-07ec-47bd-b105-de1a6fc803d9/main-image.webp"
+  alt: "API Chain Testing: How to Test Multi-Request Sequences Automatically"
+author:
+  name: "DevTools Team"
+  avatar: "/logo.svg"
+tags: ["workflow","api-testing","yaml","variables","regression-testing"]
+category: "Guides"
+summary: "Learn API chain testing with YAML: authenticate, create resources, assert responses, and clean up reliably in CI with Git-reviewed flows."
+cta:
+  primary:
+    heading: "Build a multi-step YAML flow in DevTools"
+    body: "Use flows to chain auth → create → validate → cleanup with explicit dependencies and variables. Keep sequences deterministic and Git-friendly."
+    buttonText: "Work with flows"
+    url: "https://dev.tools/docs/how-to/working-with-flows/"
+    secondaryText: "Use Flow templates"
+    secondaryUrl: "https://dev.tools/templates/"
+  secondary:
+    heading: "Manage env vars, tokens, and IDs cleanly"
+    body: "Learn patterns for environments, variables, and secret injection so chained requests stay stable across local runs and CI."
+    buttonText: "Variables & environments"
+    url: "https://dev.tools/docs/how-to/environments-and-variables/"
+    secondaryText: "CI integrations"
+    secondaryUrl: "https://dev.tools/docs/how-to/ci-integrations/"
+  badge:
+    text: "YAML flows"
+    variant: "neutral"
+---
+
+API chain testing is what breaks most “green” API suites the moment you try to run them like production: authenticate, create state, read it back, assert invariants, then clean up. The failures are rarely about a single endpoint returning the wrong status code. They are about **state and dependencies**: tokens, IDs, CSRF headers, optimistic locking, eventual consistency, and teardown that does not run when the test fails.
+
+This tutorial shows a practical, Git-friendly way to test multi-request sequences automatically using **YAML flows** (DevTools style). We will build a deterministic chain:
+
+- Authenticate (capture token)
+- Create a resource (capture ID and ETag)
+- Validate (assert schema-like invariants and business rules)
+- Cleanup (delete resource, verify deletion)
+
+Along the way, you will see patterns for:
+
+- Variable extraction from JSON bodies and headers
+- Chaining requests via explicit dependencies
+- Assertions after every step (not just at the end)
+- Error handling and teardown strategies that keep CI clean
+
+If you want broader context on why single-request tests miss real bugs, see [Why Single-Request API Tests Miss Real Bugs](https://dev.tools/blog/why-single-request-api-tests-miss-real-bugs/). If you need a bigger end-to-end structure, also review [End-to-End API Testing: The Complete Guide](https://dev.tools/guides/end-to-end-api-testing/). This post stays narrowly focused on chaining and the mechanics that make it deterministic.
+
+![A simple diagram showing four API test steps connected in a chain: Authenticate (token) -> Create resource (id, etag) -> Validate (assertions) -> Cleanup (delete, verify 404).](https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/f2a13878-07ec-47bd-b105-de1a6fc803d9/image-0.webp)
+
+## What “API chain testing” actually means (for people who already test APIs)
+
+In practice, “multi-request sequences” fall into a few dependency categories. Treating them explicitly is the difference between a stable CI suite and a pile of flaky runs.
+
+| Dependency type | What you chain | Common source | Why it fails in CI if you ignore it |
+|---|---|---|---|
+| Auth | Access token, session cookie, CSRF token | Login/OIDC exchange, cookie jar, response headers | Token expiry, wrong audience/scope, CSRF mismatch, hidden cookie state |
+| Resource identity | IDs, URLs, Location header | Create responses, Location header | Hardcoded IDs collide across runs, parallel jobs race |
+| Concurrency control | ETag, version number, If-Match token | Response headers, body fields | Update tests pass locally, fail under concurrent writes |
+| Pagination | cursor, next page token | Response body/Link header | Tests only validate page 1, miss ordering bugs |
+| Side-effect completion | webhook delivery ID, job status | Async endpoints, queues | Eventual consistency makes “read after write” flaky |
+
+Chain tests succeed when you:
+
+- **Extract** only the values you need.
+- **Assert** after each step so failures are localized.
+- **Make state unique** per run so tests do not fight.
+- **Always clean up**, even on failure, or make cleanup idempotent.
+
+DevTools is designed for this style because flows are **native YAML** that you can commit, diff, and review in pull requests (instead of UI-locked collections or tool-specific DSLs). If your team is migrating, the mechanics here map directly to [Migrate from Postman to DevTools](https://dev.tools/guides/migrate-from-postman/).
+
+## Why YAML (and Git) is the right place for chaining
+
+Chaining forces you to encode dependencies and state transitions. In a UI-first tool, that tends to become:
+
+- hidden state in a “current environment”
+- scripting glued across requests
+- non-diffable changes because the artifact is an export format (often JSON with unstable ordering)
+
+With YAML-first flows, the default workflow is:
+
+- a stable file format
+- reviewable diffs (including request bodies)
+- predictable merges
+- CI-native execution
+
+If you care about keeping diffs clean over time, read [YAML API Test File Structure: Conventions for Readable Git Diffs](https://dev.tools/blog/yaml-api-test-file-structure-conventions-for-readable-git-diffs/). It is the unglamorous part that prevents “tests as code” from turning into “tests as merge conflict”.
+
+## The example API we will test (replace with your real endpoints)
+
+To keep the flow concrete, this tutorial assumes an API with these endpoints:
+
+- `POST /auth/login` returns `{ "accessToken": "..." }`
+- `POST /v1/projects` creates a project and returns `{ "id": "...", "name": "..." }` and an `ETag` header
+- `GET /v1/projects/{id}` returns the project
+- `DELETE /v1/projects/{id}` deletes it
+
+Your API will differ. The patterns do not.
+
+### The determinism rules for the example
+
+We will follow a few rules that make chain tests survive parallel CI runs:
+
+- Every run uses a unique `run_id` that is included in created resource names.
+- We assert invariants, not incidental details (no brittle timestamp equality).
+- Cleanup is idempotent (a second delete is not “failure”).
+
+## Repo layout and environment inputs
+
+A minimal layout that scales:
+
+- `flows/` contains YAML flows
+- `env/` contains non-secret environment templates
+- secrets come from CI secret stores (GitHub Actions secrets, Vault, etc)
+
+Example:
+
+```text
+.
+├─ flows/
+│  └─ project_chain_test.yaml
+├─ env/
+│  ├─ local.env.example
+│  └─ ci.env.example
+└─ README.md
+```
+
+### Environment variables (example)
+
+Put the shape in `env/local.env.example` and keep secrets out of Git:
+
+```bash
+BASE_URL=https://api.example.test
+USERNAME=devtools-ci
+PASSWORD=replace-me
+RUN_ID=local-123
+```
+
+In CI, you typically set `RUN_ID` to something already unique (workflow run ID, job ID, commit SHA). The point is: **make created resources traceable and non-colliding**.
+
+## The full YAML flow (auth -> create -> validate -> cleanup)
+
+Below is a complete flow file you can adapt. It is intentionally explicit. The YAML shows:
+
+- extraction of `accessToken`
+- chaining with `Authorization: Bearer ...`
+- capture of `projectId` and `projectEtag`
+- assertions between steps
+- cleanup + deletion verification
+
+> Notes on syntax: DevTools flows are YAML-first and support request chaining and assertions. If your project uses a slightly different key naming (runner versions can evolve), keep the structure and adapt the keys to your schema. The important part is the dependency graph and how values are extracted and reused.
+
+```yaml
+name: project-chain-test
+
+vars:
+  base_url: ${BASE_URL}
+  username: ${USERNAME}
+  password: ${PASSWORD}
+  run_id: ${RUN_ID}
+
+steps:
+  - id: health
+    type: http
+    request:
+      method: GET
+      url: ${base_url}/health
+      headers:
+        accept: application/json
+    assert:
+      - status: 200
+
+  - id: login
+    type: http
+    depends_on:
+      - health
+    request:
+      method: POST
+      url: ${base_url}/auth/login
+      headers:
+        content-type: application/json
+        accept: application/json
+      body:
+        json:
+          username: ${username}
+          password: ${password}
+    assert:
+      - status: 200
+      - jsonpath:
+          path: $.accessToken
+          exists: true
+      - jsonpath:
+          path: $.accessToken
+          type: string
+          min_length: 20
+    extract:
+      access_token:
+        from: body
+        jsonpath: $.accessToken
+
+  - id: create_project
+    type: http
+    depends_on:
+      - login
+    request:
+      method: POST
+      url: ${base_url}/v1/projects
+      headers:
+        content-type: application/json
+        accept: application/json
+        authorization: Bearer ${steps.login.access_token}
+      body:
+        json:
+          name: chain-test-${run_id}
+          visibility: private
+    assert:
+      - status: 201
+      - header:
+          name: content-type
+          contains: application/json
+      - jsonpath:
+          path: $.id
+          exists: true
+      - jsonpath:
+          path: $.name
+          equals: chain-test-${run_id}
+    extract:
+      project_id:
+        from: body
+        jsonpath: $.id
+      project_etag:
+        from: header
+        name: etag
+
+  - id: get_project
+    type: http
+    depends_on:
+      - create_project
+    request:
+      method: GET
+      url: ${base_url}/v1/projects/${steps.create_project.project_id}
+      headers:
+        accept: application/json
+        authorization: Bearer ${steps.login.access_token}
+    assert:
+      - status: 200
+      - jsonpath:
+          path: $.id
+          equals: ${steps.create_project.project_id}
+      - jsonpath:
+          path: $.name
+          equals: chain-test-${run_id}
+      - jsonpath:
+          path: $.visibility
+          equals: private
+
+  - id: update_project_if_match
+    type: http
+    depends_on:
+      - get_project
+    request:
+      method: PATCH
+      url: ${base_url}/v1/projects/${steps.create_project.project_id}
+      headers:
+        content-type: application/json
+        accept: application/json
+        authorization: Bearer ${steps.login.access_token}
+        if-match: ${steps.create_project.project_etag}
+      body:
+        json:
+          description: updated-by-chain-test-${run_id}
+    assert:
+      - status: 200
+      - jsonpath:
+          path: $.description
+          equals: updated-by-chain-test-${run_id}
+
+  - id: delete_project
+    type: http
+    depends_on:
+      - update_project_if_match
+    request:
+      method: DELETE
+      url: ${base_url}/v1/projects/${steps.create_project.project_id}
+      headers:
+        authorization: Bearer ${steps.login.access_token}
+    assert:
+      - status:
+          in: [200, 202, 204]
+
+  - id: verify_deleted
+    type: http
+    depends_on:
+      - delete_project
+    request:
+      method: GET
+      url: ${base_url}/v1/projects/${steps.create_project.project_id}
+      headers:
+        accept: application/json
+        authorization: Bearer ${steps.login.access_token}
+    assert:
+      - status: 404
+```
+
+You now have an actual chain test. The next sections explain why each piece is there, how to tighten it for CI determinism, and how to handle the two hard problems: cleanup on failure and async consistency.
+
+## Step-by-step: chaining mechanics that matter
+
+### 1) Start with a cheap “health” preflight
+
+This step is not about correctness, it is about **fast failure**. If DNS is wrong, the environment is down, or you are pointed at the wrong base URL, you want to fail in 200ms, not after a login timeout.
+
+Keep it minimal:
+
+- no auth
+- no dynamic inputs
+- a single invariant (200 status)
+
+### 2) Authentication: extract the token, assert its shape
+
+Experienced teams often only assert `status: 200` on login. That is too weak.
+
+A good auth step asserts:
+
+- the token field exists
+- it is a string
+- it is “plausibly real” (length threshold, or matches a JWT-ish pattern if applicable)
+
+This catches a common regression where an auth service starts returning `{ token: null }` with 200 due to a bad backend fallback.
+
+Extraction is intentionally small:
+
+- capture the `accessToken`
+- do not store the full response as a variable blob
+
+That keeps your test surface area tight and diffs smaller when auth payloads evolve.
+
+### 3) Resource creation: capture stable identities (ID, Location, ETag)
+
+For chain tests, the create step is where most suites become flaky, for three reasons:
+
+- name collisions in shared environments
+- hidden server-generated fields that change across runs
+- eventual consistency (create returns 201, but read-after-write is not immediate)
+
+The flow addresses collisions by including `run_id` in the name. For parallel CI, pick something unique per job.
+
+It also captures `ETag` because optimistic locking is a real-world dependency. If your API does not use ETags, the same idea applies to version numbers.
+
+### 4) Validation: assert invariants, not noise
+
+After `GET`, the test asserts the identity and key fields.
+
+Avoid brittle checks:
+
+- timestamps equal to an exact value
+- arrays with order that is not contractually guaranteed
+- fields that depend on background jobs
+
+If you need deeper assertion patterns (subset matching, tolerances, timestamp normalization), see [JSON Assertion Patterns for API Tests](https://dev.tools/blog/json-assertion-patterns-for-api-tests-a-practical-guide-with-yaml-examples/) and [Deterministic API Assertions](https://dev.tools/blog/deterministic-api-assertions-stop-flaky-json-tests-in-ci/).
+
+### 5) Cleanup: make it explicit, and verify it
+
+Cleanup is not a “nice to have”. It is what keeps shared environments usable.
+
+Two rules:
+
+- Deletion should accept multiple success statuses because APIs differ (`200`, `202`, `204`).
+- Verification should assert `404` (or your contract’s equivalent) so you detect soft deletes or permission masking.
+
+## Variable extraction patterns you will need beyond the happy path
+
+The tutorial flow extracted from:
+
+- JSON body (`$.accessToken`, `$.id`)
+- header (`ETag`)
+
+In real suites, you will also extract:
+
+- `Location` header for newly created resources
+- cookies (session-based auth)
+- pagination cursors
+
+Here are a few practical patterns in YAML form.
+
+### Extract from Location header (create returns URL)
+
+Some APIs return an ID only in `Location`.
+
+```yaml
+- id: create_widget
+  type: http
+  request:
+    method: POST
+    url: ${base_url}/v1/widgets
+    headers:
+      content-type: application/json
+      authorization: Bearer ${steps.login.access_token}
+    body:
+      json:
+        name: widget-${run_id}
+  assert:
+    - status: 201
+    - header:
+        name: location
+        exists: true
+  extract:
+    widget_url:
+      from: header
+      name: location
+```
+
+Then you can `GET ${steps.create_widget.widget_url}` directly without reconstructing paths.
+
+### Extract cookie-based sessions (when Authorization is not used)
+
+If your API uses a session cookie, the chain dependency is the cookie jar. Tools differ on how they persist cookies between steps.
+
+A deterministic approach is to capture the specific cookie you need and send it explicitly:
+
+```yaml
+- id: login_cookie
+  type: http
+  request:
+    method: POST
+    url: ${base_url}/session
+    headers:
+      content-type: application/json
+    body:
+      json:
+        username: ${username}
+        password: ${password}
+  assert:
+    - status: 200
+    - header:
+        name: set-cookie
+        contains: session=
+  extract:
+    session_cookie:
+      from: header
+      name: set-cookie
+```
+
+Then send it:
+
+```yaml
+headers:
+  cookie: ${steps.login_cookie.session_cookie}
+```
+
+Whether you should do this depends on your runner’s cookie handling. The point is: make the dependency visible.
+
+### Extract pagination cursors for multi-page validation
+
+Cursor pagination is a classic chain test because you need the output of page 1 to fetch page 2.
+
+```yaml
+- id: list_page_1
+  type: http
+  request:
+    method: GET
+    url: ${base_url}/v1/projects?limit=50
+    headers:
+      authorization: Bearer ${steps.login.access_token}
+  assert:
+    - status: 200
+    - jsonpath:
+        path: $.nextCursor
+        exists: true
+  extract:
+    cursor:
+      from: body
+      jsonpath: $.nextCursor
+
+- id: list_page_2
+  type: http
+  depends_on:
+    - list_page_1
+  request:
+    method: GET
+    url: ${base_url}/v1/projects?limit=50&cursor=${steps.list_page_1.cursor}
+    headers:
+      authorization: Bearer ${steps.login.access_token}
+  assert:
+    - status: 200
+```
+
+In higher-signal suites, you also assert stable ordering constraints (if your contract defines them) and that items are not duplicated across pages.
+
+## Assertions between steps: treat each edge as a contract
+
+A chain test is a graph. Every edge is a contract:
+
+- login produces token
+- create consumes token, produces ID
+- get consumes ID
+- delete consumes ID
+
+A common anti-pattern is a single “final assertion” at the end. That makes failures expensive to debug.
+
+Instead:
+
+- assert existence/type immediately after extraction
+- assert identity fields (`id`) on reads
+- assert server headers that matter (`content-type`, cache rules, rate limit headers)
+
+If you need a catalog of assertion types, [API Assertions in YAML](https://dev.tools/blog/api-assertions-in-yaml-status-json-paths-headers-timing-thresholds/) is a good reference.
+
+## Error handling patterns that keep CI and environments sane
+
+Chained tests fail. The question is whether they fail in a way that:
+
+- leaves your environment clean
+- produces actionable output
+- avoids cascading failures that waste CI minutes
+
+Here are pragmatic patterns that do not depend on any “magic” runner feature.
+
+### Pattern 1: Idempotent cleanup (delete can be retried safely)
+
+If cleanup can run twice without causing a failure, you can safely run it in more situations.
+
+For delete requests:
+
+- accept `404` as “already deleted”
+- accept `409` only if you know your API returns it during async deletes (rare)
+
+Example:
+
+```yaml
+- id: cleanup_delete_project
+  type: http
+  request:
+    method: DELETE
+    url: ${base_url}/v1/projects/${steps.create_project.project_id}
+    headers:
+      authorization: Bearer ${steps.login.access_token}
+  assert:
+    - status:
+        in: [200, 202, 204, 404]
+```
+
+This prevents secondary failures when you rerun a job or when teardown runs after a partial create.
+
+### Pattern 2: Make teardown a separate flow, run it even when tests fail
+
+Many CI systems stop executing steps after a failing command unless you tell them otherwise. A robust approach is:
+
+- the main flow writes out the created IDs as outputs (file, env, or runner output)
+- a teardown flow consumes those IDs
+- CI runs teardown with an “always run” condition
+
+You can implement this in GitHub Actions with an `if: always()` step. DevTools already has a complete guide for CI wiring, see [API regression testing in GitHub Actions](https://dev.tools/guides/api-regression-testing-github-actions/).
+
+A teardown flow can be a tiny YAML file:
+
+```yaml
+name: teardown-project
+
+vars:
+  base_url: ${BASE_URL}
+  access_token: ${ACCESS_TOKEN}
+  project_id: ${PROJECT_ID}
+
+steps:
+  - id: delete
+    type: http
+    request:
+      method: DELETE
+      url: ${base_url}/v1/projects/${project_id}
+      headers:
+        authorization: Bearer ${access_token}
+    assert:
+      - status:
+          in: [200, 202, 204, 404]
+```
+
+This pattern scales when your chain creates multiple resources (projects, users, billing objects) and you want cleanup to be centrally managed.
+
+### Pattern 3: Localize failures with “checkpoint” assertions
+
+If your create step returns 201 but you forgot a required field, the read step might still return a representation that looks “fine”. Later operations fail in confusing ways.
+
+Add checkpoint assertions right after create:
+
+- ID exists and is not empty
+- fields you control echo back correctly
+- a header you depend on (ETag, Location) exists
+
+This makes failures point to the exact step that violated expectations.
+
+### Pattern 4: Eventual consistency, poll with a bounded budget
+
+If `POST` is async (write accepted, read side lags), a naive `GET` immediately after create will be flaky.
+
+You need a polling loop with:
+
+- a maximum number of attempts
+- fixed or exponential backoff
+- a clear failure message
+
+If your DevTools flow runner supports loops/conditions, implement polling inside the flow. If not, implement polling at the CI wrapper level.
+
+A YAML sketch of the polling intent (adapt to your loop syntax):
+
+```yaml
+- id: wait_until_readable
+  type: loop
+  max_attempts: 10
+  sleep_ms: 300
+  until:
+    status: 200
+  do:
+    - id: get_project_eventual
+      type: http
+      request:
+        method: GET
+        url: ${base_url}/v1/projects/${steps.create_project.project_id}
+        headers:
+          authorization: Bearer ${steps.login.access_token}
+```
+
+The key is the bounded budget. A test that “eventually passes” after 90 seconds is not a good regression gate.
+
+### Pattern 5: Treat auth failures as a distinct class
+
+Auth failure will cascade into 401s everywhere. Make that obvious:
+
+- assert token shape
+- optionally assert claims if you are using JWT and your runner can decode it
+- separate “auth contract” flows from “business logic” flows
+
+That way a broken auth deployment does not look like “projects API regressed”.
+
+## Making chain tests reviewable in pull requests
+
+Chained YAML tests pay off when they are easy to review. Two practical conventions:
+
+- Keep step IDs stable. Renaming step IDs creates noisy diffs and breaks references.
+- Keep extraction next to the request that produces it. Avoid “global variable soup”.
+
+If your suite is already large, enforce formatting rules (sorted headers, stable key ordering) so that “change a header” does not rewrite the file. The DevTools conventions post mentioned earlier is a good baseline.
+
+## Postman/Newman vs Bruno vs YAML-first chaining (what actually changes)
+
+Chaining is possible everywhere. The difference is how it behaves when you put it in Git and CI.
+
+### Postman collections (and Newman in CI)
+
+Postman typically chains via:
+
+- collection variables / environment variables
+- pre-request scripts and test scripts (JavaScript)
+
+In CI, Newman executes the collection export (JSON). Common friction points:
+
+- diffs are noisy because exports reorder keys or include UI metadata
+- scripts can become a shared global state across requests
+- reviewing “what changed” in a pull request is slower than reviewing YAML
+
+If you are currently in Newman, see [Newman alternative for CI: DevTools CLI](https://dev.tools/guides/newman-alternative-ci/).
+
+### Bruno
+
+Bruno improves the “local files in Git” story compared to Postman, but it is still a **tool-specific format** (`.bru`) rather than native YAML. If you care about portability across teams and minimal schema friction, plain YAML tends to be easier to integrate with existing toolchains (linters, renderers, internal generators).
+
+### YAML-first (DevTools)
+
+The practical differences for chaining:
+
+- the chain is readable without opening a GUI
+- step outputs can be referenced explicitly
+- the flow is diffable and code-reviewable
+- CI runners can shard flows by file path and run them in parallel
+
+For CI-native structure patterns (smoke vs regression, sharding, reporting), see [API Testing in CI/CD: From Manual Clicks to Automated Pipelines](https://dev.tools/guides/api-testing-ci-cd/).
+
+## Advanced scenario: add a negative check without breaking determinism
+
+A good chain test often includes one or two negative assertions that verify access control. Keep them deterministic:
+
+- do not rely on timing
+- do not rely on random data
+- keep the failure localized
+
+Example: after creation, try reading the project with a token that lacks scope.
+
+You can do this by logging in as a restricted user (separate credentials) and asserting `403`.
+
+```yaml
+- id: login_restricted
+  type: http
+  depends_on:
+    - health
+  request:
+    method: POST
+    url: ${base_url}/auth/login
+    headers:
+      content-type: application/json
+    body:
+      json:
+        username: ${RESTRICTED_USERNAME}
+        password: ${RESTRICTED_PASSWORD}
+  assert:
+    - status: 200
+  extract:
+    restricted_token:
+      from: body
+      jsonpath: $.accessToken
+
+- id: get_project_forbidden
+  type: http
+  depends_on:
+    - create_project
+    - login_restricted
+  request:
+    method: GET
+    url: ${base_url}/v1/projects/${steps.create_project.project_id}
+    headers:
+      authorization: Bearer ${steps.login_restricted.restricted_token}
+  assert:
+    - status: 403
+```
+
+This catches the “created resources are accidentally world-readable” class of regression, without introducing flaky dependencies.
+
+## When to use a JS extraction/validation node (and when not to)
+
+Many API checks are expressible as JSONPath assertions. Use them first.
+
+Use a JS node when you need:
+
+- derived values (hashing, canonicalization)
+- multi-field logic (if A then B)
+- more precise failure messages than a single JSONPath can provide
+
+If you do use JS, keep it small and deterministic. Avoid time-based branching.
+
+A JS node might validate that an array is sorted by `createdAt` and that items have unique IDs (pseudo-example):
+
+```yaml
+- id: validate_sort_and_uniqueness
+  type: js
+  depends_on:
+    - list_page_1
+  input:
+    body: ${steps.list_page_1.response_body}
+  script: |
+    const items = input.body.items || []
+    const ids = new Set()
+    for (const it of items) {
+      if (!it.id) throw new Error('missing id')
+      if (ids.has(it.id)) throw new Error(`duplicate id: ${it.id}`)
+      ids.add(it.id)
+    }
+```
+
+The key is that JS is the exception, not the default glue.
+
+## CI integration: what to pin and what to store
+
+Chain tests are only useful if CI results are auditable and repeatable.
+
+Two practical recommendations:
+
+- Pin runner and tooling versions so your suite does not drift (see [Pinning GitHub Actions + Tool Versions](https://dev.tools/blog/pinning-github-actions-tool-versions-stop-ci-breakage-devtools-included/)).
+- Store artifacts that explain failures (JUnit XML, logs) without dumping secrets (see [Auditable API Test Runs](https://dev.tools/blog/auditable-api-test-runs-what-to-store-junit-logs-har-yaml-artifacts/)).
+
+If you already have GitHub Actions, the simplest workflow is:
+
+- run smoke chain tests on every PR
+- run broader regression flows post-merge or nightly
+- always upload JUnit/log artifacts
+
+DevTools has a dedicated guide you can copy-paste from: [API regression testing in GitHub Actions](https://dev.tools/guides/api-regression-testing-github-actions/).
+
+## Practical checklist: what makes a chain test “CI-grade”
+
+Before you call a chain flow production-ready, verify:
+
+- Inputs are parameterized (base URL, credentials, run ID).
+- Every step has at least one meaningful assertion.
+- IDs and tokens are extracted explicitly, not copied into static fixtures.
+- Created resources include a unique suffix so parallelism is safe.
+- Cleanup exists, is idempotent, and deletion is verified.
+- Eventual consistency is handled with bounded polling (or you have a synchronous endpoint).
+- The YAML stays readable in diffs (stable step IDs, stable key ordering).
+
+## If you are starting from browser traffic, generate the chain instead of hand-writing it
+
+If your workflows are already exercised in a browser, a fast path is:
+
+- capture a bounded HAR that starts with auth
+- redact secrets
+- convert HAR to YAML
+- normalize and chain the generated steps
+
+That pipeline is covered in [Chrome DevTools Network to YAML Flow](https://dev.tools/blog/chrome-devtools-network-to-yaml-flow-a-repeatable-pipeline/) and [HAR → YAML API Test Flow](https://dev.tools/blog/har-yaml-api-test-flow-auto-extract-variables-chain-requests/).
+
+The important detail for chain testing is what happens after conversion: you remove browser-only noise and make dependencies explicit (token, IDs, CSRF), then add deterministic assertions.
+
+## Summary
+
+API chain testing is the difference between “each endpoint returns 200” and “the system works as a workflow”. A CI-grade chain flow:
+
+- turns auth, resource IDs, and concurrency tokens into explicit extracted variables
+- asserts invariants after each step
+- cleans up reliably (even after failures)
+- stays readable and reviewable in Git
+
+If your current approach depends on UI-edited collections or custom formats, moving the chain into native YAML is often the simplest way to make it deterministic, portable, and CI-friendly.
