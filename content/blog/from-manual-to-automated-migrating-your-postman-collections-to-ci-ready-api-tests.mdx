@@ -249,9 +249,9 @@ Below is a representative YAML flow pattern (focus on the shape, not the exact r
 ```yaml
 workspace_name: Projects Create and Verify
 env:
-  BASE_URL: '#env:BASE_URL'
-  API_TOKEN: '#env:API_TOKEN'
-  RUN_ID: '#env:RUN_ID'
+  BASE_URL: '{{#env:BASE_URL}}'
+  API_TOKEN: '{{#env:API_TOKEN}}'
+  RUN_ID: '{{#env:RUN_ID}}'
 run:
   - flow: ProjectsCreateAndVerify
 flows:
@@ -295,7 +295,7 @@ flows:
 What changed compared to Postman:
 
 - The test is **data flow driven**. You reference `{{CreateProject.response.body.id}}` directly in later steps.
-- Variables are explicit (`env:` block with `#env:` references), not implicit globals.
+- Variables are explicit (`env:` block with `{{#env:}}` references), not implicit globals.
 - Assertions use `js:` nodes that throw on failure, keeping validation logic visible and reviewable.
 
 ### Common translation rules
@@ -504,9 +504,9 @@ If your auth requires exchanging credentials for a token, prefer to do the excha
 ```yaml
 workspace_name: Login and List Projects
 env:
-  BASE_URL: '#env:BASE_URL'
-  TEST_USER_EMAIL: '#env:TEST_USER_EMAIL'
-  TEST_USER_PASSWORD: '#env:TEST_USER_PASSWORD'
+  BASE_URL: '{{#env:BASE_URL}}'
+  TEST_USER_EMAIL: '{{#env:TEST_USER_EMAIL}}'
+  TEST_USER_PASSWORD: '{{#env:TEST_USER_PASSWORD}}'
 run:
   - flow: LoginAndList
 flows:

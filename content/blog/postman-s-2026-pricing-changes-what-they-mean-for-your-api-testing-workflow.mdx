@@ -184,9 +184,9 @@ Example YAML (illustrative structure):
 ```yaml
 workspace_name: Auth Smoke
 env:
-  BASE_URL: '#env:BASE_URL'
-  TEST_USER_EMAIL: '#env:TEST_USER_EMAIL'
-  TEST_USER_PASSWORD: '#env:TEST_USER_PASSWORD'
+  BASE_URL: '{{#env:BASE_URL}}'
+  TEST_USER_EMAIL: '{{#env:TEST_USER_EMAIL}}'
+  TEST_USER_PASSWORD: '{{#env:TEST_USER_PASSWORD}}'
 run:
   - flow: AuthSmoke
 flows:
@@ -380,8 +380,8 @@ A common pattern is create then fetch, capturing `Location` or an ID:
 ```yaml
 workspace_name: Create Then Fetch
 env:
-  BASE_URL: '#env:BASE_URL'
-  TOKEN: '#env:TOKEN'
+  BASE_URL: '{{#env:BASE_URL}}'
+  TOKEN: '{{#env:TOKEN}}'
 run:
   - flow: CreateThenFetch
 flows:

@@ -157,10 +157,10 @@ Below is a complete flow file you can adapt. It is intentionally explicit. The Y
 ```yaml
 workspace_name: ProjectChainTest
 env:
-  BASE_URL: '#env:BASE_URL'
-  USERNAME: '#env:USERNAME'
-  PASSWORD: '#env:PASSWORD'
-  RUN_ID: '#env:RUN_ID'
+  BASE_URL: '{{#env:BASE_URL}}'
+  USERNAME: '{{#env:USERNAME}}'
+  PASSWORD: '{{#env:PASSWORD}}'
+  RUN_ID: '{{#env:RUN_ID}}'
 run:
   - flow: ProjectChainTest
 flows:
@@ -561,9 +561,9 @@ A teardown flow can be a tiny YAML file:
 ```yaml
 workspace_name: TeardownProject
 env:
-  BASE_URL: '#env:BASE_URL'
-  ACCESS_TOKEN: '#env:ACCESS_TOKEN'
-  PROJECT_ID: '#env:PROJECT_ID'
+  BASE_URL: '{{#env:BASE_URL}}'
+  ACCESS_TOKEN: '{{#env:ACCESS_TOKEN}}'
+  PROJECT_ID: '{{#env:PROJECT_ID}}'
 run:
   - flow: Teardown
 flows:
