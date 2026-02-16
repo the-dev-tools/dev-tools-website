@@ -4,7 +4,7 @@ date: "2026-02-14"
 slug: "api-chain-testing-how-to-test-multi-request-sequences-automatically"
 id: "f2a13878-07ec-47bd-b105-de1a6fc803d9"
 image:
-  url: "https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/f2a13878-07ec-47bd-b105-de1a6fc803d9/main-image.webp"
+  url: "https://dev-tools-blog-images.fly.storage.tigris.dev/blog/api-chain-testing-how-to-test-multi-request-sequences-automatically/main-image.webp"
   alt: "API Chain Testing: How to Test Multi-Request Sequences Automatically"
 author:
   name: "DevTools Team"
@@ -50,7 +50,7 @@ Along the way, you will see patterns for:
 
 If you want broader context on why single-request tests miss real bugs, see [Why Single-Request API Tests Miss Real Bugs](https://dev.tools/blog/why-single-request-api-tests-miss-real-bugs/). If you need a bigger end-to-end structure, also review [End-to-End API Testing: The Complete Guide](https://dev.tools/guides/end-to-end-api-testing/). This post stays narrowly focused on chaining and the mechanics that make it deterministic.
 
-![A simple diagram showing four API test steps connected in a chain: Authenticate (token) -> Create resource (id, etag) -> Validate (assertions) -> Cleanup (delete, verify 404).](https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/f2a13878-07ec-47bd-b105-de1a6fc803d9/image-0.webp)
+![A simple diagram showing four API test steps connected in a chain: Authenticate (token) -> Create resource (id, etag) -> Validate (assertions) -> Cleanup (delete, verify 404).](https://dev-tools-blog-images.fly.storage.tigris.dev/blog/api-chain-testing-how-to-test-multi-request-sequences-automatically/image-0.webp)
 
 ## What “API chain testing” actually means (for people who already test APIs)
 
@@ -155,155 +155,149 @@ Below is a complete flow file you can adapt. It is intentionally explicit. The Y
 > Notes on syntax: DevTools flows are YAML-first and support request chaining and assertions. If your project uses a slightly different key naming (runner versions can evolve), keep the structure and adapt the keys to your schema. The important part is the dependency graph and how values are extracted and reused.
 
 ```yaml
-name: project-chain-test
+workspace_name: ProjectChainTest
+env:
+  BASE_URL: '#env:BASE_URL'
+  USERNAME: '#env:USERNAME'
+  PASSWORD: '#env:PASSWORD'
+  RUN_ID: '#env:RUN_ID'
+run:
+  - flow: ProjectChainTest
+flows:
+  - name: ProjectChainTest
+    steps:
+      - request:
+          name: Health
+          method: GET
+          url: '{{BASE_URL}}/health'
+          headers:
+            Accept: application/json
+      - js:
+          name: ValidateHealth
+          code: |
+            export default function(ctx) {
+              if (ctx.Health?.response?.status !== 200) throw new Error("Health check failed");
+            }
+          depends_on: Health
 
-vars:
-  base_url: ${BASE_URL}
-  username: ${USERNAME}
-  password: ${PASSWORD}
-  run_id: ${RUN_ID}
+      - request:
+          name: Login
+          method: POST
+          url: '{{BASE_URL}}/auth/login'
+          headers:
+            Content-Type: application/json
+            Accept: application/json
+          body:
+            username: '{{USERNAME}}'
+            password: '{{PASSWORD}}'
+          depends_on: Health
+      - js:
+          name: ValidateLogin
+          code: |
+            export default function(ctx) {
+              const resp = ctx.Login?.response;
+              if (resp?.status !== 200) throw new Error("Login failed");
+              const token = resp?.body?.accessToken;
+              if (!token || typeof token !== "string") throw new Error("Missing accessToken");
+              if (token.length < 20) throw new Error("Token too short");
+            }
+          depends_on: Login
 
-steps:
-  - id: health
-    type: http
-    request:
-      method: GET
-      url: ${base_url}/health
-      headers:
-        accept: application/json
-    assert:
-      - status: 200
+      - request:
+          name: CreateProject
+          method: POST
+          url: '{{BASE_URL}}/v1/projects'
+          headers:
+            Content-Type: application/json
+            Accept: application/json
+            Authorization: 'Bearer {{Login.response.body.accessToken}}'
+          body:
+            name: 'chain-test-{{RUN_ID}}'
+            visibility: private
+          depends_on: Login
+      - js:
+          name: ValidateCreateProject
+          code: |
+            export default function(ctx) {
+              const resp = ctx.CreateProject?.response;
+              if (resp?.status !== 201) throw new Error("Create failed: " + resp?.status);
+              if (!resp?.body?.id) throw new Error("Missing project id");
+              if (resp?.body?.name !== "chain-test-" + ctx.env.RUN_ID) throw new Error("Name mismatch");
+            }
+          depends_on: CreateProject
 
-  - id: login
-    type: http
-    depends_on:
-      - health
-    request:
-      method: POST
-      url: ${base_url}/auth/login
-      headers:
-        content-type: application/json
-        accept: application/json
-      body:
-        json:
-          username: ${username}
-          password: ${password}
-    assert:
-      - status: 200
-      - jsonpath:
-          path: $.accessToken
-          exists: true
-      - jsonpath:
-          path: $.accessToken
-          type: string
-          min_length: 20
-    extract:
-      access_token:
-        from: body
-        jsonpath: $.accessToken
+      - request:
+          name: GetProject
+          method: GET
+          url: '{{BASE_URL}}/v1/projects/{{CreateProject.response.body.id}}'
+          headers:
+            Accept: application/json
+            Authorization: 'Bearer {{Login.response.body.accessToken}}'
+          depends_on: CreateProject
+      - js:
+          name: ValidateGetProject
+          code: |
+            export default function(ctx) {
+              const resp = ctx.GetProject?.response;
+              if (resp?.status !== 200) throw new Error("Get failed");
+              if (resp?.body?.id !== ctx.CreateProject?.response?.body?.id) throw new Error("ID mismatch");
+              if (resp?.body?.visibility !== "private") throw new Error("Visibility mismatch");
+            }
+          depends_on: GetProject
 
-  - id: create_project
-    type: http
-    depends_on:
-      - login
-    request:
-      method: POST
-      url: ${base_url}/v1/projects
-      headers:
-        content-type: application/json
-        accept: application/json
-        authorization: Bearer ${steps.login.access_token}
-      body:
-        json:
-          name: chain-test-${run_id}
-          visibility: private
-    assert:
-      - status: 201
-      - header:
-          name: content-type
-          contains: application/json
-      - jsonpath:
-          path: $.id
-          exists: true
-      - jsonpath:
-          path: $.name
-          equals: chain-test-${run_id}
-    extract:
-      project_id:
-        from: body
-        jsonpath: $.id
-      project_etag:
-        from: header
-        name: etag
+      - request:
+          name: UpdateProjectIfMatch
+          method: PATCH
+          url: '{{BASE_URL}}/v1/projects/{{CreateProject.response.body.id}}'
+          headers:
+            Content-Type: application/json
+            Accept: application/json
+            Authorization: 'Bearer {{Login.response.body.accessToken}}'
+            If-Match: '{{CreateProject.response.headers.etag}}'
+          body:
+            description: 'updated-by-chain-test-{{RUN_ID}}'
+          depends_on: GetProject
+      - js:
+          name: ValidateUpdate
+          code: |
+            export default function(ctx) {
+              const resp = ctx.UpdateProjectIfMatch?.response;
+              if (resp?.status !== 200) throw new Error("Update failed");
+              if (resp?.body?.description !== "updated-by-chain-test-" + ctx.env.RUN_ID) throw new Error("Description mismatch");
+            }
+          depends_on: UpdateProjectIfMatch
 
-  - id: get_project
-    type: http
-    depends_on:
-      - create_project
-    request:
-      method: GET
-      url: ${base_url}/v1/projects/${steps.create_project.project_id}
-      headers:
-        accept: application/json
-        authorization: Bearer ${steps.login.access_token}
-    assert:
-      - status: 200
-      - jsonpath:
-          path: $.id
-          equals: ${steps.create_project.project_id}
-      - jsonpath:
-          path: $.name
-          equals: chain-test-${run_id}
-      - jsonpath:
-          path: $.visibility
-          equals: private
+      - request:
+          name: DeleteProject
+          method: DELETE
+          url: '{{BASE_URL}}/v1/projects/{{CreateProject.response.body.id}}'
+          headers:
+            Authorization: 'Bearer {{Login.response.body.accessToken}}'
+          depends_on: UpdateProjectIfMatch
+      - js:
+          name: ValidateDelete
+          code: |
+            export default function(ctx) {
+              const status = ctx.DeleteProject?.response?.status;
+              if (![200, 202, 204].includes(status)) throw new Error("Delete failed: " + status);
+            }
+          depends_on: DeleteProject
 
-  - id: update_project_if_match
-    type: http
-    depends_on:
-      - get_project
-    request:
-      method: PATCH
-      url: ${base_url}/v1/projects/${steps.create_project.project_id}
-      headers:
-        content-type: application/json
-        accept: application/json
-        authorization: Bearer ${steps.login.access_token}
-        if-match: ${steps.create_project.project_etag}
-      body:
-        json:
-          description: updated-by-chain-test-${run_id}
-    assert:
-      - status: 200
-      - jsonpath:
-          path: $.description
-          equals: updated-by-chain-test-${run_id}
-
-  - id: delete_project
-    type: http
-    depends_on:
-      - update_project_if_match
-    request:
-      method: DELETE
-      url: ${base_url}/v1/projects/${steps.create_project.project_id}
-      headers:
-        authorization: Bearer ${steps.login.access_token}
-    assert:
-      - status:
-          in: [200, 202, 204]
-
-  - id: verify_deleted
-    type: http
-    depends_on:
-      - delete_project
-    request:
-      method: GET
-      url: ${base_url}/v1/projects/${steps.create_project.project_id}
-      headers:
-        accept: application/json
-        authorization: Bearer ${steps.login.access_token}
-    assert:
-      - status: 404
+      - request:
+          name: VerifyDeleted
+          method: GET
+          url: '{{BASE_URL}}/v1/projects/{{CreateProject.response.body.id}}'
+          headers:
+            Accept: application/json
+            Authorization: 'Bearer {{Login.response.body.accessToken}}'
+          depends_on: DeleteProject
+      - js:
+          name: ValidateVerifyDeleted
+          code: |
+            export default function(ctx) {
+              if (ctx.VerifyDeleted?.response?.status !== 404) throw new Error("Expected 404 after delete");
+            }
+          depends_on: VerifyDeleted
 ```
 
 You now have an actual chain test. The next sections explain why each piece is there, how to tighten it for CI determinism, and how to handle the two hard problems: cleanup on failure and async consistency.
@@ -392,29 +386,28 @@ Here are a few practical patterns in YAML form.
 Some APIs return an ID only in `Location`.
 
 ```yaml
-- id: create_widget
-  type: http
-  request:
+- request:
+    name: CreateWidget
     method: POST
-    url: ${base_url}/v1/widgets
+    url: '{{BASE_URL}}/v1/widgets'
     headers:
-      content-type: application/json
-      authorization: Bearer ${steps.login.access_token}
+      Content-Type: application/json
+      Authorization: 'Bearer {{Login.response.body.accessToken}}'
     body:
-      json:
-        name: widget-${run_id}
-  assert:
-    - status: 201
-    - header:
-        name: location
-        exists: true
-  extract:
-    widget_url:
-      from: header
-      name: location
+      name: 'widget-{{RUN_ID}}'
+    depends_on: Login
+- js:
+    name: ValidateCreateWidget
+    code: |
+      export default function(ctx) {
+        const resp = ctx.CreateWidget?.response;
+        if (resp?.status !== 201) throw new Error("Create failed");
+        if (!resp?.headers?.location) throw new Error("Missing Location header");
+      }
+    depends_on: CreateWidget
 ```
 
-Then you can `GET ${steps.create_widget.widget_url}` directly without reconstructing paths.
+Then you can `GET {{CreateWidget.response.headers.location}}` directly without reconstructing paths.
 
 ### Extract cookie-based sessions (when Authorization is not used)
 
@@ -423,33 +416,32 @@ If your API uses a session cookie, the chain dependency is the cookie jar. Tools
 A deterministic approach is to capture the specific cookie you need and send it explicitly:
 
 ```yaml
-- id: login_cookie
-  type: http
-  request:
+- request:
+    name: LoginCookie
     method: POST
-    url: ${base_url}/session
+    url: '{{BASE_URL}}/session'
     headers:
-      content-type: application/json
+      Content-Type: application/json
     body:
-      json:
-        username: ${username}
-        password: ${password}
-  assert:
-    - status: 200
-    - header:
-        name: set-cookie
-        contains: session=
-  extract:
-    session_cookie:
-      from: header
-      name: set-cookie
+      username: '{{USERNAME}}'
+      password: '{{PASSWORD}}'
+- js:
+    name: ValidateLoginCookie
+    code: |
+      export default function(ctx) {
+        const resp = ctx.LoginCookie?.response;
+        if (resp?.status !== 200) throw new Error("Session login failed");
+        const cookie = resp?.headers?.["set-cookie"];
+        if (!cookie || !cookie.includes("session=")) throw new Error("Missing session cookie");
+      }
+    depends_on: LoginCookie
 ```
 
 Then send it:
 
 ```yaml
 headers:
-  cookie: ${steps.login_cookie.session_cookie}
+  Cookie: '{{LoginCookie.response.headers.set-cookie}}'
 ```
 
 Whether you should do this depends on your runner’s cookie handling. The point is: make the dependency visible.
@@ -459,34 +451,37 @@ Whether you should do this depends on your runner’s cookie handling. The point
 Cursor pagination is a classic chain test because you need the output of page 1 to fetch page 2.
 
 ```yaml
-- id: list_page_1
-  type: http
-  request:
+- request:
+    name: ListPage1
     method: GET
-    url: ${base_url}/v1/projects?limit=50
+    url: '{{BASE_URL}}/v1/projects?limit=50'
     headers:
-      authorization: Bearer ${steps.login.access_token}
-  assert:
-    - status: 200
-    - jsonpath:
-        path: $.nextCursor
-        exists: true
-  extract:
-    cursor:
-      from: body
-      jsonpath: $.nextCursor
+      Authorization: 'Bearer {{Login.response.body.accessToken}}'
+    depends_on: Login
+- js:
+    name: ValidateListPage1
+    code: |
+      export default function(ctx) {
+        const resp = ctx.ListPage1?.response;
+        if (resp?.status !== 200) throw new Error("List failed");
+        if (!resp?.body?.nextCursor) throw new Error("Missing nextCursor");
+      }
+    depends_on: ListPage1
 
-- id: list_page_2
-  type: http
-  depends_on:
-    - list_page_1
-  request:
+- request:
+    name: ListPage2
     method: GET
-    url: ${base_url}/v1/projects?limit=50&cursor=${steps.list_page_1.cursor}
+    url: '{{BASE_URL}}/v1/projects?limit=50&cursor={{ListPage1.response.body.nextCursor}}'
     headers:
-      authorization: Bearer ${steps.login.access_token}
-  assert:
-    - status: 200
+      Authorization: 'Bearer {{Login.response.body.accessToken}}'
+    depends_on: ListPage1
+- js:
+    name: ValidateListPage2
+    code: |
+      export default function(ctx) {
+        if (ctx.ListPage2?.response?.status !== 200) throw new Error("Page 2 failed");
+      }
+    depends_on: ListPage2
 ```
 
 In higher-signal suites, you also assert stable ordering constraints (if your contract defines them) and that items are not duplicated across pages.
@@ -532,16 +527,21 @@ For delete requests:
 Example:
 
 ```yaml
-- id: cleanup_delete_project
-  type: http
-  request:
+- request:
+    name: CleanupDeleteProject
     method: DELETE
-    url: ${base_url}/v1/projects/${steps.create_project.project_id}
+    url: '{{BASE_URL}}/v1/projects/{{CreateProject.response.body.id}}'
     headers:
-      authorization: Bearer ${steps.login.access_token}
-  assert:
-    - status:
-        in: [200, 202, 204, 404]
+      Authorization: 'Bearer {{Login.response.body.accessToken}}'
+    depends_on: CreateProject
+- js:
+    name: ValidateCleanupDelete
+    code: |
+      export default function(ctx) {
+        const status = ctx.CleanupDeleteProject?.response?.status;
+        if (![200, 202, 204, 404].includes(status)) throw new Error("Cleanup failed: " + status);
+      }
+    depends_on: CleanupDeleteProject
 ```
 
 This prevents secondary failures when you rerun a job or when teardown runs after a partial create.
@@ -559,24 +559,30 @@ You can implement this in GitHub Actions with an `if: always()` step. DevTools a
 A teardown flow can be a tiny YAML file:
 
 ```yaml
-name: teardown-project
-
-vars:
-  base_url: ${BASE_URL}
-  access_token: ${ACCESS_TOKEN}
-  project_id: ${PROJECT_ID}
-
-steps:
-  - id: delete
-    type: http
-    request:
-      method: DELETE
-      url: ${base_url}/v1/projects/${project_id}
-      headers:
-        authorization: Bearer ${access_token}
-    assert:
-      - status:
-          in: [200, 202, 204, 404]
+workspace_name: TeardownProject
+env:
+  BASE_URL: '#env:BASE_URL'
+  ACCESS_TOKEN: '#env:ACCESS_TOKEN'
+  PROJECT_ID: '#env:PROJECT_ID'
+run:
+  - flow: Teardown
+flows:
+  - name: Teardown
+    steps:
+      - request:
+          name: Delete
+          method: DELETE
+          url: '{{BASE_URL}}/v1/projects/{{PROJECT_ID}}'
+          headers:
+            Authorization: 'Bearer {{ACCESS_TOKEN}}'
+      - js:
+          name: ValidateDelete
+          code: |
+            export default function(ctx) {
+              const status = ctx.Delete?.response?.status;
+              if (![200, 202, 204, 404].includes(status)) throw new Error("Teardown failed: " + status);
+            }
+          depends_on: Delete
 ```
 
 This pattern scales when your chain creates multiple resources (projects, users, billing objects) and you want cleanup to be centrally managed.
@@ -608,20 +614,25 @@ If your DevTools flow runner supports loops/conditions, implement polling inside
 A YAML sketch of the polling intent (adapt to your loop syntax):
 
 ```yaml
-- id: wait_until_readable
-  type: loop
-  max_attempts: 10
-  sleep_ms: 300
-  until:
-    status: 200
-  do:
-    - id: get_project_eventual
-      type: http
-      request:
-        method: GET
-        url: ${base_url}/v1/projects/${steps.create_project.project_id}
-        headers:
-          authorization: Bearer ${steps.login.access_token}
+- for:
+    name: WaitUntilReadable
+    range: 10
+    steps:
+      - request:
+          name: GetProjectEventual
+          method: GET
+          url: '{{BASE_URL}}/v1/projects/{{CreateProject.response.body.id}}'
+          headers:
+            Authorization: 'Bearer {{Login.response.body.accessToken}}'
+      - js:
+          name: CheckReadable
+          code: |
+            export default function(ctx) {
+              if (ctx.GetProjectEventual?.response?.status === 200) return { done: true };
+              return { done: false };
+            }
+          depends_on: GetProjectEventual
+    depends_on: CreateProject
 ```
 
 The key is the bounded budget. A test that “eventually passes” after 90 seconds is not a good regression gate.
@@ -692,38 +703,38 @@ Example: after creation, try reading the project with a token that lacks scope.
 You can do this by logging in as a restricted user (separate credentials) and asserting `403`.
 
 ```yaml
-- id: login_restricted
-  type: http
-  depends_on:
-    - health
-  request:
+- request:
+    name: LoginRestricted
     method: POST
-    url: ${base_url}/auth/login
+    url: '{{BASE_URL}}/auth/login'
     headers:
-      content-type: application/json
+      Content-Type: application/json
     body:
-      json:
-        username: ${RESTRICTED_USERNAME}
-        password: ${RESTRICTED_PASSWORD}
-  assert:
-    - status: 200
-  extract:
-    restricted_token:
-      from: body
-      jsonpath: $.accessToken
+      username: '{{RESTRICTED_USERNAME}}'
+      password: '{{RESTRICTED_PASSWORD}}'
+    depends_on: Health
+- js:
+    name: ValidateLoginRestricted
+    code: |
+      export default function(ctx) {
+        if (ctx.LoginRestricted?.response?.status !== 200) throw new Error("Restricted login failed");
+      }
+    depends_on: LoginRestricted
 
-- id: get_project_forbidden
-  type: http
-  depends_on:
-    - create_project
-    - login_restricted
-  request:
+- request:
+    name: GetProjectForbidden
     method: GET
-    url: ${base_url}/v1/projects/${steps.create_project.project_id}
+    url: '{{BASE_URL}}/v1/projects/{{CreateProject.response.body.id}}'
     headers:
-      authorization: Bearer ${steps.login_restricted.restricted_token}
-  assert:
-    - status: 403
+      Authorization: 'Bearer {{LoginRestricted.response.body.accessToken}}'
+    depends_on: CreateProject
+- js:
+    name: ValidateForbidden
+    code: |
+      export default function(ctx) {
+        if (ctx.GetProjectForbidden?.response?.status !== 403) throw new Error("Expected 403, got: " + ctx.GetProjectForbidden?.response?.status);
+      }
+    depends_on: GetProjectForbidden
 ```
 
 This catches the “created resources are accidentally world-readable” class of regression, without introducing flaky dependencies.
@@ -743,20 +754,20 @@ If you do use JS, keep it small and deterministic. Avoid time-based branching.
 A JS node might validate that an array is sorted by `createdAt` and that items have unique IDs (pseudo-example):
 
 ```yaml
-- id: validate_sort_and_uniqueness
-  type: js
-  depends_on:
-    - list_page_1
-  input:
-    body: ${steps.list_page_1.response_body}
-  script: |
-    const items = input.body.items || []
-    const ids = new Set()
-    for (const it of items) {
-      if (!it.id) throw new Error('missing id')
-      if (ids.has(it.id)) throw new Error(`duplicate id: ${it.id}`)
-      ids.add(it.id)
-    }
+- js:
+    name: ValidateSortAndUniqueness
+    code: |
+      export default function(ctx) {
+        const items = ctx.ListPage1?.response?.body?.items || [];
+        const ids = new Set();
+        for (const it of items) {
+          if (!it.id) throw new Error("missing id");
+          if (ids.has(it.id)) throw new Error("duplicate id: " + it.id);
+          ids.add(it.id);
+        }
+        return { uniqueCount: ids.size };
+      }
+    depends_on: ListPage1
 ```
 
 The key is that JS is the exception, not the default glue.

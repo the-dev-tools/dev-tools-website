@@ -4,7 +4,7 @@ date: "2026-02-15"
 slug: "from-manual-to-automated-migrating-your-postman-collections-to-ci-ready-api-tests"
 id: "2fc8ce22-24b5-40b8-af6c-adbd41656eca"
 image:
-  url: "https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/2fc8ce22-24b5-40b8-af6c-adbd41656eca/main-image.webp"
+  url: "https://dev-tools-blog-images.fly.storage.tigris.dev/blog/from-manual-to-automated-migrating-your-postman-collections-to-ci-ready-api-tests/main-image.webp"
   alt: "From Manual to Automated: Migrating Your Postman Collections to CI-Ready API Tests"
 author:
   name: "DevTools Team"
@@ -191,7 +191,7 @@ Keep flows small and composable. When everything is one giant flow, a single fai
 
 If you want more detail on keeping YAML diffs readable, DevTools has a focused guide on [YAML API test file structure conventions](https://dev.tools/blog/yaml-api-test-file-structure-conventions-for-readable-git-diffs/).
 
-![A simple diagram showing a migration pipeline: Postman collection export and environment export on the left, conversion into YAML flows in the middle, then Git pull requests and CI runs with JUnit artifacts on the right.](https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/2fc8ce22-24b5-40b8-af6c-adbd41656eca/image-0.webp)
+![A simple diagram showing a migration pipeline: Postman collection export and environment export on the left, conversion into YAML flows in the middle, then Git pull requests and CI runs with JUnit artifacts on the right.](https://dev-tools-blog-images.fly.storage.tigris.dev/blog/from-manual-to-automated-migrating-your-postman-collections-to-ci-ready-api-tests/image-0.webp)
 
 ## Step 4: Convert a single “golden path” folder first
 
@@ -247,48 +247,56 @@ pm.test("has id", () => {
 Below is a representative YAML flow pattern (focus on the shape, not the exact runner keys if your org standard differs). The important part is that it is readable and reviewable.
 
 ```yaml
-id: projects_create_and_verify
-vars:
-  base_url: ${BASE_URL}
-  token: ${API_TOKEN}
-steps:
-  - id: create_project
-    request:
-      method: POST
-      url: "${base_url}/v1/projects"
-      headers:
-        authorization: "Bearer ${token}"
-        content-type: application/json
-      body:
-        name: "ci-${RUN_ID}"
-    expect:
-      status: 201
-      json:
-        - path: $.id
-          type: string
-    capture:
-      project_id: $.id
-
-  - id: get_project
-    request:
-      method: GET
-      url: "${base_url}/v1/projects/${project_id}"
-      headers:
-        authorization: "Bearer ${token}"
-    expect:
-      status: 200
-      json:
-        - path: $.id
-          equals: "${project_id}"
-        - path: $.name
-          equals: "ci-${RUN_ID}"
+workspace_name: Projects Create and Verify
+env:
+  BASE_URL: '#env:BASE_URL'
+  API_TOKEN: '#env:API_TOKEN'
+  RUN_ID: '#env:RUN_ID'
+run:
+  - flow: ProjectsCreateAndVerify
+flows:
+  - name: ProjectsCreateAndVerify
+    steps:
+      - request:
+          name: CreateProject
+          method: POST
+          url: '{{BASE_URL}}/v1/projects'
+          headers:
+            Authorization: 'Bearer {{API_TOKEN}}'
+            Content-Type: application/json
+          body:
+            name: 'ci-{{RUN_ID}}'
+      - js:
+          name: ValidateCreate
+          code: |
+            export default function(ctx) {
+              if (ctx.CreateProject?.response?.status !== 201) throw new Error("Expected 201");
+              if (typeof ctx.CreateProject?.response?.body?.id !== "string") throw new Error("id must be a string");
+            }
+          depends_on: CreateProject
+      - request:
+          name: GetProject
+          method: GET
+          url: '{{BASE_URL}}/v1/projects/{{CreateProject.response.body.id}}'
+          headers:
+            Authorization: 'Bearer {{API_TOKEN}}'
+          depends_on: CreateProject
+      - js:
+          name: ValidateGet
+          code: |
+            export default function(ctx) {
+              if (ctx.GetProject?.response?.status !== 200) throw new Error("Expected 200");
+              if (ctx.GetProject?.response?.body?.id !== ctx.CreateProject?.response?.body?.id) throw new Error("ID mismatch");
+              if (ctx.GetProject?.response?.body?.name !== `ci-${ctx.RUN_ID}`) throw new Error("Name mismatch");
+            }
+          depends_on: GetProject
 ```
 
 What changed compared to Postman:
 
-- The test is **data flow driven**. You capture `project_id` once and reuse it.
-- Variables are explicit (`base_url`, `token`), not implicit globals.
-- Assertions are declared as data, which is easier to diff in PRs.
+- The test is **data flow driven**. You reference `{{CreateProject.response.body.id}}` directly in later steps.
+- Variables are explicit (`env:` block with `#env:` references), not implicit globals.
+- Assertions use `js:` nodes that throw on failure, keeping validation logic visible and reviewable.
 
 ### Common translation rules
 
@@ -318,7 +326,7 @@ If you need to keep exact JSON for signature reasons, use YAML block scalars:
 
 ```yaml
 body: |
-  {"name":"ci-${RUN_ID}","flags":{"a":true}}
+  {"name":"ci-{{RUN_ID}}","flags":{"a":true}}
 ```
 
 ## Step 6: Convert Postman variable models into deterministic inputs
@@ -367,71 +375,88 @@ Generate it in CI as `${GITHUB_RUN_ID}` or a short SHA. For local runs, generate
 
 Chaining is where most Postman suites hide state in scripts.
 
-### Capture from JSON response
+### Reference values from earlier responses
 
-You already saw capturing `$.id`. Here is a slightly more realistic pattern with nested data and arrays.
+You already saw referencing `{{CreateProject.response.body.id}}`. In DevTools, there is no separate `capture:` block. You reference node outputs directly using `{{NodeName.response.body.field}}` syntax.
 
-```yaml
-capture:
-  user_id: $.user.id
-  first_role: $.user.roles[0]
-```
-
-### Use captured values in later requests
+Here is a slightly more realistic pattern with nested data and arrays:
 
 ```yaml
-url: "${base_url}/v1/users/${user_id}/roles/${first_role}"
+steps:
+  - request:
+      name: GetUser
+      method: GET
+      url: '{{BASE_URL}}/v1/users/me'
+      headers:
+        Authorization: 'Bearer {{API_TOKEN}}'
+  - request:
+      name: GetRoleDetails
+      method: GET
+      url: '{{BASE_URL}}/v1/users/{{GetUser.response.body.user.id}}/roles/{{GetUser.response.body.user.roles.0}}'
+      headers:
+        Authorization: 'Bearer {{API_TOKEN}}'
+      depends_on: GetUser
 ```
 
 ### Avoid implicit coupling
 
-If a step needs a value, make it obvious by keeping the capture adjacent to the producer request and using stable step IDs.
+If a step needs a value, make it obvious by using clear node names and `depends_on` to declare ordering.
 
-A migration tip: if your Postman suite uses `pm.collectionVariables.set("x", ...)` all over the place, you likely have hidden coupling. Extract those into explicit captures and references, or your YAML will become the same “spooky action at a distance”, just in a different file.
+A migration tip: if your Postman suite uses `pm.collectionVariables.set("x", ...)` all over the place, you likely have hidden coupling. Convert those into direct `{{NodeName.response.body.field}}` references, or your YAML will become the same "spooky action at a distance", just in a different file.
 
 ## Step 8: Translate Postman test scripts into YAML assertions
 
 Postman tests are JavaScript, which means teams often end up writing mini frameworks. That is flexible, but it is also why reviews become unproductive.
 
-### Map the 80 percent case to declarative assertions
+### Map the 80 percent case to js validation nodes
 
 Most suites check:
 
 - status codes
 - presence/type of fields
-- equality against captured values
+- equality against values from earlier responses
 - simple header checks
 
-Those should become YAML rules. The exact syntax depends on your runner, but your goal is the same: **assert invariants that survive harmless response evolution**.
+In DevTools, assertions are `js:` nodes that `throw new Error()` on failure. Your goal is the same: **assert invariants that survive harmless response evolution**.
 
 A practical pattern:
 
 ```yaml
-expect:
-  status: 200
-  headers:
-    content-type: "application/json"
-  json:
-    - path: $.id
-      equals: "${project_id}"
-    - path: $.createdAt
-      matches: "^\\d{4}-\\d{2}-\\d{2}T"  # timestamp shape, not exact value
+steps:
+  - request:
+      name: GetProject
+      method: GET
+      url: '{{BASE_URL}}/v1/projects/{{CreateProject.response.body.id}}'
+      headers:
+        Authorization: 'Bearer {{API_TOKEN}}'
+      depends_on: CreateProject
+  - js:
+      name: ValidateGetProject
+      code: |
+        export default function(ctx) {
+          const res = ctx.GetProject?.response;
+          if (res?.status !== 200) throw new Error("Expected 200");
+          if (res?.headers?.["content-type"]?.indexOf("application/json") === -1) throw new Error("Expected JSON");
+          if (res?.body?.id !== ctx.CreateProject?.response?.body?.id) throw new Error("ID mismatch");
+          if (!/^\d{4}-\d{2}-\d{2}T/.test(res?.body?.createdAt)) throw new Error("Timestamp format invalid");
+        }
+      depends_on: GetProject
 ```
 
-### When you still need JavaScript
+### When to add more JavaScript
 
-Some assertions are easier with code:
+Some assertions require more logic:
 
 - canonicalizing arrays before comparing
 - validating signatures
 - computing derived values
 
-DevTools supports JavaScript nodes in flows (use them sparingly). Keep JS logic small and deterministic, and prefer it for extraction/normalization rather than for controlling the entire test.
+Keep JS nodes small and deterministic. Prefer them for validation and normalization rather than for controlling the entire test flow.
 
 A reasonable split is:
 
-- YAML for request/response and the assertion surface
-- JS for parsing and producing a small set of derived values
+- YAML `request:` nodes for the request/response surface
+- `js:` nodes for validation, extraction, and producing derived values
 
 If you want a deeper set of patterns, DevTools has a practical guide on [JSON assertion patterns for API tests](https://dev.tools/blog/json-assertion-patterns-for-api-tests-a-practical-guide-with-yaml-examples/).
 
@@ -449,14 +474,14 @@ Good:
 
 ```yaml
 headers:
-  authorization: "Bearer ${API_TOKEN}"
+  Authorization: 'Bearer {{API_TOKEN}}'
 ```
 
 Bad:
 
 ```yaml
 headers:
-  authorization: "Bearer eyJhbGciOi..."
+  Authorization: 'Bearer eyJhbGciOi...'
 ```
 
 ### Secrets in CI
@@ -477,34 +502,52 @@ If your auth requires exchanging credentials for a token, prefer to do the excha
 #### Login then reuse token
 
 ```yaml
-steps:
-  - id: login
-    request:
-      method: POST
-      url: "${base_url}/v1/login"
-      headers:
-        content-type: application/json
-      body:
-        email: ${TEST_USER_EMAIL}
-        password: ${TEST_USER_PASSWORD}
-    expect:
-      status: 200
-    capture:
-      token: $.token
-
-  - id: list_projects
-    request:
-      method: GET
-      url: "${base_url}/v1/projects"
-      headers:
-        authorization: "Bearer ${token}"
-    expect:
-      status: 200
+workspace_name: Login and List Projects
+env:
+  BASE_URL: '#env:BASE_URL'
+  TEST_USER_EMAIL: '#env:TEST_USER_EMAIL'
+  TEST_USER_PASSWORD: '#env:TEST_USER_PASSWORD'
+run:
+  - flow: LoginAndList
+flows:
+  - name: LoginAndList
+    steps:
+      - request:
+          name: Login
+          method: POST
+          url: '{{BASE_URL}}/v1/login'
+          headers:
+            Content-Type: application/json
+          body:
+            email: '{{TEST_USER_EMAIL}}'
+            password: '{{TEST_USER_PASSWORD}}'
+      - js:
+          name: ValidateLogin
+          code: |
+            export default function(ctx) {
+              if (ctx.Login?.response?.status !== 200) throw new Error("Login failed");
+              if (!ctx.Login?.response?.body?.token) throw new Error("No token returned");
+            }
+          depends_on: Login
+      - request:
+          name: ListProjects
+          method: GET
+          url: '{{BASE_URL}}/v1/projects'
+          headers:
+            Authorization: 'Bearer {{Login.response.body.token}}'
+          depends_on: Login
+      - js:
+          name: ValidateList
+          code: |
+            export default function(ctx) {
+              if (ctx.ListProjects?.response?.status !== 200) throw new Error("Expected 200");
+            }
+          depends_on: ListProjects
 ```
 
 #### OAuth client credentials
 
-Same structure, different endpoint. Capture the access token and pass it.
+Same structure, different endpoint. Reference the access token from the auth response via `{{AuthRequest.response.body.access_token}}`.
 
 #### CSRF tokens
 

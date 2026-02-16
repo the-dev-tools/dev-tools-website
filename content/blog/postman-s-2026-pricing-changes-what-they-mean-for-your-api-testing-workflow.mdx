@@ -4,7 +4,7 @@ date: "2026-02-14"
 slug: "postman-s-2026-pricing-changes-what-they-mean-for-your-api-testing-workflow"
 id: "c43438ed-93bb-4209-ac12-c32dbe46dd2f"
 image:
-  url: "https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/c43438ed-93bb-4209-ac12-c32dbe46dd2f/main-image.webp"
+  url: "https://dev-tools-blog-images.fly.storage.tigris.dev/blog/postman-s-2026-pricing-changes-what-they-mean-for-your-api-testing-workflow/main-image.webp"
   alt: "Postman's 2026 Pricing Changes: What They Mean for Your API Testing Workflow"
 author:
   name: "DevTools Team"
@@ -168,7 +168,7 @@ Key properties that matter in 2026 pricing conversations:
 
 Most importantly, DevTools is opinionated about the artifact: **your source of truth is a YAML file in Git**, not a workspace.
 
-![A simple side-by-side comparison diagram showing “Postman UI collection” on the left and “YAML flows in Git” on the right, with arrows to “Pull request review” and “CI run + JUnit report” to highlight a Git-first workflow.](https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/c43438ed-93bb-4209-ac12-c32dbe46dd2f/image-0.webp)
+![A simple side-by-side comparison diagram showing “Postman UI collection” on the left and “YAML flows in Git” on the right, with arrows to “Pull request review” and “CI run + JUnit report” to highlight a Git-first workflow.](https://dev-tools-blog-images.fly.storage.tigris.dev/blog/postman-s-2026-pricing-changes-what-they-mean-for-your-api-testing-workflow/image-0.webp)
 
 ### A concrete example: request chaining in YAML (no UI state)
 
@@ -182,41 +182,49 @@ In a YAML-first flow, you want two things:
 Example YAML (illustrative structure):
 
 ```yaml
-id: auth-smoke
-steps:
-  - id: login
-    request:
-      method: POST
-      url: "${BASE_URL}/v1/login"
-      headers:
-        content-type: application/json
-      body:
-        json:
-          email: "${TEST_USER_EMAIL}"
-          password: "${TEST_USER_PASSWORD}"
-    extract:
-      token: "$.access_token"
-    assert:
-      status: 200
-      json:
-        - path: "$.access_token"
-          type: string
-          present: true
-
-  - id: get-profile
-    request:
-      method: GET
-      url: "${BASE_URL}/v1/me"
-      headers:
-        authorization: "Bearer ${token}"
-    assert:
-      status: 200
-      json:
-        - path: "$.id"
-          type: string
-          present: true
-        - path: "$.email"
-          equals: "${TEST_USER_EMAIL}"
+workspace_name: Auth Smoke
+env:
+  BASE_URL: '#env:BASE_URL'
+  TEST_USER_EMAIL: '#env:TEST_USER_EMAIL'
+  TEST_USER_PASSWORD: '#env:TEST_USER_PASSWORD'
+run:
+  - flow: AuthSmoke
+flows:
+  - name: AuthSmoke
+    steps:
+      - request:
+          name: Login
+          method: POST
+          url: '{{BASE_URL}}/v1/login'
+          headers:
+            Content-Type: application/json
+          body:
+            email: '{{TEST_USER_EMAIL}}'
+            password: '{{TEST_USER_PASSWORD}}'
+      - js:
+          name: ValidateLogin
+          code: |
+            export default function(ctx) {
+              if (ctx.Login?.response?.status !== 200) throw new Error("Login failed");
+              if (!ctx.Login?.response?.body?.access_token) throw new Error("No access_token");
+            }
+          depends_on: Login
+      - request:
+          name: GetProfile
+          method: GET
+          url: '{{BASE_URL}}/v1/me'
+          headers:
+            Authorization: 'Bearer {{Login.response.body.access_token}}'
+          depends_on: Login
+      - js:
+          name: ValidateProfile
+          code: |
+            export default function(ctx) {
+              if (ctx.GetProfile?.response?.status !== 200) throw new Error("GetProfile failed");
+              if (typeof ctx.GetProfile?.response?.body?.id !== "string") throw new Error("Missing id");
+              if (ctx.GetProfile?.response?.body?.email !== ctx.env?.TEST_USER_EMAIL) throw new Error("Email mismatch");
+            }
+          depends_on: GetProfile
 ```
 
 Two workflow differences vs Postman are worth calling out:
@@ -330,7 +338,7 @@ A common layout for YAML flows looks like:
 - `fixtures/` for static payloads
 - CI workflow under `.github/workflows/`
 
-![A repository tree image showing folders named flows, env, fixtures, and .github/workflows, with example YAML flow files under flows and env template files under env.](https://kccqmbkylzrrhibpxtbk.supabase.co/storage/v1/object/public/public-user-assets/b460f601-795d-47ba-abf4-41fb76ccea6f/c43438ed-93bb-4209-ac12-c32dbe46dd2f/image-1.webp)
+![A repository tree image showing folders named flows, env, fixtures, and .github/workflows, with example YAML flow files under flows and env template files under env.](https://dev-tools-blog-images.fly.storage.tigris.dev/blog/postman-s-2026-pricing-changes-what-they-mean-for-your-api-testing-workflow/image-1.webp)
 
 If your team cares about clean diffs, adopt formatting conventions early. DevTools has guidance on stable YAML diffs here: [YAML API Test File Structure: Conventions for Readable Git Diffs](https://dev.tools/blog/yaml-api-test-file-structure-conventions-for-readable-git-diffs/).
 
@@ -370,39 +378,48 @@ In YAML flows, keep captures adjacent to usage.
 A common pattern is create then fetch, capturing `Location` or an ID:
 
 ```yaml
-id: create-then-fetch
-steps:
-  - id: create-order
-    request:
-      method: POST
-      url: "${BASE_URL}/v1/orders"
-      headers:
-        authorization: "Bearer ${token}"
-        content-type: application/json
-      body:
-        json:
-          sku: "TEST-SKU-1"
-          qty: 1
-    extract:
-      orderId: "$.id"
-    assert:
-      status: 201
-      json:
-        - path: "$.id"
-          type: string
-          present: true
-
-  - id: fetch-order
-    request:
-      method: GET
-      url: "${BASE_URL}/v1/orders/${orderId}"
-      headers:
-        authorization: "Bearer ${token}"
-    assert:
-      status: 200
-      json:
-        - path: "$.id"
-          equals: "${orderId}"
+workspace_name: Create Then Fetch
+env:
+  BASE_URL: '#env:BASE_URL'
+  TOKEN: '#env:TOKEN'
+run:
+  - flow: CreateThenFetch
+flows:
+  - name: CreateThenFetch
+    steps:
+      - request:
+          name: CreateOrder
+          method: POST
+          url: '{{BASE_URL}}/v1/orders'
+          headers:
+            Authorization: 'Bearer {{TOKEN}}'
+            Content-Type: application/json
+          body:
+            sku: 'TEST-SKU-1'
+            qty: 1
+      - js:
+          name: ValidateCreate
+          code: |
+            export default function(ctx) {
+              if (ctx.CreateOrder?.response?.status !== 201) throw new Error("Create failed");
+              if (typeof ctx.CreateOrder?.response?.body?.id !== "string") throw new Error("Missing order id");
+            }
+          depends_on: CreateOrder
+      - request:
+          name: FetchOrder
+          method: GET
+          url: '{{BASE_URL}}/v1/orders/{{CreateOrder.response.body.id}}'
+          headers:
+            Authorization: 'Bearer {{TOKEN}}'
+          depends_on: CreateOrder
+      - js:
+          name: ValidateFetch
+          code: |
+            export default function(ctx) {
+              if (ctx.FetchOrder?.response?.status !== 200) throw new Error("Fetch failed");
+              if (ctx.FetchOrder?.response?.body?.id !== ctx.CreateOrder?.response?.body?.id) throw new Error("Order ID mismatch");
+            }
+          depends_on: FetchOrder
 ```
 
 This is where YAML shines in PRs: a reviewer can see exactly which value is captured, from where, and how it is used.

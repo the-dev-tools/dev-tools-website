@@ -3,7 +3,7 @@
 # Usage: bash content/blog/images/migrate-supabase-to-tigris.sh
 #
 # Requires:
-#   - .env.local in project root (AWS_*, BUCKET_NAME)
+#   - .env.local in project root (AWS_*, BUCKET_NAME) — or env vars set directly (CI)
 #   - aws cli
 
 set -euo pipefail
@@ -13,16 +13,18 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 BLOG_DIR="${PROJECT_ROOT}/content/blog"
 ENV_FILE="${PROJECT_ROOT}/.env.local"
 
-# --- Load env ---
-if [ ! -f "$ENV_FILE" ]; then
-  echo "ERROR: $ENV_FILE not found."
-  exit 1
+# --- Load env (skip if vars already set, e.g. in CI) ---
+if [ -z "${BUCKET_NAME:-}" ]; then
+  if [ ! -f "$ENV_FILE" ]; then
+    echo "ERROR: $ENV_FILE not found and BUCKET_NAME not set in environment."
+    exit 1
+  fi
+  set -a
+  source "$ENV_FILE"
+  set +a
 fi
-set -a
-source "$ENV_FILE"
-set +a
 
-if [ -z "$BUCKET_NAME" ]; then echo "ERROR: BUCKET_NAME not set"; exit 1; fi
+if [ -z "${BUCKET_NAME:-}" ]; then echo "ERROR: BUCKET_NAME not set"; exit 1; fi
 
 TIGRIS_BASE="https://${BUCKET_NAME}.fly.storage.tigris.dev"
 
@@ -31,11 +33,17 @@ echo "=== Scanning for Supabase images ==="
 
 # Extract unique URLs with their source files
 URLS_FILE=$(mktemp)
-grep -roh 'https://kccqmbkylzrrhibpxtbk[.]supabase[.]co/storage/v1/object/public/public-user-assets/[^")*  ]*\.webp' "$BLOG_DIR"/*.mdx | sort -u > "$URLS_FILE"
+grep -roh 'https://kccqmbkylzrrhibpxtbk[.]supabase[.]co/storage/v1/object/public/public-user-assets/[^")*  ]*\.webp' "$BLOG_DIR"/*.mdx | sort -u > "$URLS_FILE" || true
 
 URL_COUNT=$(wc -l < "$URLS_FILE" | tr -d ' ')
 echo "Found ${URL_COUNT} unique Supabase images"
 echo ""
+
+if [ "$URL_COUNT" -eq 0 ]; then
+  echo "=== No Supabase images to migrate ==="
+  rm -f "$URLS_FILE"
+  exit 0
+fi
 
 # Step 2: Download and upload each unique image
 UPLOADED=0
@@ -120,7 +128,12 @@ while IFS= read -r SUPA_URL; do
 
   # Replace in ALL files that contain this URL (some images might be referenced from multiple files)
   grep -rl "$SUPA_URL" "$BLOG_DIR"/*.mdx | while IFS= read -r f; do
-    sed -i '' "s|${SUPA_URL}|${TIGRIS_URL}|g" "$f"
+    # macOS sed requires -i '', GNU sed requires -i without argument
+    if sed --version >/dev/null 2>&1; then
+      sed -i "s|${SUPA_URL}|${TIGRIS_URL}|g" "$f"
+    else
+      sed -i '' "s|${SUPA_URL}|${TIGRIS_URL}|g" "$f"
+    fi
     echo "[replaced] $(basename "$f"): ${IMG_NAME} -> Tigris"
   done
 done < "$URLS_FILE"
