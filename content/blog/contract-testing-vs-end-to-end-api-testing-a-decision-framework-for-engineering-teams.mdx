@@ -156,7 +156,7 @@ This matrix is deliberately opinionated. It helps you decide what to build first
 
 | Your situation | Contract testing priority | E2E API testing priority | Why |
 |---|---:|---:|---|
-| 1 team, <30 endpoints, 1 consumer (your UI), weekly releases | Medium | High | Behavior regressions dominate, and coordination overhead is low |
+| 1 team, &lt;30 endpoints, 1 consumer (your UI), weekly releases | Medium | High | Behavior regressions dominate, and coordination overhead is low |
 | 1 team, 100+ endpoints, weekly releases | High | Medium | Surface area grows, E2E cannot touch everything |
 | 3+ teams, shared platform API, multiple repos | Very high | Medium | Compatibility breaks become the primary source of incidents |
 | Public API with external customers/partners | Very high | Medium | You need explicit compatibility guarantees and versioning discipline |
@@ -174,7 +174,7 @@ If your org prefers something closer to an algorithm, use a weighted score.
 ### Step 1: assign a score (1 to 5) for each factor
 
 - **Team boundaries**: 1 (single team) to 5 (many teams, external consumers)
-- **API surface area**: 1 (<20 endpoints) to 5 (hundreds)
+- **API surface area**: 1 (&lt;20 endpoints) to 5 (hundreds)
 - **Release frequency**: 1 (monthly) to 5 (daily/continuous)
 - **Consumer count**: 1 (single consumer) to 5 (many)
 - **Workflow criticality**: 1 (simple CRUD) to 5 (payments, provisioning, compliance)
