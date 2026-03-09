@@ -1,0 +1,460 @@
+---
+title: "Why AI Agents Keep Failing at Multi-Step API Calls"
+date: "2026-03-10"
+slug: "why-ai-agents-keep-failing-at-multi-step-api-calls"
+id: "a1f7e3b2-9c4d-4f8a-b6e5-d2a1c3f48907"
+image:
+  url: "https://dev-tools-blog-images.fly.storage.tigris.dev/blog/why-ai-agents-keep-failing-at-multi-step-api-calls.webp"
+  alt: "Why AI Agents Keep Failing at Multi-Step API Calls"
+author:
+  name: "DevTools Team"
+  avatar: "/logo.svg"
+tags: ["AI agents", "API calls", "multi-step workflow", "AI reliability", "YAML workflows", "deterministic automation"]
+category: "AI Agents"
+summary: "LLMs can make a single API call just fine. But chain five together — auth, create, transform, validate, clean up — and they fall apart. Here is why multi-step API workflows break AI agents, and what infrastructure is actually missing."
+cta:
+  primary:
+    heading: "Build deterministic API workflows"
+    body: "Chain requests into visual Flows with auto-mapped variables, assertions at every step, and YAML export for CI. No LLM required for execution."
+    buttonText: "Try Flows"
+    url: "https://dev.tools/docs/how-to/working-with-flows/"
+    secondaryText: "Install DevTools"
+    secondaryUrl: "https://dev.tools/docs/start-here/install/"
+  secondary:
+    heading: "Run multi-step flows in CI"
+    body: "Export flows to YAML and run them in GitHub Actions with JUnit reports on every PR. Deterministic, repeatable, auditable."
+    buttonText: "CI integrations"
+    url: "https://dev.tools/docs/how-to/ci-integrations/"
+    secondaryText: "GitHub Actions template"
+    secondaryUrl: "https://dev.tools/templates/github-actions/"
+  badge:
+    text: "AI Agents"
+    variant: "neutral"
+---
+
+You ask your AI agent to do something simple: "Create a new project in our project management tool, add three tasks, assign them to the right people, and post a summary to Slack." Five API calls. Straightforward for any developer who has read the docs.
+
+The agent makes the first call. It creates the project. Then it tries to add tasks, but it hallucinates a field name. It retries with a different payload shape. That works, but now it has lost the project ID from the first response. It guesses at the ID. The third task creation fails with a 404. The agent apologizes and starts over from scratch, burning tokens and time.
+
+This is not a hypothetical. This is what happens every day in production AI agent systems. The single-call problem is solved. The multi-step problem is where agents go to die.
+
+## The single-call illusion
+
+LLMs are remarkably good at making individual API calls. Give an agent a well-documented endpoint, and it will construct the right HTTP method, headers, URL, and JSON body with high accuracy. Tools like function calling and structured outputs have made this even more reliable.
+
+This success creates an illusion: if an agent can make one API call correctly, surely it can make five in sequence. The reasoning seems obvious. Each call is just another function invocation. The agent has context from the previous response. It should be able to chain them together.
+
+But chaining is fundamentally different from calling. A single API call is a stateless operation. A multi-step workflow is a stateful program. The agent needs to:
+
+1. Parse the response from step 1 and extract specific fields
+2. Hold those fields in working memory while planning step 2
+3. Construct the next request using data from previous steps
+4. Handle errors at any point and decide whether to retry, skip, or abort
+5. Maintain consistency across the entire chain — if step 4 fails, steps 1-3 may need rollback
+
+This is not a language task. This is a programming task. And LLMs are not reliable programmers when execution matters.
+
+## The five failure modes of agentic API workflows
+
+### 1. Variable extraction drift
+
+Every multi-step workflow depends on passing data between steps. The project ID from step 1 feeds into step 2. The auth token from the login call goes into every subsequent request header. The created resource URL from a POST response becomes the target for the next GET.
+
+LLMs extract this data from JSON responses using natural language reasoning. Sometimes they get it right. Sometimes they extract the wrong field. Sometimes they round-trip the value through their own text generation and subtly corrupt it — a UUID gets a character swapped, a timestamp loses its timezone suffix, a nested field path gets flattened.
+
+Here is what this looks like in practice:
+
+```json
+// Step 1 response
+{
+  "data": {
+    "project": {
+      "id": "proj_a8f3e2b1c4d5",
+      "workspace_id": "ws_7x9k2m",
+      "created_at": "2026-03-10T09:15:00Z"
+    }
+  }
+}
+```
+
+The agent needs `data.project.id` for the next call. But it might extract `data.project.workspace_id` instead (wrong field). Or it might generate `proj_a8f3e2b1c4d` (truncated). Or it might "remember" a project ID from its training data rather than the actual response. Each of these failures is silent — the agent confidently uses the wrong value, and you only find out when a downstream call returns a cryptic error.
+
+In a deterministic workflow, variable extraction is explicit:
+
+```yaml
+flows:
+  - name: CreateAndPopulateProject
+    steps:
+      - request:
+          name: CreateProject
+          method: POST
+          url: https://api.example.com/projects
+          headers:
+            Authorization: "Bearer ${auth_token}"
+            Content-Type: application/json
+          body:
+            name: "Q1 Planning"
+            workspace_id: "${workspace_id}"
+      - js:
+          name: ExtractProjectId
+          code: |
+            export default function(ctx) {
+              const projectId = ctx.CreateProject?.response?.body?.data?.project?.id;
+              if (!projectId) throw new Error("No project ID in response");
+              return { project_id: projectId };
+            }
+          depends_on: CreateProject
+```
+
+The extraction path is defined once, tested once, and never drifts. No LLM involved in the data plumbing.
+
+### 2. Context window saturation
+
+A multi-step API workflow generates a lot of text. Each request includes headers, URL, body. Each response includes status, headers, body. After five steps, the agent's context window contains thousands of tokens of API interaction history.
+
+This creates two problems. First, the agent's attention degrades. Important details from step 1 get pushed further from the generation head. The project ID that was crystal clear three steps ago is now buried under pages of JSON. Second, the cost scales linearly. Every subsequent step pays for the full history in the prompt, even though most of it is irrelevant to the current step.
+
+Worse, many agent frameworks dump the raw HTTP responses into context without any filtering. A typical API response includes pagination metadata, rate limit headers, HATEOAS links, and other noise that the agent does not need. But the LLM processes all of it, diluting its attention on the fields that actually matter.
+
+Real-world numbers: a five-step API workflow with typical responses generates 8,000-15,000 tokens of context. A ten-step workflow can hit 30,000+ tokens. At that point, you are not just slow — you are unreliable, because the model's ability to retrieve specific details from earlier in the conversation degrades measurably.
+
+### 3. Non-deterministic error handling
+
+When step 3 of a 5-step workflow fails, what should happen? The answer depends entirely on your business logic:
+
+- If it is a rate limit (429), wait and retry
+- If it is a validation error (422), fix the payload and retry
+- If it is a not-found (404), something went wrong upstream — investigate
+- If it is a server error (500), retry with backoff
+- If it is an auth error (401), re-authenticate and replay from the failed step
+
+An LLM agent handles errors through reasoning. It reads the error response, thinks about what went wrong, and decides what to do. This reasoning is non-deterministic. The same 429 error might trigger a retry on one run and a complete restart on another. The same 422 might get "fixed" with a correct payload change or a hallucinated one.
+
+This is the worst kind of unreliability: it works sometimes. You demo the agent, it handles an error gracefully, and everyone is impressed. In production, with different error messages and slightly different context, the same error handling falls apart.
+
+Deterministic error handling is boring and reliable:
+
+```yaml
+      - request:
+          name: AddTask
+          method: POST
+          url: "https://api.example.com/projects/${project_id}/tasks"
+          headers:
+            Authorization: "Bearer ${auth_token}"
+            Content-Type: application/json
+          body:
+            title: "Review Q1 metrics"
+            assignee_id: "${assignee_id}"
+          retry:
+            max_attempts: 3
+            backoff: exponential
+            retry_on: [429, 500, 502, 503]
+      - js:
+          name: ValidateTask
+          code: |
+            export default function(ctx) {
+              const status = ctx.AddTask?.response?.status;
+              if (status === 422) throw new Error("Validation failed: " + JSON.stringify(ctx.AddTask?.response?.body));
+              if (status === 401) throw new Error("Auth expired — re-run auth flow");
+              if (status !== 201) throw new Error("Unexpected status: " + status);
+              return { task_id: ctx.AddTask?.response?.body?.id };
+            }
+          depends_on: AddTask
+```
+
+Every error condition has a defined behavior. Every retry has a defined limit. There is no reasoning, no judgment, no variability.
+
+### 4. Latency compounding
+
+An LLM agent making API calls has two latency components per step: the LLM inference time (to decide what to do and construct the request) and the API call time (to execute the request and get the response).
+
+For a single call, the LLM inference adds maybe 1-3 seconds. Barely noticeable. For a five-step workflow, you are adding 5-15 seconds of pure LLM overhead on top of the API latency. For a ten-step workflow with error handling and retries, you can easily spend 30-60 seconds just on LLM inference.
+
+But it gets worse. Many agent frameworks are sequential by design — the LLM processes each step one at a time, even when steps could run in parallel. If your workflow has three independent API calls (say, fetching data from three different services), an agent will make them sequentially because it processes one thought at a time. A deterministic workflow runner can parallelize them trivially.
+
+Here is a real timing comparison for a typical 5-step workflow:
+
+| Component | Agent-driven | Deterministic |
+|-----------|-------------|---------------|
+| Step 1 (auth) | 2.1s LLM + 0.3s API | 0.3s API |
+| Step 2 (create) | 1.8s LLM + 0.5s API | 0.5s API |
+| Step 3 (update) | 2.4s LLM + 0.4s API | 0.4s API |
+| Step 4 (verify) | 1.5s LLM + 0.2s API | 0.2s API |
+| Step 5 (notify) | 1.9s LLM + 0.3s API | 0.3s API |
+| **Total** | **11.4s** | **1.7s** |
+
+The agent version takes 6.7x longer, and most of that time is spent on LLM inference that adds zero value to the actual workflow execution.
+
+### 5. The debugging black hole
+
+When a multi-step agent workflow fails in production, debugging it is a nightmare. You have:
+
+- A conversation log that mixes reasoning, tool calls, and responses in a stream-of-consciousness format
+- No clear separation between "what the agent decided" and "what the API returned"
+- Non-reproducible behavior — running the same workflow again might produce different results
+- No structured logs, no JUnit reports, no artifact trail
+
+Compare this to debugging a deterministic workflow failure:
+
+```
+FAIL: CreateAndPopulateProject
+  Step: AddTask (step 3 of 5)
+  Request: POST https://api.example.com/projects/proj_a8f3e2b1c4d5/tasks
+  Status: 422 Unprocessable Entity
+  Response: {"error": "assignee_id 'usr_invalid' not found in project"}
+  Variable source: assignee_id was extracted from LookupUsers step
+  Previous step status: PASS (LookupUsers returned 200)
+```
+
+You know exactly which step failed, what it sent, what it got back, and where the data came from. You can reproduce the failure by re-running the same YAML. You can add an assertion to prevent regression. You can export the failure as a JUnit report for your CI dashboard.
+
+With an agent, you get: "I apologize, it seems the task creation failed. Let me try again with a different approach." Good luck writing a postmortem from that.
+
+## Why agents use API calls in the first place
+
+Before we go further, it is worth understanding why AI agents make API calls at all. The answer is tool use — the ability for an LLM to interact with external systems through function calls.
+
+The standard pattern is:
+
+1. User gives the agent a goal ("create a project and add tasks")
+2. Agent reasons about what tools (APIs) to call
+3. Agent constructs and executes tool calls one at a time
+4. Agent reads results and decides the next action
+5. Repeat until the goal is met or the agent gives up
+
+This works beautifully for single-turn tool use: "What is the weather in Tokyo?" → call weather API → return result. The LLM's reasoning adds value here because it interprets the user's intent and maps it to the right API.
+
+But for multi-step workflows, the LLM's reasoning is overhead. The developer already knows the exact sequence of calls. The exact fields to extract. The exact error handling logic. Having an LLM re-derive this knowledge on every execution is like having a senior engineer manually type out a deployment script from memory every time instead of running the bash script they wrote last month.
+
+## The missing layer: pre-composed deterministic workflows
+
+The gap in the current AI agent stack is not better prompting, bigger context windows, or more reliable function calling. The gap is an infrastructure layer that separates **workflow definition** from **workflow execution**.
+
+Here is the key insight: most multi-step API workflows are known in advance. A developer building a "create project and populate it" flow knows exactly what API calls need to happen, in what order, with what data passing between them. This workflow does not need to be re-derived by an LLM every time it runs.
+
+What it needs is:
+
+1. **A declarative definition** — the workflow as data, not as code or conversation
+2. **A deterministic executor** — something that runs the defined steps without interpretation
+3. **Structured variable passing** — explicit data flow between steps, not LLM extraction
+4. **Built-in error handling** — retry policies, failure modes, rollback logic defined in the workflow
+5. **Observability** — structured logs, timing data, pass/fail results per step
+
+This is what YAML workflow definitions provide. The workflow is defined once, version-controlled, reviewed in PRs, and executed identically every time.
+
+```yaml
+workspace_name: Project Setup Workflow
+
+run:
+  - flow: SetupProject
+
+flows:
+  - name: SetupProject
+    steps:
+      - request:
+          name: Authenticate
+          method: POST
+          url: https://api.example.com/auth/token
+          headers:
+            Content-Type: application/json
+          body:
+            client_id: "${CLIENT_ID}"
+            client_secret: "${CLIENT_SECRET}"
+            grant_type: client_credentials
+
+      - js:
+          name: ExtractToken
+          code: |
+            export default function(ctx) {
+              const token = ctx.Authenticate?.response?.body?.access_token;
+              if (!token) throw new Error("Auth failed: no access_token");
+              return { auth_token: token };
+            }
+          depends_on: Authenticate
+
+      - request:
+          name: CreateProject
+          method: POST
+          url: https://api.example.com/projects
+          headers:
+            Authorization: "Bearer ${auth_token}"
+            Content-Type: application/json
+          body:
+            name: "Q1 Planning"
+            description: "Quarterly planning project"
+          depends_on: ExtractToken
+
+      - js:
+          name: ExtractProject
+          code: |
+            export default function(ctx) {
+              const proj = ctx.CreateProject?.response?.body;
+              if (ctx.CreateProject?.response?.status !== 201) {
+                throw new Error("Project creation failed: " + JSON.stringify(proj));
+              }
+              return { project_id: proj.data.project.id };
+            }
+          depends_on: CreateProject
+
+      - request:
+          name: AddTask1
+          method: POST
+          url: "https://api.example.com/projects/${project_id}/tasks"
+          headers:
+            Authorization: "Bearer ${auth_token}"
+            Content-Type: application/json
+          body:
+            title: "Review Q1 metrics"
+            priority: "high"
+          depends_on: ExtractProject
+
+      - request:
+          name: AddTask2
+          method: POST
+          url: "https://api.example.com/projects/${project_id}/tasks"
+          headers:
+            Authorization: "Bearer ${auth_token}"
+            Content-Type: application/json
+          body:
+            title: "Draft OKRs"
+            priority: "medium"
+          depends_on: ExtractProject
+
+      - request:
+          name: AddTask3
+          method: POST
+          url: "https://api.example.com/projects/${project_id}/tasks"
+          headers:
+            Authorization: "Bearer ${auth_token}"
+            Content-Type: application/json
+          body:
+            title: "Schedule kickoff meeting"
+            priority: "medium"
+          depends_on: ExtractProject
+
+      - js:
+          name: VerifyTasks
+          code: |
+            export default function(ctx) {
+              const tasks = [ctx.AddTask1, ctx.AddTask2, ctx.AddTask3];
+              const failed = tasks.filter(t => t?.response?.status !== 201);
+              if (failed.length > 0) {
+                throw new Error(failed.length + " task(s) failed to create");
+              }
+              return {
+                tasks_created: 3,
+                project_id: ctx.ExtractProject?.project_id
+              };
+            }
+          depends_on:
+            - AddTask1
+            - AddTask2
+            - AddTask3
+```
+
+This workflow does exactly what the AI agent was trying to do — but deterministically, with explicit variable passing, structured error handling, and full observability. It runs in under 2 seconds instead of 12. It produces the same result every time. It can be reviewed in a PR, tested in CI, and debugged with structured logs.
+
+## Where agents still add value
+
+This is not an argument against AI agents. It is an argument for using them where they add value and using deterministic infrastructure where they do not.
+
+Agents add value in:
+
+- **Intent interpretation**: Understanding what the user wants and mapping it to the right workflow
+- **Dynamic decision-making**: Choosing between workflows based on context that cannot be predicted in advance
+- **Exception handling**: Dealing with truly novel errors that fall outside defined retry policies
+- **Natural language interaction**: Explaining what happened, asking for clarification, confirming destructive actions
+
+Agents subtract value in:
+
+- **Executing known sequences**: Running a defined set of API calls in order
+- **Passing structured data**: Extracting fields from JSON and injecting them into the next request
+- **Applying retry logic**: Waiting, backing off, retrying on known error codes
+- **Generating audit trails**: Logging what happened, when, and why
+
+The optimal architecture is a hybrid: the agent handles intent and orchestration, deterministic workflows handle execution.
+
+```
+User: "Set up the Q1 project with the standard template"
+  ↓
+Agent: interprets intent, selects "SetupProject" workflow,
+       resolves parameters (project name, template, assignees)
+  ↓
+Workflow engine: executes the YAML flow deterministically
+  ↓
+Agent: reads results, reports back to user
+  "Done. Created project 'Q1 Planning' with 3 tasks.
+   All assigned to the engineering team."
+```
+
+The agent does what it is good at (understanding "standard template" means the Q1 template, resolving "the engineering team" to specific user IDs). The workflow engine does what it is good at (making 7 API calls reliably, passing data between them, handling errors predictably).
+
+## How to migrate from agent-driven to workflow-driven API calls
+
+If you are building an agent that makes multi-step API calls, here is a practical migration path.
+
+### Step 1: Identify your repeatable sequences
+
+Look at your agent's API call logs. You will find that 80% of multi-step interactions follow a small number of patterns. A "create and populate project" flow. A "sync data between services" flow. A "generate report" flow. These are your candidates for workflow extraction.
+
+### Step 2: Define the workflow as YAML
+
+For each repeatable sequence, define the steps, variable passing, and error handling in YAML. Start with the happy path. Add error handling after you have the basic flow working.
+
+### Step 3: Build a visual flow (optional)
+
+If the workflow is complex (10+ steps, conditional branches, parallel paths), use a visual flow builder to design it. This makes the data dependencies visible and catches missing variable mappings before you run anything.
+
+### Step 4: Test the workflow independently
+
+Run the YAML workflow outside of your agent, against a staging environment. Verify that it produces correct results. Add assertions at each step. Generate JUnit reports for CI integration.
+
+### Step 5: Wire the agent to the workflow engine
+
+Replace the agent's multi-step API calling logic with a single tool call: "execute workflow X with parameters Y." The agent still handles intent interpretation and parameter resolution, but the workflow engine handles execution.
+
+### Step 6: Monitor and iterate
+
+Track execution times, failure rates, and error types for both agent-driven and workflow-driven executions. You will see workflow-driven executions converge to near-zero non-determinism, while agent-driven executions continue to exhibit variable behavior.
+
+## The cost equation
+
+Let us make this concrete with numbers.
+
+A typical AI agent making 5 API calls uses approximately:
+
+- **Input tokens**: 3,000-5,000 per step (conversation history + system prompt + tool definitions)
+- **Output tokens**: 200-500 per step (reasoning + tool call)
+- **Total for 5 steps**: ~20,000 input + ~1,500 output tokens
+- **Cost at GPT-4o rates**: ~$0.06 per workflow execution
+- **Cost at Claude rates**: ~$0.07 per workflow execution
+
+That seems cheap until you multiply by volume. An agent handling 1,000 workflow executions per day costs $60-70/day in LLM inference alone — for work that a deterministic workflow runner does for essentially free (just the API call latency, no inference cost).
+
+Over a month, that is $1,800-2,100 in LLM costs for executing known workflows. Over a year, $21,000-25,000. And that is just one workflow type at moderate volume.
+
+The cost of a deterministic workflow engine? Zero marginal cost per execution. The workflow is defined once and runs without LLM inference.
+
+But cost is not even the main argument. Reliability is. A 95% success rate on individual steps means a 77% success rate across a 5-step workflow (0.95^5). A 99% step success rate still gives you only 95% workflow success. Deterministic execution gives you 100% consistency — if the workflow is correct and the APIs are healthy, it succeeds every time.
+
+## What this means for the AI agent ecosystem
+
+The AI agent space is going through the same evolution that web development went through with infrastructure:
+
+1. **Phase 1** (current): Agents do everything — intent, planning, execution, error handling. Works for demos, breaks in production.
+2. **Phase 2** (emerging): Agents handle intent and orchestration, deterministic infrastructure handles execution. Reliable enough for production.
+3. **Phase 3** (future): Agents become workflow designers — they generate and modify YAML workflows based on user intent, then hand off execution entirely.
+
+We are in the transition from Phase 1 to Phase 2. The teams that figure this out first will ship reliable agent products while their competitors are still debugging non-deterministic API call chains.
+
+The infrastructure layer that makes this possible already exists. YAML workflow definitions, deterministic execution engines, structured variable passing, CI integration, JUnit reporting — these are not hypothetical tools. They are production-ready today.
+
+The question is not whether to separate agent reasoning from workflow execution. The question is how quickly you can make the switch before your users lose patience with "I apologize, let me try that again."
+
+## Start building reliable workflows
+
+If you are hitting the multi-step API reliability wall, start with your most critical workflow. Define it in YAML. Test it deterministically. Wire your agent to trigger it instead of re-deriving it every time.
+
+Your agent is good at understanding what users want. Let it do that. But for the mechanical work of making API calls in sequence, passing data between them, and handling errors predictably — use infrastructure designed for exactly that job.
+
+For a hands-on guide to building your first multi-step workflow, see: [How to Build an End-to-End API Test: Login, Create, Verify, Delete](/blog/how-to-build-end-to-end-api-test-login-create-verify-delete/). For CI integration, see: [API Testing in GitHub Actions](/blog/api-testing-in-github-actions-secrets-auth-retries-rate-limits/).
