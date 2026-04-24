@@ -303,6 +303,146 @@ The returned object becomes available as:
 {{NodeName.processedAt}}
 ```
 
+### 7. GraphQL Node
+
+Executes a GraphQL query or mutation. Use when your API is GraphQL-based instead of REST — you get a dedicated query editor, variables pane, and the same assertion / header / response-history surface as HTTP requests. See [GraphQL Requests](/docs/how-to/graphql-requests) for the full standalone editor.
+
+![GraphQL node config in a flow — query pane and JSON response](/docs/assets/flow-graphql-node-config.webp)
+
+**Configuration:**
+- **URL**: GraphQL endpoint (supports `{{BASE_URL}}` variables)
+- **Query / Variables / Headers / Assertion** tabs mirror the standalone request editor
+- **Evaluated / Browse** switch to inspect the compiled query with variables substituted
+
+**Output Structure:**
+```
+{{NodeName.response.status}}
+{{NodeName.response.body.data.<field>}}   # GraphQL payloads live under .data
+{{NodeName.response.body.errors}}
+{{NodeName.response.duration}}
+```
+
+**YAML:**
+```yaml
+- graphql:
+    name: GetCountries
+    url: 'https://countries.trevorblades.com/'
+    query: |
+      query {
+        countries {
+          code
+          name
+          emoji
+        }
+      }
+```
+
+### 8. WebSocket Connection Node
+
+Opens a WebSocket connection that downstream **WebSocket Send** nodes can write to. The connection stays open for the duration of the flow run (or until a Wait node / flow end closes it). Received messages are captured per-connection so you can assert on them.
+
+![WebSocket Connection node config with received message in the output pane](/docs/assets/flow-websocket-connection-node-config.webp)
+
+**Configuration:**
+- **URL**: `ws://` / `wss://` endpoint
+- **Headers**: connection-time headers (e.g. `Authorization`)
+
+**Output (per received message):**
+```
+{{NodeName.index}}     # 0-based message index
+{{NodeName.type}}      # "received"
+{{NodeName.message}}   # payload (string or parsed JSON)
+```
+
+### 9. WebSocket Send Node
+
+Sends a message over an upstream WebSocket Connection. Connect the Send node's input to the Connection node's **Message** (or **Next**) handle to choose when it fires.
+
+**Configuration:**
+- **Message**: text/JSON payload; supports `{{ }}` variables including `{{ uuid() }}` and `{{ faker.* }}`
+- **Connection**: reference to the upstream WS Connection node (wired via the graph)
+
+**YAML sketch:**
+```yaml
+- ws_connection:
+    name: EchoWS
+    url: 'wss://devtools-echo-ws.fly.dev/'
+- ws_send:
+    name: SendHello
+    connection: EchoWS
+    message: '{"test": {{ now().Unix() }}}'
+    depends_on: EchoWS
+```
+
+### 10. Wait Node
+
+Pauses the flow for a configurable duration. Useful for letting async side-effects settle (WebSocket backfill, eventual consistency, rate-limit cool-downs) before the next node runs.
+
+**Configuration:**
+- **Duration**: milliseconds / seconds / etc.
+
+**YAML:**
+```yaml
+- wait:
+    name: LetEventsLand
+    duration: 2s
+    depends_on: SendHello
+```
+
+### 11. Run Sub Flow Node
+
+Invokes another flow from within the current flow, passing typed inputs and receiving typed outputs. Pairs with the **Sub-Flow Return** terminal node on the child-flow side.
+
+![Main flow calling a Sub Flow node in sequence with Wait](/docs/assets/flow-run-sub-flow-example.webp)
+
+**Use cases:**
+- Re-use an authentication ritual across many parent flows
+- Compose a complex scenario from smaller, focused flows
+- Share logic between a CI smoke test and a fuller regression suite
+
+**Configuration:**
+- **Flow**: pick the child flow
+- **Inputs**: values passed into the child flow's variables
+- **Outputs**: the child's `Sub-Flow Return` payload becomes `{{NodeName.<field>}}`
+
+**Example — parent and child:**
+
+![Sub Flow canvas: Manual Start → GraphQL → WS Connection → WS Send → Wait → Sub-Flow Return](/docs/assets/flow-subflow-canvas-example.webp)
+
+```yaml
+# Child flow — ends with sub_flow_return
+- name: BuildSession
+  steps:
+    - graphql:
+        name: BootstrapData
+        url: '{{API_URL}}'
+        query: 'query { me { id } }'
+    - sub_flow_return:
+        name: Done
+        outputs:
+          userId: '{{BootstrapData.response.body.data.me.id}}'
+        depends_on: BootstrapData
+
+# Parent flow — invokes the child via run_sub_flow
+- name: MainScenario
+  steps:
+    - run_sub_flow:
+        name: Session
+        flow: BuildSession
+    - request:
+        name: FetchProfile
+        method: GET
+        url: '{{API_URL}}/profile/{{Session.userId}}'
+        depends_on: Session
+```
+
+### 12. Sub-Flow Return Node
+
+Terminal node for a child flow. Defines the typed payload that becomes available as node output on the parent's `Run Sub Flow` node. A flow that is ever invoked as a sub-flow must end in one.
+
+**Configuration:**
+- **Outputs**: key → expression map, evaluated at the point this node runs
+
 ## Connecting Nodes
 
 ### Execution Flow

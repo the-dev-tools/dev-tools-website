@@ -457,6 +457,7 @@ DevTools supports several built-in variable functions:
 {{ uuid() }}              # Generate UUID v4
 {{ uuid("v4") }}          # Generate UUID v4
 {{ uuid("v7") }}          # Generate UUID v7
+{{ ulid() }}              # Generate ULID
 {{ now() }}               # Current ISO 8601 datetime
 {{ now().Unix() }}        # Current Unix timestamp (seconds)
 {{ now().UnixMilli() }}   # Current Unix timestamp (milliseconds)
@@ -473,8 +474,108 @@ headers:
 
 body:
   requestId: '{{ uuid() }}'
-  createdAt: '{{ now() }}' 
+  createdAt: '{{ now() }}'
 ```
+
+### Fake Data Generators (`faker.*`)
+
+For generating realistic test data, DevTools exposes a `faker` namespace with 35 generators. Type `{{ faker.` in the expression editor to browse them via autocomplete.
+
+**Personal:**
+
+```yaml
+{{ faker.name() }}          # "John Doe"
+{{ faker.firstName() }}     # "John"
+{{ faker.lastName() }}      # "Doe"
+{{ faker.titleMale() }}     # "Mr."
+{{ faker.titleFemale() }}   # "Ms."
+```
+
+**Contact:**
+
+```yaml
+{{ faker.email() }}         # "john.doe@example.com"
+{{ faker.phoneNumber() }}   # "+1-555-0100"
+```
+
+**Internet:**
+
+```yaml
+{{ faker.url() }}           # "https://example.com/foo"
+{{ faker.domainName() }}    # "example.com"
+{{ faker.ipv4() }}          # "192.168.1.1"
+{{ faker.ipv6() }}          # "2001:db8::1"
+{{ faker.macAddress() }}    # "00:1B:44:11:3A:B7"
+{{ faker.username() }}      # "jdoe42"
+{{ faker.password() }}      # "Abc!xy12"
+```
+
+**Text:**
+
+```yaml
+{{ faker.word() }}          # "lorem"
+{{ faker.sentence() }}      # "Lorem ipsum dolor sit amet."
+{{ faker.paragraph() }}     # Multi-sentence paragraph
+```
+
+**Date & time:**
+
+```yaml
+{{ faker.date() }}          # "2024-03-15"
+{{ faker.time() }}          # "14:32:05"
+{{ faker.monthName() }}     # "March"
+{{ faker.dayOfWeek() }}     # "Tuesday"
+{{ faker.dayOfMonth() }}    # "15"
+{{ faker.year() }}          # "2024"
+{{ faker.century() }}       # "XXI"
+{{ faker.timestamp() }}     # "2024-03-15 14:32:05"
+{{ faker.timezone() }}      # "America/New_York"
+{{ faker.unixTime() }}      # Random Unix timestamp (int64)
+```
+
+**Payment:**
+
+```yaml
+{{ faker.ccNumber() }}              # "4111111111111111"
+{{ faker.ccType() }}                # "Visa"
+{{ faker.currency() }}              # "USD"
+{{ faker.amountWithCurrency() }}    # "142.50 USD"
+```
+
+**IDs:**
+
+```yaml
+{{ faker.uuid() }}          # Hyphenated UUID
+{{ faker.uuidDigit() }}     # Digit-only UUID (no hyphens)
+```
+
+**Random int:**
+
+```yaml
+{{ faker.randomInt(100) }}      # Int in [0, 100]
+{{ faker.randomInt(5, 15) }}    # Int in [5, 15]
+```
+
+**Example — seeding a load test:**
+
+```yaml
+- request:
+    name: CreateTestUser
+    method: POST
+    url: '{{BASE_URL}}/users'
+    headers:
+      X-Request-ID: '{{ uuid() }}'
+    body:
+      id: '{{ faker.uuid() }}'
+      name: '{{ faker.name() }}'
+      email: '{{ faker.email() }}'
+      phone: '{{ faker.phoneNumber() }}'
+      city: '{{ faker.domainName() }}'
+      age: '{{ faker.randomInt(18, 90) }}'
+      createdAt: '{{ now() }}'
+```
+
+Every call returns a fresh random value — `{{ faker.email() }}` used twice in one request body will yield two different emails. Values are not deterministic; do not rely on them for golden-output assertions.
 
 ## Variable Mapping System
 

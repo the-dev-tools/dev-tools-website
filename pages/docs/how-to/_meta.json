@@ -1,6 +1,7 @@
 {
   "import-har": "Importing HAR Files",
   "working-with-flows": "Working with Flows",
+  "graphql-requests": "GraphQL Requests",
   "environments-and-variables": "Environments & Variables",
   "ci-integrations": "CI/CD Integration"
 }
