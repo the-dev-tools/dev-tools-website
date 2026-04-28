@@ -143,8 +143,10 @@ function MarkdownContent({ content }: { content: string }) {
   }
 
   lines.forEach((line, idx) => {
+    const trimmed = line.trim()
+
     // Code blocks
-    if (line.startsWith('```')) {
+    if (trimmed.startsWith('```')) {
       if (inCodeBlock) {
         flushCodeBlock()
         inCodeBlock = false
@@ -160,34 +162,34 @@ function MarkdownContent({ content }: { content: string }) {
       return
     }
 
-    // Headers
-    if (line.startsWith('### ')) {
+    // Headers (allow leading whitespace from nested markdown)
+    if (trimmed.startsWith('### ')) {
       flushList()
       elements.push(
         <h3 key={`h3-${idx}`} className="text-lg font-semibold text-white mt-6 mb-3">
-          {parseInlineMarkdown(line.replace('### ', ''))}
+          {parseInlineMarkdown(trimmed.slice(4))}
         </h3>
       )
-    } else if (line.startsWith('## ')) {
+    } else if (trimmed.startsWith('## ')) {
       flushList()
       elements.push(
         <h2 key={`h2-${idx}`} className="text-xl font-semibold text-white mt-6 mb-3">
-          {parseInlineMarkdown(line.replace('## ', ''))}
+          {parseInlineMarkdown(trimmed.slice(3))}
         </h2>
       )
     }
-    // List items
-    else if (line.match(/^[\*\-]\s/)) {
-      currentList.push(line.replace(/^[\*\-]\s/, ''))
+    // List items (allow leading whitespace for nested lists)
+    else if (trimmed.match(/^[\*\-]\s/)) {
+      currentList.push(trimmed.replace(/^[\*\-]\s/, ''))
     }
     // Empty lines
-    else if (line.trim() === '') {
+    else if (trimmed === '') {
       flushList()
     }
     // Standalone images
-    else if (line.match(/^!\[/)) {
+    else if (trimmed.startsWith('![')) {
       flushList()
-      const parsed = parseInlineMarkdown(line)
+      const parsed = parseInlineMarkdown(trimmed)
       elements.push(
         <div key={`img-wrapper-${idx}`} className="mb-4">
           {parsed}
@@ -195,11 +197,11 @@ function MarkdownContent({ content }: { content: string }) {
       )
     }
     // Regular paragraphs
-    else if (line.trim()) {
+    else if (trimmed) {
       flushList()
       elements.push(
         <p key={`p-${idx}`} className="text-slate-300 mb-4">
-          {parseInlineMarkdown(line)}
+          {parseInlineMarkdown(trimmed)}
         </p>
       )
     }
