@@ -1,0 +1,230 @@
+---
+title: "HAR File API Testing: How to Capture and Replay Browser Traffic"
+date: "2026-04-28"
+slug: "har-file-api-testing"
+id: "857c9800-219f-4169-8a57-c9a5c0668d4d"
+image:
+  url: "https://dev-tools-blog-images.fly.storage.tigris.dev/blog/har-file-api-testing.webp"
+  alt: "HAR File API Testing: How to Capture and Replay Browser Traffic"
+author:
+  name: "DevTools Team"
+  avatar: "/logo.svg"
+tags: ["har", "api-testing", "chrome-devtools", "ci-cd", "test-automation", "traffic-replay"]
+category: "Guides"
+summary: "Capture a HAR file in Chrome, sanitize sensitive data, and turn it into a runnable, repeatable API test in CI in under ten minutes."
+cta:
+  primary:
+    heading: "Turn a HAR into a CI-ready flow"
+    body: "Import a HAR, drop the noise, and run the resulting YAML flow as a required check on every pull request."
+    buttonText: "Import a HAR file"
+    url: "https://dev.tools/docs/how-to/import-har/"
+    secondaryText: "See multi-step flows"
+    secondaryUrl: "https://dev.tools/features/multi-step-api-testing/"
+  secondary:
+    heading: "Get the HAR capture cheat sheet"
+    body: "The five-minute walk-through for capturing a clean HAR in Chrome DevTools, with the settings that actually matter."
+    buttonText: "Read the guide"
+    url: "https://dev.tools/guides/generate-har-chrome/"
+    secondaryText: "Install DevTools"
+    secondaryUrl: "https://dev.tools/docs/start-here/install/"
+  badge:
+    text: "HAR workflow"
+    variant: "neutral"
+---
+
+HAR-based API testing is the practice of capturing real browser traffic as a HAR (HTTP Archive) file, sanitizing it, and replaying the requests as an automated test. It is the fastest path from "this worked when I clicked through the app" to "this is now a deterministic check that runs on every pull request" — without writing a single line of test code by hand.
+
+If you have ever tried to write an integration test for a multi-step workflow only to discover six undocumented headers, two background polling endpoints, and a CSRF token you forgot existed, the HAR-driven workflow is for you. The browser already knows the truth. You just need to extract it.
+
+This post walks through the whole pipeline — capture, sanitize, convert, run — and the choices that matter at each step.
+
+## Why HAR files are the fastest path from production traffic to a test
+
+Hand-written API tests start from a mental model of the API. HAR-driven tests start from the actual call sequence the browser executed. Two consequences fall out of that:
+
+- **You stop guessing about implicit dependencies.** The HAR records the auth refresh, the CSRF fetch, the feature-flag probe, and the polling endpoints exactly as the frontend issued them. None of that has to be re-derived from docs.
+- **Tests track product behavior, not your assumptions.** When the frontend changes the order of two calls, a hand-written test stays green and a HAR-derived test catches it.
+
+The trade-off is that HAR captures are noisy by default — every analytics beacon, every static asset, every browser-only header rides along. The work is not in writing the test; it is in picking the right slice.
+
+## What is actually inside a HAR file
+
+A HAR is a JSON document with a single `log` object. Inside it:
+
+- `entries[]` — one object per HTTP request the browser made during the recording window. Each entry has the full request (method, URL, headers, query string, post data) and the full response (status, headers, content, mime type), plus a `timings` object with DNS, connect, send, wait, and receive durations.
+- `pages[]` — page-load events tied to entries via `pageref`. Useful for trimming a HAR to "just one navigation" without touching the entries themselves.
+- `creator`, `browser`, `version` — metadata about what produced the file.
+
+Two things to know:
+
+1. **Response bodies are optional.** Chrome only includes them if you tick the right box at export time (covered below). Without bodies, you cannot validate anything more interesting than status codes.
+2. **HAR is human-readable JSON.** You can `jq` it, regex-mask it, diff it in code review, and commit a sanitized version to a repo without specialized tooling.
+
+## How to capture a HAR file in Chrome DevTools
+
+Chrome is the most common starting point, and the one whose behavior changes most often. Three settings matter.
+
+### Enable "Allow to generate HAR with sensitive data"
+
+Recent Chrome versions strip cookies and authorization headers from exports by default. For testing your own application against a staging environment, you almost always want them included — otherwise the replay can't authenticate.
+
+1. Open DevTools (`Cmd+Option+I` on macOS, `F12` on Windows/Linux).
+2. Click the gear icon (top right of DevTools) to open Settings.
+3. Under **Preferences → Network**, tick **Allow to generate HAR with sensitive data**.
+
+Treat HARs with credentials as you would treat a secret. Sanitize before committing (next section).
+
+### Turn on "Preserve log"
+
+By default Chrome clears the network panel on every navigation. For multi-step workflows that span a redirect (login flows in particular) this drops the most important requests.
+
+In the Network panel, tick **Preserve log** at the top.
+
+### Filter to XHR/Fetch and your domain before exporting
+
+Right-click an entry in the Network panel and choose **Save all as HAR with content**. Two filters cut the file size dramatically:
+
+- **Type filter**: select **Fetch/XHR** (or `Fetch/XHR` and `Doc` if your flow includes form posts that return HTML).
+- **Domain filter**: type `domain:api.example.com` in the filter bar to scope to your backend.
+
+Apply the filters first, then export. Chrome respects them.
+
+## Capturing HAR in Firefox and Safari
+
+For a quick reference:
+
+- **Firefox**: Network panel → right-click any row → **Save All As HAR**. Response bodies are included by default; there is no equivalent of Chrome's sensitive-data toggle, so cookies are present.
+- **Safari**: Develop menu (enable in Preferences → Advanced if hidden) → **Show Web Inspector** → Network tab → right-click → **Export HAR**. Safari does not include response bodies by default; in 17+ there is an "Include response bodies" preference under Web Inspector settings.
+
+Safari and Firefox HARs are interchangeable with Chrome HARs at the spec level — anything that consumes a Chrome HAR will consume theirs.
+
+## Sanitizing a HAR file before committing it
+
+A HAR straight off a browser is not safe to commit. The minimum sanitation pass:
+
+| Field | Action | Why |
+|---|---|---|
+| `Authorization` header | Replace value with `{{AUTH_TOKEN}}` | Bearer tokens leak account access |
+| `Cookie` request headers | Replace with placeholder or strip | Sessions, tracking IDs |
+| `Set-Cookie` response headers | Strip values | Same |
+| Query string params (`token`, `key`, `signature`) | Replace values | OAuth callbacks, signed URLs |
+| `email`, `phone`, `ssn` in bodies | Replace with fixture values | PII |
+| `userId`, `accountId` in URLs | Replace with `{{USER_ID}}` | PII + makes replay portable |
+
+A useful pattern: keep an unsanitized capture locally for one quick replay verification, then run a one-shot sanitization script and commit only the sanitized version. A small `sanitize-har.js` (Node, no deps) using `JSON.parse` plus a list of header/regex rules takes about 30 lines. If you'd rather not write it, the **dev.tools HAR import** wizard does this automatically and lets you preview the masked diff before saving.
+
+## Turning a HAR into an API test
+
+Three common conversion targets, with very different ergonomics.
+
+### As a Postman collection
+
+Postman has a HAR-to-collection import (Import → File → choose your HAR). Each entry becomes one request inside a single collection. You then run the collection with Newman or the Postman CLI in CI.
+
+**Strengths:** familiar UI, easy to share with non-engineers.
+
+**Weaknesses:** Postman flattens the dependency graph. If request 5 depends on a token from request 1, you have to add `pm.environment.set` / `pm.environment.get` scripts by hand. For multi-step workflows this defeats the point of starting from a HAR.
+
+### As a k6 script
+
+The `har-to-k6` converter (Grafana k6) emits a JavaScript file with one HTTP call per entry. Useful when the workflow you captured is the workflow you want to *load test*, not just functionally test.
+
+```bash
+har-to-k6 my-flow.har -o flow.js
+k6 run flow.js
+```
+
+**Strengths:** the fastest path from "browser session" to "load test."
+
+**Weaknesses:** the generated script is dense and not easy to maintain. Variable propagation across steps is manual. Use this for one-off load characterization, not as your primary functional test.
+
+### As a multi-step YAML flow
+
+This is where dev.tools fits. The HAR import wizard produces a [YAML flow](https://dev.tools/docs/how-to/working-with-flows/) where each request is a named step, and the converter automatically detects values that flow from one response into the next request — auth tokens, IDs, redirect targets — and rewrites them as variable references.
+
+```yaml
+workspace_name: HAR Replay
+env:
+  BASE_URL: '{{#env:BASE_URL}}'
+run:
+  - flow: CheckoutWorkflow
+flows:
+  - name: CheckoutWorkflow
+    steps:
+      - request:
+          name: Login
+          method: POST
+          url: '{{BASE_URL}}/auth/login'
+          headers:
+            Content-Type: application/json
+          body:
+            email: 'test@example.com'
+            password: '{{TEST_PASSWORD}}'
+      - request:
+          name: CreateCart
+          method: POST
+          url: '{{BASE_URL}}/carts'
+          headers:
+            Authorization: 'Bearer {{Login.response.body.access_token}}'
+          depends_on: Login
+      - js:
+          name: AssertCartCreated
+          code: |
+            export default function(ctx) {
+              if (ctx.CreateCart?.response?.status !== 201) {
+                throw new Error("Cart not created: " + ctx.CreateCart?.response?.status);
+              }
+              return { cart_id: ctx.CreateCart.response.body.id };
+            }
+          depends_on: CreateCart
+```
+
+The output is a Git-friendly text file. Diffs are reviewable. The same file runs locally, in the CLI, and in [GitHub Actions](https://dev.tools/features/ci-cd-integration/) without modification.
+
+## Common pitfalls
+
+A short list of things that make HAR-driven tests fail in confusing ways.
+
+- **Empty response bodies.** If you exported without "with content," the file looks fine but no assertion can run on the body. Always re-export "with content" before sanitizing.
+- **Volatile headers.** `Date`, `If-None-Match`, `Sec-CH-UA-*` change between captures and replays. Strip them before replay; they are almost never required by the server.
+- **Expired tokens.** A token captured at 9am may not be valid at 5pm. Either inject a fresh token via env var at run time, or include the auth/refresh call inside the captured flow so it gets re-issued every run.
+- **Noisy CDN domains.** Analytics, fonts, image CDNs, and feature-flag SDKs add hundreds of entries that don't affect the workflow. Filter to your API domain before exporting.
+- **Background polling.** Some apps poll `/notifications` or `/heartbeat` every few seconds. These show up as duplicate entries. Drop them unless they are part of the test.
+- **Order vs. concurrency.** The browser issues many requests in parallel; HAR entries are ordered by start time, not completion. If your replay tool runs them strictly sequentially, latency may differ noticeably from the real session — usually fine for functional tests, sometimes a problem for timing-sensitive ones.
+
+## When HAR is the wrong choice
+
+HAR is great for short, request/response-shaped workflows. It is the wrong starting point for:
+
+- **WebSockets.** Chrome records the connection and a frame log, but most converters can't replay the framed message stream. Test these directly in code.
+- **Server-sent events / long-running streams.** Same issue — the entry is one row, the streamed body is recorded as one blob.
+- **gRPC.** Browsers don't speak raw gRPC; HAR captures gRPC-Web traffic, which is a different (and often incompatible) protocol on the server.
+- **Tests that need to assert mid-stream behavior** (e.g., chunked uploads, progressive renders).
+
+For everything else — REST, GraphQL over POST, OAuth flows, classic form submissions — HAR-driven testing is the highest-leverage move you can make.
+
+## FAQ
+
+### Is HAR-based testing the same as record-and-playback UI testing?
+
+No. UI record-and-playback tools (Selenium IDE, old-school QTP) record clicks and keystrokes, then replay them through a browser. HAR-based testing skips the browser at replay time and re-issues the underlying HTTP requests directly. It is faster, more deterministic, and tests the API contract rather than the UI rendering.
+
+### Can I commit a HAR file to my repo?
+
+Yes — once it is sanitized. Strip secrets and PII, replace dynamic values with placeholders, and the file becomes a reviewable text artifact like any other test fixture. The cleaner pattern most teams settle on is to commit a derived YAML / Postman / k6 artifact instead of the HAR itself, since the converted form is easier to read and maintain.
+
+### How do I keep a HAR-derived test from going stale?
+
+Re-capture and re-import on a cadence (a quarter is reasonable for stable products), or whenever the frontend's network behavior changes meaningfully. With YAML-based flows, the diff between the new import and the previous version is itself reviewable in a pull request, which makes drift visible.
+
+### What about authentication that uses HttpOnly cookies?
+
+Chrome's "Allow to generate HAR with sensitive data" setting includes them. After capture, replace the cookie value with a variable reference and inject a freshly-issued cookie at runtime — usually by making the auth/login call the first step of the flow rather than relying on the captured session.
+
+### Is HAR-based testing accepted in regulated environments?
+
+Yes, with the same caveats as any test artifact: the HAR (or its derived YAML/script) needs to be sanitized of PII and credentials, version-controlled, and produced from a non-production environment. Many regulated teams prefer the derived-YAML approach because the YAML diff is auditable and the original capture can be discarded.
+
+---
+
+If you've gotten this far, the next step is the [dev.tools HAR import guide](https://dev.tools/docs/how-to/import-har/), which walks through the same workflow with screenshots, or the [generate-a-HAR-in-Chrome cheat sheet](https://dev.tools/guides/generate-har-chrome/) if you want a focused capture reference.
