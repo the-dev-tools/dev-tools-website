@@ -7,7 +7,7 @@
 
 | # | Day | Slug | Status | Published |
 |---|---|---|---|---|
-| 1 | Mon | har-file-api-testing | drafted | 2026-04-28 |
+| 1 | Mon | har-file-api-testing | published | 2026-04-28 |
 | 2 | Wed | newman-alternative | pending | — |
 | 3 | Fri | load-testing-vs-stress-testing-vs-performance-testing | pending | — |
 | 4 | Mon | api-testing-ci-cd-github-actions | pending | — |
