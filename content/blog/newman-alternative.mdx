@@ -1,0 +1,302 @@
+---
+title: "Newman Alternative: 4 Ways to Run Postman Collections in CI Without npm"
+date: "2026-05-02"
+slug: "newman-alternative"
+id: "84b3806b-837a-4206-9a99-41955f3e64e8"
+image:
+  url: "https://dev-tools-blog-images.fly.storage.tigris.dev/blog/newman-alternative.webp"
+  alt: "Newman Alternative: 4 Ways to Run Postman Collections in CI Without npm"
+author:
+  name: "DevTools Team"
+  avatar: "/logo.svg"
+tags: ["newman", "postman", "ci-cd", "github-actions", "api-testing", "migration"]
+category: "CI/CD"
+summary: "Compare four ways to run Postman collections in CI without Newman — Postman CLI, Apidog CLI, k6, and dev.tools — with real GitHub Actions YAML for each."
+cta:
+  primary:
+    heading: "Replace Newman with reviewable YAML flows"
+    body: "Import a Postman collection or HAR file, get a Git-friendly YAML flow, and run it as a required CI check with JUnit reports."
+    buttonText: "See the Newman alternative"
+    url: "https://dev.tools/postman-cli-alternative/"
+    secondaryText: "Install the dev.tools CLI"
+    secondaryUrl: "https://dev.tools/cli/"
+  secondary:
+    heading: "Move off Postman without rewriting tests"
+    body: "Compare dev.tools to Postman across pricing, CI, and Git workflow before you commit."
+    buttonText: "DevTools vs Postman"
+    url: "https://dev.tools/compare/devtools-vs-postman/"
+    secondaryText: "All Postman alternatives"
+    secondaryUrl: "https://dev.tools/postman-alternative/"
+  badge:
+    text: "Newman alternative"
+    variant: "neutral"
+---
+
+A Newman alternative is any CLI runner that executes Postman-style collections — or the equivalent test workflows — outside the `newman` npm package. The reasons to want one have stacked up in 2026: Postman's free-tier policy changes, Newman's slowed maintenance cadence, the npm supply-chain footprint inside CI containers, and the Postman CLI's own learning curve. This post compares the four serious options and gives you copy-paste GitHub Actions YAML for each.
+
+If you only need the verdict: **Postman CLI** is the safest drop-in if you already pay for Postman; **Apidog CLI** is the best like-for-like swap on the free tier; **k6** is the right move when functional and load testing converge; and **dev.tools** is the answer when the goal is reviewable, Git-native YAML flows that don't depend on Postman at all.
+
+## Why teams are leaving Newman in 2026
+
+Newman ran the entire post-Postman-CLI era of CI testing. It still works. But three pressures have pushed teams to look elsewhere this year.
+
+**Postman's March 2026 free-plan changes.** The free plan now caps shared collections and reduces collection-runner credits, which makes it awkward to keep your CI source of truth in a Postman workspace your team can't all access. Several engineering teams have pulled their collections out of Postman entirely as a result.
+
+**Newman's slowed maintenance cadence.** Newman is officially supported, but the release cadence has slowed considerably as Postman shifts investment to the official Postman CLI. PRs sit longer; integrations with newer reporters and CI runners arrive later. Nothing is broken, but the trajectory is clear.
+
+**npm supply-chain pressure inside CI.** A Newman install pulls in dozens of transitive dependencies. CI security teams in regulated environments flag every one. Each replacement on this list trims that surface area — Postman CLI is a single Go binary, Apidog CLI is one binary, k6 is one binary, dev.tools is one binary.
+
+**The "we never wanted JSON collections in Git" complaint.** Postman collections are 4–8 KB JSON blobs that are unreadable in pull requests. Teams that have moved to Bruno, Hurl, or YAML-flow tools cite Git diffability as the single biggest quality-of-life win.
+
+## Option 1 — Postman CLI (the official Newman successor)
+
+The Postman CLI is Postman's own replacement for Newman. It is a Go binary that calls the Postman API to fetch collections, runs them locally, and posts results back. It is the lowest-friction option if you already have a paid Postman account and your collections live there.
+
+**Install:**
+
+```bash
+curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
+```
+
+**GitHub Actions workflow:**
+
+```yaml
+name: API tests (Postman CLI)
+on: [pull_request]
+jobs:
+  postman:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Postman CLI
+        run: curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
+      - name: Login to Postman
+        run: postman login --with-api-key ${{ secrets.POSTMAN_API_KEY }}
+      - name: Run collection
+        run: postman collection run "$POSTMAN_COLLECTION_UID" --environment "$POSTMAN_ENV_UID"
+        env:
+          POSTMAN_COLLECTION_UID: ${{ vars.POSTMAN_COLLECTION_UID }}
+          POSTMAN_ENV_UID: ${{ vars.POSTMAN_ENV_UID }}
+```
+
+**Pros:** zero migration. Existing collections, environments, and pre-request scripts all work.
+
+**Cons:** still requires a Postman account. Free-tier limits on the number of collection runs apply. Result data lives in Postman, not in your repo.
+
+**Use when:** you already pay for Postman, your collections are mature, and the team is happy with Postman's UI as the source of truth.
+
+## Option 2 — Apidog CLI for Postman-compatible collections
+
+Apidog is a Postman-shaped product that natively imports Postman collections and ships its own CLI runner. The CLI is the closest like-for-like Newman replacement that works on the free tier without phoning home to Postman.
+
+**Install:**
+
+```bash
+npm install -g apidog-cli
+# or download the binary release from apidog.com/cli
+```
+
+**GitHub Actions workflow:**
+
+```yaml
+name: API tests (Apidog CLI)
+on: [pull_request]
+jobs:
+  apidog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install -g apidog-cli
+      - name: Run collection
+        run: apidog run ./collections/checkout.json --reporter junit --out-file results.xml
+      - uses: dorny/test-reporter@v2
+        if: always()
+        with:
+          name: API tests
+          path: results.xml
+          reporter: java-junit
+```
+
+**Pros:** runs Postman collection JSON directly. Built-in JUnit reporter. Works on the free tier without an Apidog account if you point it at a local file.
+
+**Cons:** still npm-installed in the default install path. Apidog's pre-request script semantics are *almost* but not exactly Postman's, so collections that lean heavily on `pm.sendRequest` or shared-environment mutations sometimes need small tweaks.
+
+**Use when:** you want a Newman-shaped runner without the Postman dependency, and your collection JSON can live in your repo.
+
+## Option 3 — Convert to k6 with postman-to-k6
+
+For teams whose CI tests are already drifting toward "checks plus light load," `postman-to-k6` (Grafana) converts a collection to a k6 JavaScript file. You then run `k6` — a single binary, no npm — and get the same functional checks plus the option to ramp it into a load test later.
+
+**Install:**
+
+```bash
+npm install -g @grafana/postman-to-k6
+brew install k6   # or download from k6.io
+```
+
+**Convert and run:**
+
+```bash
+postman-to-k6 my-collection.json -o checkout.js
+k6 run checkout.js
+```
+
+**GitHub Actions workflow:**
+
+```yaml
+name: API tests (k6)
+on: [pull_request]
+jobs:
+  k6:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: grafana/setup-k6-action@v1
+      - name: Run k6
+        run: k6 run --out json=results.json tests/checkout.js
+```
+
+**Pros:** the converted script is a single self-contained file you can commit. The k6 binary has zero npm footprint at run time. Load testing later is a one-line change to `options.stages`.
+
+**Cons:** the conversion flattens scripting. `pm.test`, `pm.environment.*`, `pm.sendRequest`, and shared scripts mostly survive but require manual review. Treat the output as a starting point, not a finished test.
+
+**Use when:** your collections are mostly request/check pairs without elaborate scripting, and you expect to want load tests against the same flows soon.
+
+## Option 4 — Convert to dev.tools YAML flows
+
+dev.tools imports Postman collections and HAR files directly, then turns them into a [YAML flow](https://dev.tools/docs/how-to/working-with-flows/) where each request is a named step and inter-step variables are auto-mapped. The resulting file is human-readable, diff-friendly in pull requests, and runs anywhere the dev.tools binary runs.
+
+This is the path most relevant to teams who came to "Newman alternative" looking for an exit from Postman, not a re-implementation of it. Capturing from a [HAR file](https://dev.tools/blog/har-file-api-testing/) instead of a Postman collection is also supported and often cleaner — the browser knows things about your auth flow that your old Postman collection probably forgot.
+
+**Install:**
+
+```bash
+brew install the-dev-tools/tap/dev-tools
+# or download the binary from dev.tools/download
+```
+
+**Sample YAML flow** (after import):
+
+```yaml
+workspace_name: Checkout
+env:
+  BASE_URL: '{{#env:BASE_URL}}'
+run:
+  - flow: CheckoutWorkflow
+flows:
+  - name: CheckoutWorkflow
+    steps:
+      - request:
+          name: Login
+          method: POST
+          url: '{{BASE_URL}}/auth/login'
+          headers:
+            Content-Type: application/json
+          body:
+            email: 'qa@example.com'
+            password: '{{TEST_PASSWORD}}'
+      - request:
+          name: CreateCart
+          method: POST
+          url: '{{BASE_URL}}/carts'
+          headers:
+            Authorization: 'Bearer {{Login.response.body.access_token}}'
+          depends_on: Login
+      - js:
+          name: AssertCart
+          code: |
+            export default function(ctx) {
+              if (ctx.CreateCart?.response?.status !== 201) {
+                throw new Error("Cart not created: " + ctx.CreateCart?.response?.status);
+              }
+              return { cart_id: ctx.CreateCart.response.body.id };
+            }
+          depends_on: CreateCart
+```
+
+**GitHub Actions workflow:**
+
+```yaml
+name: API tests (dev.tools)
+on: [pull_request]
+jobs:
+  devtools:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dev.tools CLI
+        run: |
+          curl -fsSL https://dev.tools/install.sh | sh
+          echo "$HOME/.dev-tools/bin" >> $GITHUB_PATH
+      - name: Run flow
+        env:
+          BASE_URL: ${{ vars.STAGING_URL }}
+          TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+        run: dev-tools run flows/checkout.yaml --junit results.xml
+      - uses: dorny/test-reporter@v2
+        if: always()
+        with:
+          name: API tests
+          path: results.xml
+          reporter: java-junit
+```
+
+**Pros:** YAML diffs cleanly in pull requests. No Postman account, no npm, no JSON blob fixtures. Variable passing between steps is explicit and readable. Same file runs locally and in CI.
+
+**Cons:** Postman scripting that uses `pm.sendRequest` mid-collection becomes a `js:` step — usually clearer, but a behavioral rewrite. Teams already invested in Postman's collaborative UI lose that surface.
+
+**Use when:** you want collections out of Postman entirely, you want test diffs that reviewers can actually read, and you want CI to be the source of truth.
+
+## Side-by-side comparison
+
+| | Postman CLI | Apidog CLI | k6 (via postman-to-k6) | dev.tools |
+|---|---|---|---|---|
+| Runs Postman JSON directly | Yes (via Postman API) | Yes (local file) | After conversion | After import |
+| Postman account required | Yes | No | No | No |
+| Free for unlimited CI runs | Tier-limited | Yes | Yes | Yes |
+| npm at install time | No | Yes (default) | Yes (converter) | No |
+| npm at run time | No | Yes (default) | No | No |
+| Single binary | Yes | Yes (binary release) | Yes | Yes |
+| File stored in your repo | No (lives in Postman) | Postman JSON | k6 JS | YAML flow |
+| Diffable in PRs | No | Hard (JSON) | Medium (JS) | Yes (YAML) |
+| Load testing on the same artifact | No | No | Yes | Roadmap |
+| JUnit output | Plugin | Built-in | Built-in (xk6) | Built-in |
+
+## How to migrate without rewriting your tests
+
+Three rules of thumb that survive every migration we've seen go badly when ignored.
+
+1. **Pick a single canonical workflow first.** The most-run collection in your repo. Migrate that one end-to-end with the new tool. Run it side-by-side with Newman in CI for a week. Cut over only when both pass on every PR.
+2. **Don't port the pre-request scripts you don't need.** Most Postman collections accumulate `pm.environment.set` calls that exist only because someone forgot they could pass values between steps directly. Read each script before porting; many can disappear.
+3. **Move auth out of the collection if you can.** Issue tokens in a CI step (or the first step of the flow) and pass them via env vars. Auth that lives inside a stale collection is the most common source of post-migration flakiness.
+
+If you want a deeper walk-through of the Postman-to-CI migration specifically, the [from manual to automated migration guide](/blog/from-manual-to-automated-migrating-your-postman-collections-to-ci-ready-api-tests/) covers the same ground in more detail.
+
+## FAQ
+
+### Will Newman keep working?
+
+Yes. Postman has not announced an end-of-life date for Newman, and the package still receives security updates. The "Newman alternative" question is about whether Newman is still the *best* choice for new projects in 2026, not whether existing pipelines will stop running.
+
+### Is the Postman CLI a drop-in for Newman?
+
+Mostly. The Postman CLI uses the same collection format and the same `pm.*` scripting API, so existing collections run unchanged. The differences are in the command-line surface (`postman collection run` vs `newman run`), the reporters available, and the requirement that your collection live in a Postman workspace rather than as a local JSON file.
+
+### What about my pre-request and test scripts?
+
+Postman CLI runs them unmodified. Apidog runs almost all of them. k6 conversion translates `pm.test` to k6 `check()` and `pm.environment.set/get` to k6 variables; complex scripts need review. dev.tools converts each script to a `js:` step using a similar `ctx`-based API, which is usually clearer in YAML but is a small behavioral rewrite.
+
+### Can I run a Postman collection without any account anywhere?
+
+Apidog CLI, k6 (post-conversion), and dev.tools (post-import) all run the converted artifact entirely offline against a local file. Postman CLI requires the Postman API.
+
+### Which option is best for parallel CI runs?
+
+All four can be parallelized via GitHub Actions matrix strategies. k6 and dev.tools have the lowest startup overhead per job because there is no npm install on the critical path. For tips on parallelizing API tests at scale, see [parallel runs and JUnit artifacts in GitHub Actions](/blog/github-ci-cd-for-api-tests-parallel-runs-and-junit-artifacts/).
+
+---
+
+Once you've picked a runner, the next decisions are about secrets, retries, and rate limits in CI — covered in the [API testing in CI/CD guide](/blog/api-testing-in-github-actions-secrets-auth-retries-rate-limits/) — and about how to gate merges on the result, which is the topic of the [HAR-to-CI gate post](/blog/api-testing-from-real-traffic-from-har-capture-to-ci-gate/).
