@@ -1,0 +1,157 @@
+---
+title: "Load Testing vs Stress Testing vs Performance Testing: Definitions and When to Use Each"
+date: "2026-05-04"
+slug: "load-testing-vs-stress-testing-vs-performance-testing"
+id: "f5cbb7a2-e768-429c-9aae-7e2937079920"
+image:
+  url: "https://dev-tools-blog-images.fly.storage.tigris.dev/blog/load-testing-vs-stress-testing-vs-performance-testing.webp"
+  alt: "Load Testing vs Stress Testing vs Performance Testing: Definitions and When to Use Each"
+author:
+  name: "DevTools Team"
+  avatar: "/logo.svg"
+tags: ["load-testing", "stress-testing", "performance-testing", "spike-testing", "soak-testing", "smoke-testing"]
+category: "Performance"
+summary: "Performance, load, stress, spike, soak, and smoke tests explained side by side — with a decision tree for picking the right test for the job."
+cta:
+  primary:
+    heading: "Run API performance checks in CI"
+    body: "Catch regressions before they ship. dev.tools chains real API workflows into reviewable YAML and runs them on every pull request."
+    buttonText: "See multi-step API testing"
+    url: "https://dev.tools/features/multi-step-api-testing/"
+    secondaryText: "CI/CD integration"
+    secondaryUrl: "https://dev.tools/features/ci-cd-integration/"
+  secondary:
+    heading: "Start from real traffic, not assumptions"
+    body: "Capture a HAR, convert to a YAML flow, then layer load profiles when you're ready to push past steady-state checks."
+    buttonText: "HAR file API testing"
+    url: "https://dev.tools/blog/har-file-api-testing/"
+    secondaryText: "Install DevTools"
+    secondaryUrl: "https://dev.tools/docs/start-here/install/"
+  badge:
+    text: "Glossary"
+    variant: "neutral"
+---
+
+**Performance testing** is the umbrella discipline of measuring how a system behaves under workload. **Load testing** measures behavior at expected steady-state traffic. **Stress testing** measures behavior past the breaking point. **Spike, soak, and smoke** are narrower profiles for sudden surges, long-duration drift, and sanity checks. They're related, often confused, and answer different questions.
+
+This is a definitional reference — short, tabled, and decision-tree-led — for engineers who keep getting "can you load test this?" requests where the right test is actually one of the others.
+
+## Performance testing is the umbrella — what falls under it
+
+Performance testing is the broad practice of evaluating system behavior in terms of speed, scalability, and reliability under workload. Every other test in this post is a kind of performance test.
+
+Inside that umbrella, the six common profiles are:
+
+- **Smoke test** — a 5-minute sanity check that the system runs at all
+- **Load test** — sustained traffic at expected production rates
+- **Stress test** — increasing load until the system breaks
+- **Spike test** — a sudden surge from low to peak traffic
+- **Soak (endurance) test** — moderate traffic held for hours or days
+- **Breakpoint test** — a methodical climb to find the exact failure threshold
+
+The mistake most teams make is conflating "performance testing" (the umbrella) with "load testing" (one specific profile). When a stakeholder asks for "performance testing," what they almost always need is a sequence of these — smoke first, then load, then stress or spike depending on the risk model.
+
+## Load testing — what it is and isn't
+
+A **load test** verifies that the system meets its service-level objectives at *expected* traffic levels for a *sustained* period.
+
+- **Goal:** confirm the system handles normal production traffic without degrading
+- **Typical duration:** 30 minutes to a few hours
+- **Load shape:** ramp up to target, hold steady, ramp down
+- **Success criteria:** p95 and p99 latency stay under SLO, error rate stays below budget, no resource saturation that wouldn't recover
+
+Load testing answers "can we serve our normal Tuesday-afternoon traffic without anyone noticing?" It does *not* tell you what happens at 3× normal, what happens during a viral spike, or whether the system slowly leaks memory over a weekend. Those are stress, spike, and soak tests respectively.
+
+A load test is the most common starting point for a performance program because the success criterion is concrete: SLOs you've already committed to. If you don't have SLOs yet, define them first — load testing without an SLO is just generating numbers.
+
+## Stress testing — what "breaking point" actually means
+
+A **stress test** pushes load past expected levels until the system fails, to characterize how it fails.
+
+- **Goal:** find the breaking point and observe the failure mode
+- **Typical duration:** 15 minutes to an hour, with load increasing throughout
+- **Load shape:** continuous ramp-up with no plateau, or stepped increases until something breaks
+- **Success criteria:** the system degrades gracefully (rejects with 429, queues, sheds load) rather than crashing or corrupting data
+
+Stress testing is not about finding a number to brag about. It's about observing failure: does the database connection pool exhaust first, or the load balancer? Do queues back up safely, or does the worker pool fork-bomb itself? Does autoscaling kick in fast enough, or does the first 60 seconds of overload generate timeouts that propagate?
+
+The output of a stress test is usually a paragraph in a runbook, not a graph in a slide deck. "When p99 reaches 800 ms, we're 90 seconds away from queue saturation; the auto-scaler responds in 120 seconds, so the operational SLO at peak is to alert when p99 crosses 600 ms."
+
+## Spike, soak, and smoke testing in one paragraph each
+
+A **spike test** simulates a sudden, severe traffic surge — Black Friday, a TV-ad mention, a launch-day push notification. Load jumps from a baseline to a multiple of normal in seconds, holds briefly, then drops back. The interesting question is recovery: does the system stabilize within minutes once the spike subsides, or do retries keep it pinned?
+
+A **soak (endurance) test** runs at moderate, realistic load for a long time — often 8 to 72 hours. It surfaces problems no short test can find: memory leaks, connection-pool exhaustion, log-disk fill, certificate refresh failures, stale-cache drift. Soak tests are the cheapest way to catch the bugs that take down production at 4 a.m. on day three of an incident-free release.
+
+A **smoke test** is a 5-minute, low-volume run that verifies the test setup itself works — the script connects, auth succeeds, endpoints respond — before you commit to a longer test. Always run a smoke test before any other performance test. Catching a misconfigured environment after a 4-hour soak is its own kind of failure.
+
+## Side-by-side comparison
+
+| Test type | Goal | Duration | Load shape | Success criterion | When to run |
+|---|---|---|---|---|---|
+| Smoke | Verify the test runs | 5 min | Light, flat | Script completes, no setup errors | Before every other test |
+| Load | Meet SLO at expected traffic | 30 min – 2 hr | Ramp, hold steady, ramp down | p95/p99 within SLO, errors within budget | Pre-merge for hot paths, nightly for full suite |
+| Stress | Find breaking point and failure mode | 15 min – 1 hr | Continuous or stepped ramp | Graceful degradation observed | Quarterly, before major launches |
+| Spike | Survive sudden surges | 10–30 min | Sharp jump, brief plateau, drop | Recovers within minutes of spike end | Before known events (launches, marketing pushes) |
+| Soak | Find slow-burn failures | 4–72 hr | Moderate, sustained | No drift in latency, memory, error rate | Before major releases, monthly |
+| Breakpoint | Find exact failure threshold | 30 min – 2 hr | Methodical step increases | Threshold identified per resource | When sizing infrastructure or capacity planning |
+
+## A simple decision tree for picking the right test
+
+Ask yourself the question and the test follows:
+
+- **"Did I just change my test setup?"** → Smoke test.
+- **"Can we handle Tuesday's normal traffic?"** → Load test against your SLO.
+- **"What happens at 3× normal?"** → Stress test.
+- **"Can we survive Black Friday?"** → Spike test, then a load test at projected Black Friday volume.
+- **"Did our last release introduce a memory leak?"** → Soak test for at least 8 hours.
+- **"How much capacity do we actually need?"** → Breakpoint test, then size to ~60% of the threshold.
+- **"Is this API ready for production at all?"** → Smoke, then load. Add others as risk warrants.
+
+For most teams, the realistic cadence is: smoke before every test, load on a nightly schedule, soak monthly, stress and spike before major launches, breakpoint when capacity-planning.
+
+## Common misuses
+
+A few patterns that show up in almost every performance program at some point.
+
+**Running stress tests when you needed load tests.** A stress test that pushes far past expected traffic produces alarming numbers that don't reflect production. If you're trying to answer "are we safe at our current scale?", a load test at expected traffic is the right tool.
+
+**Skipping smoke before a long test.** A 4-hour soak that fails in the first 30 seconds because of a typo in the script is the kind of mistake nobody admits to twice. Smoke tests cost five minutes; they're cheap insurance.
+
+**Treating one heavy load test as a substitute for soak.** A 30-minute load test at peak rate doesn't catch memory leaks, file-descriptor exhaustion, or cert-rotation bugs. Soak is a separate test for separate failure modes.
+
+**Loading tests in the wrong environment.** Tests run against a quarter-sized staging environment generate numbers that have nothing to do with prod behavior. Either use a prod-clone or be explicit that staging numbers are directional only.
+
+**No SLOs.** "We did some load testing and the response times looked OK" is not a result. Without SLO targets, every load test is a numbers exercise that nobody can act on. The first artifact of any performance program should be a written SLO; the second is the load test against it.
+
+If you want to actually script these profiles in k6 — including stages snippets for each — that's covered in the [load test profiles guide](/blog/api-load-testing-guide/) (and the deeper [API load testing pillar](/blog/api-load-testing-guide/) when it lands). For end-to-end load testing of an API specifically, see [how to load test an API](/blog/api-load-testing-guide/).
+
+## FAQ
+
+### Is performance testing the same as load testing?
+
+No. Performance testing is the umbrella that includes load, stress, spike, soak, smoke, and breakpoint testing. Load testing is one specific profile inside that umbrella — sustained traffic at expected production rates against an SLO.
+
+### What's the difference between load testing and stress testing in one sentence?
+
+Load testing verifies the system meets its SLOs at expected traffic; stress testing pushes traffic past expected levels until the system fails, to observe how it fails.
+
+### Do I need to run all six profiles?
+
+No team runs all six on a frequent cadence. The realistic minimum is smoke before every test and load on a regular schedule (nightly or pre-merge for critical paths). Add soak before major releases, spike before known events, stress quarterly, and breakpoint only when capacity planning.
+
+### Where does benchmarking fit in?
+
+Benchmarking is the comparison of measured performance against a fixed reference — another version, another configuration, another product. Any of the profiles above can be used to generate the numbers that go into a benchmark, but benchmarking is a reporting practice, not a test type.
+
+### What's the difference between load testing and capacity testing?
+
+They overlap. "Capacity testing" usually refers to a breakpoint test: methodically increasing load to find the exact threshold at which a specific resource (CPU, memory, connections, queue depth) saturates. A load test holds at expected traffic; a capacity test climbs until something breaks.
+
+### How are these different for API testing specifically?
+
+The same six profiles apply, but the metrics shift toward latency percentiles (p50/p95/p99), throughput in requests per second, and error rate. UI-driven load tests also measure browser render time, which doesn't apply to APIs. For API-specific guidance, the [API load testing guide](/blog/api-load-testing-guide/) covers the metric set in detail.
+
+---
+
+If you've already nailed down which profile you need, the next decision is the tool. The [k6 vs JMeter comparison](/blog/api-load-testing-guide/) covers the two most common choices for API-shaped workloads.
