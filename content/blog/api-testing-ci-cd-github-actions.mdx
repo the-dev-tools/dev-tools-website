@@ -1,0 +1,315 @@
+---
+title: "API Testing in CI/CD: A GitHub Actions Tutorial with Working YAML Examples"
+date: "2026-05-05"
+slug: "api-testing-ci-cd-github-actions"
+id: "6833c313-c45c-4c99-b1b8-a5f1fba62f3d"
+image:
+  url: "https://dev-tools-blog-images.fly.storage.tigris.dev/blog/api-testing-ci-cd-github-actions.webp"
+  alt: "API Testing in CI/CD: A GitHub Actions Tutorial with Working YAML Examples"
+author:
+  name: "DevTools Team"
+  avatar: "/logo.svg"
+tags: ["ci-cd", "github-actions", "api-testing", "automation", "junit", "pull-requests"]
+category: "CI/CD"
+summary: "Automate API tests in CI/CD with GitHub Actions — including matrix strategies, secrets, JUnit reports, service containers, and ready-to-copy YAML examples."
+cta:
+  primary:
+    heading: "Run YAML API flows on every PR"
+    body: "dev.tools turns multi-step API workflows into reviewable YAML and runs them in GitHub Actions with JUnit reports — no Postman account required."
+    buttonText: "See CI/CD integration"
+    url: "https://dev.tools/features/ci-cd-integration/"
+    secondaryText: "Install the CLI"
+    secondaryUrl: "https://dev.tools/cli/"
+  secondary:
+    heading: "Pick the right runner for CI"
+    body: "Compare four ways to run Postman-style collections in CI without Newman, with copy-paste workflow YAML for each."
+    buttonText: "Newman alternative comparison"
+    url: "https://dev.tools/blog/newman-alternative/"
+    secondaryText: "DevTools vs Postman"
+    secondaryUrl: "https://dev.tools/compare/devtools-vs-postman/"
+  badge:
+    text: "Tutorial"
+    variant: "neutral"
+---
+
+API tests in CI/CD catch the regressions your local checks miss. They run against a real environment, with real auth, on every pull request — and they fail loudly enough that nobody can merge a 500. This tutorial walks through a complete GitHub Actions setup: triggers, secrets, service containers, parallelization with a matrix, JUnit reporting, and the quality gates that turn a green check into a reliable signal. Every example is copy-paste runnable.
+
+If you're new to CI for APIs and just want a starting point, skip to the **minimal viable workflow** below. If you already have something working and want to make it faster, more parallel, or better at surfacing failures, the matrix and JUnit sections are where the leverage is.
+
+## Why API tests belong in CI
+
+Three reasons that hold up across every team size.
+
+**Faster feedback than UI tests.** A UI end-to-end test pipeline that takes 25 minutes is the kind of thing engineers learn to ignore. An API test suite that runs the same critical workflows against a deployed environment in 90 seconds gets read every time it fails. The difference is dwell time on the result.
+
+**Shift-left for contract changes.** Most production incidents that look like "the frontend broke" are really "the backend changed a response shape and nobody noticed." API tests in CI are the cheapest place to catch that — they fail on the PR that introduced the change, not in the integration environment three days later.
+
+**Auditable, deterministic artifacts.** A green CI check with a JUnit XML attached is something a release manager can reason about. "It worked on my machine" is something they can't.
+
+## The four triggers that matter
+
+GitHub Actions has many event triggers; for API tests, only four pull their weight.
+
+```yaml
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+```
+
+- **`pull_request`** runs the suite on every PR. This is your gate.
+- **`push` to main** runs after merge against the post-merge state — useful if main is what gets deployed to staging.
+- **`schedule`** runs the suite nightly against a stable environment. Catches drift that PR runs miss because the environment changed underneath you.
+- **`workflow_dispatch`** lets you re-run on demand from the Actions tab without a code push. Invaluable when debugging a flaky run.
+
+Avoid `push` to feature branches as a trigger — it doubles your spend and rarely catches anything new.
+
+## The minimal viable workflow
+
+Three steps: check out, run the tests, surface the result. Nothing more.
+
+```yaml
+name: API tests
+on:
+  pull_request:
+    branches: [main]
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dev.tools CLI
+        run: |
+          curl -fsSL https://dev.tools/install.sh | sh
+          echo "$HOME/.dev-tools/bin" >> $GITHUB_PATH
+
+      - name: Run API flows
+        env:
+          BASE_URL: ${{ vars.STAGING_URL }}
+          TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+        run: dev-tools run flows/ --junit results.xml
+
+      - name: Publish test report
+        if: always()
+        uses: dorny/test-reporter@v2
+        with:
+          name: API tests
+          path: results.xml
+          reporter: java-junit
+```
+
+Three things to notice:
+
+- `timeout-minutes` is set. Without it a hanging test will burn 6 hours of runner time.
+- The test report step uses `if: always()` so failures still get reported.
+- Secrets and config are split: `vars.STAGING_URL` for non-secret config, `secrets.TEST_PASSWORD` for credentials.
+
+Substitute any of the runners from the [Newman alternative comparison](/blog/newman-alternative/) — Postman CLI, Apidog CLI, k6 — and the structure stays identical.
+
+## Adding secrets and environment variables safely
+
+Two rules that prevent the most common CI security mistakes.
+
+**Never echo a secret.** GitHub masks secrets in logs by default, but only if they appear *exactly* as the secret value. Logging `Bearer $TOKEN` masks it; logging the URL-encoded version does not. The safe pattern is to never `echo` anything that contains a secret, ever.
+
+**Use environment-scoped secrets, not repo-scoped, for staging vs prod.** Repo-scoped secrets are visible to every workflow. Environment-scoped secrets (Settings → Environments) require explicit reference and can be gated by required reviewers.
+
+```yaml
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    environment: staging         # gates secrets behind environment rules
+    env:
+      BASE_URL: ${{ vars.STAGING_URL }}
+      AUTH_TOKEN: ${{ secrets.STAGING_AUTH_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: dev-tools run flows/checkout.yaml
+```
+
+For a deeper treatment of secret rotation, scopes, and CI-specific token hygiene, see [API tokens in CI: scopes, rotation, and secret hygiene](/blog/api-tokens-in-ci-scopes-rotation-and-secret-hygiene/).
+
+## Database and service containers for end-to-end tests
+
+When the system under test needs a real backing service, GitHub Actions service containers are the cleanest pattern. They start before your steps run, get a stable hostname (`postgres`, `redis`, etc.), and tear down at job end.
+
+```yaml
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: app_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+        options: --health-cmd "redis-cli ping" --health-interval 5s
+    env:
+      DATABASE_URL: postgres://postgres:ci@localhost:5432/app_test
+      REDIS_URL: redis://localhost:6379
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run migrations
+        run: ./scripts/migrate.sh
+      - name: Start API server
+        run: ./scripts/start-server.sh &
+      - name: Wait for server
+        run: timeout 30 sh -c 'until curl -sf http://localhost:8080/health; do sleep 1; done'
+      - name: Run API flows
+        run: dev-tools run flows/ --junit results.xml
+```
+
+The `wait for server` step is non-negotiable — without it, your test runs against an endpoint that hasn't finished starting and you get cryptic connection-refused errors that look like flaky tests.
+
+## Parallelizing tests with a matrix strategy
+
+A matrix runs N copies of the same job in parallel, each with a different value for one or more variables. For API tests, the most useful axis is "which slice of the test suite to run."
+
+```yaml
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [auth, billing, checkout, search, admin]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dev.tools CLI
+        run: |
+          curl -fsSL https://dev.tools/install.sh | sh
+          echo "$HOME/.dev-tools/bin" >> $GITHUB_PATH
+      - name: Run ${{ matrix.suite }} flows
+        env:
+          BASE_URL: ${{ vars.STAGING_URL }}
+        run: dev-tools run flows/${{ matrix.suite }}/ --junit results-${{ matrix.suite }}.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: results-${{ matrix.suite }}
+          path: results-${{ matrix.suite }}.xml
+```
+
+Two things matter here.
+
+**`fail-fast: false`.** The default cancels all matrix jobs if one fails, which makes the failure report misleading — you don't know whether the cancelled jobs would have passed or failed. Always set it to `false` for test matrices.
+
+**Unique artifact names per matrix job.** `results-${{ matrix.suite }}` avoids the collision you'd get from five jobs all uploading `results.xml`.
+
+For deeper guidance on large parallel runs and caching, see [GitHub Actions for YAML API tests: parallel runs and caching](/blog/github-actions-for-yaml-api-tests-parallel-runs-caching-copy-paste-workflow/).
+
+## JUnit reporting for inline PR feedback
+
+A failing CI check with a "click here for details" link is one extra page-load between an engineer and the answer. JUnit reports rendered inline on the PR remove that friction.
+
+`dorny/test-reporter` renders a readable test summary directly in the PR's Checks tab. The XML format is the same one Newman, k6, JMeter, dev.tools, and pytest all emit, so the reporter is tool-agnostic.
+
+```yaml
+- name: Aggregate test reports
+  if: always()
+  uses: dorny/test-reporter@v2
+  with:
+    name: API tests
+    path: 'results-*.xml'    # globs across matrix artifacts
+    reporter: java-junit
+    fail-on-error: true
+```
+
+Combine with `if: always()` so you get the report even when the test step exited non-zero. For a full walkthrough of getting JUnit output to look right in GitHub Actions, see [JUnit reports for API tests in GitHub Actions](/blog/junit-reports-for-api-tests-make-github-actions-show-failures-cleanly/).
+
+## Quality gates and branch protection
+
+A green API check is only as useful as the merge rule it enforces. In repository settings → Branches → Branch protection rules:
+
+- Require status checks to pass before merging
+- Require branches to be up to date before merging (forces re-runs after main moves)
+- Require pull request reviews
+- Add the API test job's `name:` (e.g., `API tests`) to the required status checks
+
+Two pitfalls worth knowing:
+
+- A required check that's *skipped* (because of a path filter) is treated as missing, not green. If you use `paths:` to scope the workflow, set up a "no-op" matching job that always reports green for the unmatched path, or branch protection will block PRs that legitimately don't need to run the suite.
+- Required checks block external-PR merges if the secrets aren't accessible to forks. For OSS projects, run the suite on `pull_request_target` carefully or split the public smoke run from the secret-bearing full run.
+
+## Choosing your runner
+
+The runner is the binary or script that executes the actual tests. The four most common choices for API tests in CI:
+
+| Runner | Source format | Pros | Cons |
+|---|---|---|---|
+| Postman CLI | Postman collection (in Postman cloud) | Drop-in for Newman, no migration | Requires Postman account; collection lives outside repo |
+| Apidog CLI | Postman-compatible collection JSON | Local file, no Postman account | npm install path; slightly different scripting |
+| k6 | JS test script | Single binary, doubles as load test | Functional checks are JS, not declarative |
+| dev.tools | YAML flow | Diff-friendly YAML, single binary, no npm | Postman scripting is a `js:` step rewrite |
+
+Detailed comparison and copy-paste GitHub Actions workflows for each: [Newman alternative: 4 ways to run Postman collections in CI](/blog/newman-alternative/).
+
+## Pre-merge smoke vs nightly full suite — a tiered strategy
+
+Running everything on every PR sounds thorough but rarely is. After ~30 PRs/day the queue exceeds the runner concurrency limit and the gate stops being a gate. The realistic pattern is a tiered strategy:
+
+- **Pre-merge smoke (every PR):** the 10–20 highest-value flows. Auth, payments, the top three reads. Target: 90 seconds or less.
+- **Pre-merge full (paths-filtered):** when files in `api/` or `migrations/` change, run the full critical-path suite. Target: 5 minutes.
+- **Post-merge full (`push` to main):** the full suite against the post-merge state. Catches anything the PR run missed because it tested an outdated branch.
+- **Nightly (`schedule`):** the entire test suite, including soak-style long-runners and integration tests against a prod-clone.
+
+The discipline is to put no test in the pre-merge smoke tier that takes longer than its information value justifies.
+
+## Troubleshooting
+
+A short list of failure modes that show up in almost every CI-API-testing setup eventually.
+
+**Flaky tests caused by timing assumptions.** "Wait one second after creating a record, then read it" works locally and fails 5% of the time in CI when the runner is slower. Use bounded retries (e.g., poll for up to 5 seconds) instead of fixed sleeps.
+
+**Secrets that leak into logs.** A secret only gets masked when it appears *literally* in output. URL-encoded, base64'd, or partial substrings are not masked. Audit any `set -x` or verbose debug flags before committing.
+
+**Timeouts on the runner, not the test.** GitHub Actions kills jobs at 6 hours by default. A long-running test with no per-step timeout will eat the whole quota before it surfaces the underlying hang. Always set `timeout-minutes` on jobs and steps.
+
+**Tests that pass locally and fail in CI.** Almost always one of: a missing env var, a missing service container, or a clock-skew issue against an upstream OAuth provider. Diff `env` output from a local run against the CI run when this happens.
+
+**Required checks not running on Dependabot PRs.** Dependabot PRs run with restricted permissions by default and can't access secrets. Use a `pull_request_target` workflow or explicitly allow secrets for Dependabot in repo settings.
+
+## FAQ
+
+### What's the difference between API testing in CI and end-to-end testing in CI?
+
+API testing exercises the HTTP/gRPC/GraphQL surface of a system without going through a browser. End-to-end testing usually means the full UI flow — clicks, waits, screenshots. API tests are typically 5–20× faster than UI E2E and catch most contract regressions earlier.
+
+### Should every PR run the full API test suite?
+
+For most teams, no. The pre-merge tier should be a fast smoke (90 seconds or less); the full suite runs on a path-filtered trigger or post-merge. Running everything on every PR queues runners and trains engineers to ignore the gate.
+
+### How do I run API tests against a preview/PR environment?
+
+Two patterns: (1) deploy a per-PR preview from your IaC (Vercel-style or fly.io review apps) and pass its URL as an env var into the test job, or (2) run an ephemeral local server inside the runner via service containers. Pattern 1 catches deployment-time issues; pattern 2 is cheaper and closer to a unit-of-work.
+
+### What if my tests need a real third-party API (Stripe, Twilio)?
+
+Use the third-party's sandbox or test mode for every CI run. For determinism, mock the third-party at the HTTP level for unit-style tests and only hit the sandbox for a small set of integration-tier tests. Never run CI against a third-party's production environment.
+
+### How do I keep CI runtime under 5 minutes as the suite grows?
+
+Three levers in order of impact: parallelize with a matrix (linear speedup until you hit runner caps), cache dependencies (saves 30–90s per run), and split the suite into smoke vs full tiers. The matrix is almost always the biggest win.
+
+### Are there OWASP/security implications of running API tests in CI?
+
+Two main ones: secret exposure (covered above) and the test environment being a known target. Don't run tests against production. Don't commit fixture data that contains real PII. Treat the CI environment's credentials as production-equivalent — they can read/write to staging with elevated privileges.
+
+---
+
+For more focused guidance, the next two reads are the [Newman alternative comparison](/blog/newman-alternative/) for picking a CLI runner, and the [HAR-to-CI gate post](/blog/api-testing-from-real-traffic-from-har-capture-to-ci-gate/) for going from a captured browser session to a required check.

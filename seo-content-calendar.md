@@ -10,7 +10,7 @@
 | 1 | Mon | har-file-api-testing | published | 2026-04-28 |
 | 2 | Wed | newman-alternative | published | 2026-05-02 |
 | 3 | Fri | load-testing-vs-stress-testing-vs-performance-testing | published | 2026-05-04 |
-| 4 | Mon | api-testing-ci-cd-github-actions | pending | — |
+| 4 | Mon | api-testing-ci-cd-github-actions | published | 2026-05-04 |
 | 5 | Wed | how-to-calculate-virtual-users-load-testing | pending | — |
 | 6 | Fri | api-testing-guide (PILLAR 1) | pending | — |
 | 7 | Mon | k6-vs-jmeter | pending | — |
