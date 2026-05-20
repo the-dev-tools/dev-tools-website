@@ -1,0 +1,321 @@
+---
+title: "How to Load Test an API: A Step-by-Step Tutorial with k6"
+date: "2026-05-14"
+slug: "how-to-load-test-an-api"
+id: "be97d022-a803-4748-8cc6-90c99de869f9"
+image:
+  url: "https://dev-tools-blog-images.fly.storage.tigris.dev/blog/how-to-load-test-an-api.webp"
+  alt: "How to Load Test an API: A Step-by-Step Tutorial with k6"
+author:
+  name: "DevTools Team"
+  avatar: "/logo.svg"
+tags: ["k6", "load-testing", "api-testing", "performance", "ci-cd", "tutorial"]
+category: "Performance"
+summary: "Load test any REST API in under an hour: define SLOs, write a k6 script, simulate realistic users, run in CI, and interpret p95/p99 percentiles."
+cta:
+  primary:
+    heading: "Capture real flows first"
+    body: "Get the most realistic load test by starting from a HAR capture of real browser traffic, then layering load profiles on top."
+    buttonText: "HAR file API testing"
+    url: "https://dev.tools/blog/har-file-api-testing/"
+    secondaryText: "Multi-step API testing"
+    secondaryUrl: "https://dev.tools/features/multi-step-api-testing/"
+  secondary:
+    heading: "Run it on every PR"
+    body: "Gate merges on performance regressions with GitHub Actions, JUnit reports, and tiered smoke/full strategies."
+    buttonText: "CI/CD tutorial"
+    url: "https://dev.tools/blog/api-testing-ci-cd-github-actions/"
+    secondaryText: "Install DevTools"
+    secondaryUrl: "https://dev.tools/docs/start-here/install/"
+  badge:
+    text: "Tutorial"
+    variant: "neutral"
+---
+
+Load testing an API correctly takes about an hour from a cold start if you follow a tight sequence: define SLOs, pick endpoints, choose a load profile, write a small k6 script, smoke it, ramp it, run it, and interpret the percentiles. This tutorial walks through that sequence end to end. The example uses k6 because it has the cleanest tutorial syntax; the same steps apply to JMeter, Locust, or Artillery with minor changes.
+
+If you're skimming for the hard part: it's not writing the script. It's interpreting the results, and specifically knowing the difference between "we hit our SLO" and "we saturated the load generator before we reached the SLO." This post spends real time on that.
+
+## Before you start — define your SLOs and pick a target
+
+A load test without a target answers the wrong question. Before you write a script, write down:
+
+- **Throughput target** — what RPS does the API need to handle in production? Look at your monitoring dashboard for peak hour over the last 30 days. Use that number × 1.5 as your test target, to give yourself headroom.
+- **Latency SLO** — what p95 and p99 latencies are acceptable? Common starting points: p95 < 200 ms, p99 < 500 ms for user-facing reads; p95 < 500 ms for writes.
+- **Error budget** — what error rate is acceptable under load? 0.1% (one in 1,000) is a typical SLO; 1% is the upper bound before customer experience degrades.
+
+Write these down at the top of your test script as comments. When the test fails, you want to know what passing looks like.
+
+## Step 1 — Pick the endpoints that actually matter
+
+Pareto your API. Look at the last 30 days of access logs (or your APM tool) and identify the top 10 endpoints by request volume. Those generate the vast majority of customer-visible load. Test those first.
+
+Three categories worth special attention regardless of volume:
+
+- **Auth endpoints** — they precede every other call, so they're on the critical path even when their direct volume is modest.
+- **Write endpoints with downstream effects** — payment processing, account creation, anything that triggers async workflows.
+- **Endpoints with known performance complaints** — anything customers have called slow recently.
+
+Don't try to load test every endpoint on the first pass. Five well-tested endpoints beat 50 sloppily-tested ones.
+
+## Step 2 — Decide your load profile
+
+Pick the right test type for the question you're answering. The six profiles:
+
+- **Smoke** — does the test setup work? Run first, always.
+- **Load** — does the API meet SLO at expected traffic? Your default.
+- **Stress** — what's the breaking point? Quarterly or pre-launch.
+- **Spike** — does it survive sudden traffic surges? Before known events.
+- **Soak** — does it degrade over hours? Before major releases.
+- **Breakpoint** — what's the exact failure threshold? When capacity planning.
+
+Full treatment: [performance test types comparison](/blog/load-testing-vs-stress-testing-vs-performance-testing/). For most tutorials, start with smoke then load.
+
+## Step 3 — Capture realistic traffic
+
+You have three sources for the requests your test will execute:
+
+**HAR import.** Capture real browser traffic (login, click through the workflow, export) and convert to a test script. Most realistic, least manual work. See [HAR file API testing](/blog/har-file-api-testing/).
+
+**OpenAPI/Swagger spec.** Generate scaffold from the spec. Quick start, but the generated tests don't reflect how the API is actually called in production.
+
+**Hand-written.** Read the docs, write the calls. Slowest, most prone to "but I tested it" gaps where production uses parameters you didn't.
+
+For this tutorial we'll hand-write a small example, but for real load tests against your production workload, HAR-import is the recommended starting point.
+
+## Step 4 — Write a basic k6 script
+
+A working k6 script for a typical authenticated REST API:
+
+```javascript
+import http from 'k6/http';
+import { check, sleep } from 'k6';
+
+// SLOs from Step 0:
+// - throughput target: 1000 RPS
+// - latency: p95 < 200ms, p99 < 500ms
+// - errors: < 0.1%
+
+export const options = {
+  stages: [
+    { duration: '2m', target: 100 },   // ramp up
+    { duration: '5m', target: 100 },   // steady state
+    { duration: '1m', target: 0 },     // ramp down
+  ],
+  thresholds: {
+    http_req_failed: ['rate<0.001'],
+    http_req_duration: ['p(95)<200', 'p(99)<500'],
+  },
+};
+
+const BASE_URL = __ENV.BASE_URL || 'https://staging.api.example.com';
+
+export function setup() {
+  // Authenticate once, share the token across all VUs
+  const r = http.post(`${BASE_URL}/auth/login`, JSON.stringify({
+    email: __ENV.TEST_EMAIL,
+    password: __ENV.TEST_PASSWORD,
+  }), { headers: { 'Content-Type': 'application/json' } });
+  return { token: r.json('access_token') };
+}
+
+export default function (data) {
+  const headers = {
+    'Authorization': `Bearer ${data.token}`,
+    'Content-Type': 'application/json',
+  };
+
+  // Step 1: read a list
+  const list = http.get(`${BASE_URL}/orders?limit=20`, { headers });
+  check(list, { 'list: 200': (r) => r.status === 200 });
+
+  // Step 2: read a single record
+  const orderId = list.json('data.0.id');
+  if (orderId) {
+    const detail = http.get(`${BASE_URL}/orders/${orderId}`, { headers });
+    check(detail, { 'detail: 200': (r) => r.status === 200 });
+  }
+
+  sleep(1);  // simulate think time
+}
+```
+
+What each piece does:
+
+- `setup()` runs once before VUs start. Used here to issue a single login and share the token. Avoids re-auth on every iteration.
+- `options.stages` defines the load profile: 2-minute ramp to 100 VUs, 5-minute steady state, 1-minute ramp down.
+- `options.thresholds` is the assertion layer. The test fails if these aren't met.
+- `default function` is what each VU runs in a loop. The whole function = one iteration.
+- `check()` records a pass/fail without aborting the iteration. Different from `assert` in unit tests.
+- `sleep(1)` adds think time. Without it, VUs hammer requests as fast as possible.
+
+## Step 5 — Add realistic think time and parameterized data
+
+The script above shares one user account across all VUs. That's fine for hitting general endpoints but unrealistic for tests that need per-user data isolation.
+
+```javascript
+import { SharedArray } from 'k6/data';
+
+const users = new SharedArray('users', function () {
+  return JSON.parse(open('./users.json'));
+});
+
+export default function (data) {
+  const user = users[__VU % users.length];
+  // ... use user.id, user.token, etc.
+}
+```
+
+For think time, randomize:
+
+```javascript
+sleep(Math.random() * 4 + 1);  // 1–5 seconds, uniform
+```
+
+For sizing — how many VUs to target for your RPS — see [how to calculate virtual users](/blog/how-to-calculate-virtual-users-load-testing/).
+
+## Step 6 — Calculate the right number of VUs
+
+Apply Little's Law: `VUs ≈ target_RPS × average_response_time_seconds`.
+
+For a 1,000 RPS test with 100 ms average response time and 1 second of think time per iteration:
+
+```
+iteration_time = 0.100 (request) + 1.000 (sleep) = 1.100 s
+VUs = 1000 RPS × 1.100 s = 1,100 VUs
+```
+
+Plug that into your `stages.target`. If it's off — you don't hit RPS, or you hit it with fewer VUs than expected — the issue is usually that response time at load is different from the at-rest measurement you started with. Iterate.
+
+## Step 7 — Run locally and review percentiles
+
+Smoke first, then load:
+
+```bash
+# Smoke test - 5 VUs for 30 seconds
+BASE_URL=https://staging.api.example.com \
+  TEST_EMAIL=loadtest@example.com \
+  TEST_PASSWORD=*** \
+  k6 run --vus 5 --duration 30s tests/load.js
+
+# Full load test
+k6 run tests/load.js
+```
+
+The output's most important rows:
+
+```
+http_req_duration..............: avg=89.2ms  min=23ms  med=78ms  max=4.2s  p(95)=187ms  p(99)=412ms
+http_req_failed................: 0.04%  ✓ 2  ✗ 4998
+iteration_duration.............: avg=1.1s    min=1.0s  med=1.1s  max=5.2s
+iterations.....................: 4998  827.42/s
+vus............................: 100   min=0  max=100
+```
+
+Read in this order:
+
+1. **`http_req_failed`** — error rate. If above your budget, stop and investigate before reading anything else.
+2. **`http_req_duration p(95)` and `p(99)`** — latency percentiles. These should be inside your SLO.
+3. **`iterations` rate** — actual achieved RPS. Compare to your target. If lower, you're VU-starved or the API is slower than expected.
+4. **`vus`** — confirms the load profile actually ran as configured.
+
+The `max` value is almost never useful. Single outliers don't matter; consistent p99 degradation does.
+
+## Step 8 — Promote to CI
+
+A GitHub Actions workflow that runs the load test on every PR touching the API:
+
+```yaml
+name: Load tests
+on:
+  pull_request:
+    paths: ['api/**']
+jobs:
+  k6:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: grafana/setup-k6-action@v1
+      - name: Run load test
+        env:
+          BASE_URL: ${{ vars.STAGING_URL }}
+          TEST_EMAIL: ${{ secrets.LOAD_TEST_EMAIL }}
+          TEST_PASSWORD: ${{ secrets.LOAD_TEST_PASSWORD }}
+        run: k6 run --quiet --summary-export=summary.json tests/load.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: k6-summary
+          path: summary.json
+```
+
+For pre-merge load testing specifically, keep the test short (3–5 minutes). The full multi-hour soak test runs nightly. For the full pattern see [API testing in CI/CD with GitHub Actions](/blog/api-testing-ci-cd-github-actions/).
+
+## Step 9 — Interpret results: what saturation looks like
+
+The single most common mistake in reading load test results is missing the moment of saturation. The signs:
+
+- p95 latency rises gradually as VUs ramp, then suddenly jumps 3–5× and plateaus
+- Error rate stays at 0% then jumps to 5%+ in a single bucket
+- Achieved RPS plateaus while VU count keeps rising (queueing behind in-flight requests)
+- CPU on the server is still below 100%
+
+That last point trips up everyone. **Servers saturate before CPU hits 100%** because the limit is usually a connection pool, a thread pool, a database connection, or an upstream rate limit — not raw compute. If your test fails with the server at 60% CPU, the bottleneck is elsewhere; look at connection counts and upstream timings before you blame anything.
+
+## Step 10 — Iterate
+
+A load testing program is fix-bottleneck → rerun → compare. The first run rarely meets SLO; that's the point. After each run:
+
+1. Identify the bottleneck (slow query, connection-pool exhaustion, etc.).
+2. Fix one thing.
+3. Rerun the exact same test.
+4. Compare percentiles to the previous run.
+
+Resist the urge to change the test script between runs unless you found a bug in it — every change to the test is one less apples-to-apples comparison.
+
+## Common mistakes
+
+A short list of pitfalls that show up in almost every team's first serious load test.
+
+**Testing in prod with no plan.** Load tests against production should be rare, planned, communicated, and rate-limited. Most teams should test against a prod-clone or staging until they have a year of experience.
+
+**No auth refresh during long tests.** Tokens expire. A 30-minute test with a 5-minute token starts failing at minute 6. Refresh in your script or use long-lived service tokens.
+
+**Ignoring DNS warm-up.** First request to a new hostname includes DNS resolution. In a 2-minute ramp, the first 10 seconds are usually DNS warm-up + TCP connection establishment. Discount those metrics or use a longer ramp.
+
+**Running against caches you don't acknowledge.** A CDN-fronted endpoint with 99% cache hit rate looks blazing-fast in a test that uses the same URL 10,000 times. Vary the path or cache-bust to test the real backend.
+
+**Asserting averages, not percentiles.** Average latency hides tail behavior; p95 and p99 reveal it. If your assertion is `avg < 200ms` and not `p95 < 200ms`, you're missing the bugs that matter.
+
+**Generator saturation mistaken for API saturation.** If the load generator's CPU exceeds 70%, you're testing the generator's limits, not the API's. Watch generator metrics during every run.
+
+## FAQ
+
+### How long should a load test run?
+
+Smoke: 30 seconds to 2 minutes. Load: 10–30 minutes is typical for CI; longer (1–4 hours) for pre-release. Soak: 8–72 hours. Run the shortest test that gives you a stable measurement — past that, you're burning CI minutes for diminishing returns.
+
+### Can I load test against production?
+
+Carefully. Use rate limits, off-peak hours, a flag your application respects to skip side effects, and communicate to your team and on-call before starting. The safer default for the first year of any load-testing program is a prod-clone environment.
+
+### How do I load test a GraphQL API?
+
+Same script structure, different request shape. Each query becomes a POST to the single `/graphql` endpoint with the query string in the body. The k6 community has a `k6/experimental/graphql` module that's worth a look. For most teams, the bottleneck is not the GraphQL transport but the resolvers — focus your assertions on response time, not request structure.
+
+### What about load testing async/background jobs?
+
+Two patterns: (1) load the API endpoint that enqueues the job and assert enqueue latency + queue depth; (2) separately measure end-to-end job completion latency from queue-enqueue to job-finish, but treat it as a different metric from request latency.
+
+### Should I store load test results historically?
+
+Yes — even simple flat files. The most useful metric is "did this PR regress p95 vs main?" which requires a baseline. k6 + InfluxDB + Grafana is the standard; for simpler setups, commit the `summary.json` to a results branch and diff over time.
+
+### How is this different for LLM/AI APIs?
+
+LLM APIs have non-deterministic response sizes, so latency varies wildly per request. Standard percentile metrics still work but you need to also track *tokens per second* and *time to first token*. Full treatment: [load testing LLM APIs](/blog/load-testing-llm-apis/) (forthcoming on the calendar).
+
+---
+
+If your script works and your SLOs are still off, the next decision is the tool itself — [k6 vs JMeter comparison](/blog/k6-vs-jmeter/). For the broader picture: [API Load Testing: the complete guide](/blog/api-load-testing-guide/) covers profiles, metrics, tooling, and reporting in depth.

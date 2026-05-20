@@ -1,0 +1,220 @@
+---
+title: "How to Calculate Virtual Users for Load Testing (with Formulas and Examples)"
+date: "2026-05-07"
+slug: "how-to-calculate-virtual-users-load-testing"
+id: "df79edf7-d2b5-48c1-8b20-16803a28f472"
+image:
+  url: "https://dev-tools-blog-images.fly.storage.tigris.dev/blog/how-to-calculate-virtual-users-load-testing.webp"
+  alt: "How to Calculate Virtual Users for Load Testing (with Formulas and Examples)"
+author:
+  name: "DevTools Team"
+  avatar: "/logo.svg"
+tags: ["load-testing", "virtual-users", "performance", "k6", "jmeter", "capacity-planning"]
+category: "Performance"
+summary: "The formulas behind virtual users in load testing, when to use VUs vs requests per second, and how to size a realistic test for your API."
+cta:
+  primary:
+    heading: "Run multi-step API tests in CI"
+    body: "Capture real flows, run them as YAML, and gate merges on the result. Layer load profiles when you're ready to push past steady-state checks."
+    buttonText: "See multi-step API testing"
+    url: "https://dev.tools/features/multi-step-api-testing/"
+    secondaryText: "Install the CLI"
+    secondaryUrl: "https://dev.tools/cli/"
+  secondary:
+    heading: "Pick the right test profile"
+    body: "Load, stress, spike, soak — six performance profiles explained side by side with a decision tree."
+    buttonText: "Performance test types"
+    url: "https://dev.tools/blog/load-testing-vs-stress-testing-vs-performance-testing/"
+    secondaryText: "HAR to CI gate"
+    secondaryUrl: "https://dev.tools/blog/api-testing-from-real-traffic-from-har-capture-to-ci-gate/"
+  badge:
+    text: "Sizing"
+    variant: "neutral"
+---
+
+A **virtual user (VU)** is a simulated client running one scripted workflow at a time. The core formula every load-testing tool ultimately implements is:
+
+**VUs = target requests per second × average response time (in seconds)**
+
+That's Little's Law applied to load testing. The other 80% of getting a load test right is figuring out which numbers go where, when VUs are the wrong abstraction at all, and how to add think time without inflating the test into something unrealistic. This post walks through the math, two worked examples, and the tool-specific knobs you'll actually configure.
+
+## What a virtual user actually is — and isn't
+
+A VU is a *concurrent execution context*. It runs your script: open connection, send request, wait for response, parse, send next request. While it waits on the server, it does nothing else.
+
+That has two consequences most teams get wrong on their first load test.
+
+**One VU ≠ one real user.** Real users sit on a page for 30 seconds, click, sit for another 30 seconds. A VU with no think time hammers requests as fast as the server can answer. 50 VUs without think time can generate the request rate of 5,000 real users.
+
+**More VUs ≠ more load past a point.** Once you have enough VUs to saturate your target throughput, adding more just queues them up — they wait their turn to send the next request. The throughput stays flat; only the apparent concurrency goes up. This is where teams get confused reading their own test results.
+
+The right way to think about VUs: they're a *resource budget* the test runner uses to generate load. The load itself is the throughput, and throughput is what your API sees.
+
+## VUs vs requests per second — the relationship
+
+The two metrics measure different sides of the same conversation.
+
+- **Requests per second (RPS / throughput)** is what hits the server. It's what your monitoring shows, what your SLO is defined on, and what capacity planning targets.
+- **Virtual users** is what the test client maintains. It's a control knob, not a goal.
+
+You can target either. Most modern tools (k6, Locust, Artillery, Gatling) let you choose:
+
+- **VU-based execution** (closed model): "Maintain 50 concurrent users." Throughput is whatever falls out — slower API → less throughput → fewer requests fired.
+- **Arrival-rate execution** (open model): "Fire 100 requests per second." VU count is whatever's needed — slower API → more concurrent VUs to maintain the rate.
+
+If you have an SLO ("we serve 5,000 RPS at p95 < 200 ms"), use arrival-rate execution. The test will accurately answer "do we meet our SLO?" If your goal is to simulate a population of N humans clicking through a workflow, use VU-based execution.
+
+## The core formula: VUs = target RPS × average response time
+
+The full version of Little's Law for load testing:
+
+```
+VUs = (target RPS × (response time + think time)) seconds
+```
+
+Where:
+- **target RPS** is requests per second per VU script *iteration*, not per HTTP call
+- **response time** is the time the server takes to answer one iteration (sum of all HTTP calls in the script)
+- **think time** is the time the VU sleeps between iterations to simulate human pauses
+
+For a single-call script with no think time, that simplifies to `VUs = RPS × response_time`.
+
+## Worked example 1 — a fast public API
+
+You want to load test a public read endpoint at **10,000 RPS**. Measured average response time is **20 ms (0.020 s)**. No think time — this is a service-to-service call.
+
+```
+VUs = 10,000 × 0.020 = 200 VUs
+```
+
+200 VUs is a comfortable number for one mid-sized load generator. A single c5.xlarge can run this without becoming the bottleneck.
+
+If response time degrades to 100 ms under load (which is exactly what you're testing for), the required VU count climbs to **1,000** to maintain the same 10,000 RPS. This is why **arrival-rate execution is safer for SLO testing** — the runner scales VUs automatically; with VU-based execution you'd lose throughput as latency rose.
+
+## Worked example 2 — a slower internal API
+
+Internal API behind auth. Target **500 RPS**, measured response time **800 ms (0.800 s)**, and you want to simulate human users with **5 seconds of think time** between iterations.
+
+```
+VUs = 500 × (0.800 + 5.000) = 500 × 5.800 = 2,900 VUs
+```
+
+That's a lot of VUs. Three things to do here:
+
+1. Question the think time. 5 seconds between every iteration probably overstates the workload. Real users have variable think time; a Pareto distribution between 1 and 10 seconds is more realistic.
+2. Question the response time. 800 ms average is high — it may be a sign the API isn't ready for load testing yet. Profile and fix obvious wins first.
+3. Plan for distributed load generation. 2,900 VUs is too many for a single runner; use multiple generators (k6 operator, JMeter distributed mode, Locust workers).
+
+## Adding think time for human workflows
+
+For a load test that models real human users (not service-to-service traffic), think time matters because it dominates the VU calculation. A two-second-per-iteration script with five seconds of think time spends 71% of its life *not making requests*.
+
+A practical approach:
+
+- **Service-to-service traffic:** no think time. The "users" are other services that fire as fast as possible.
+- **API simulating UI clicks:** 1–3 seconds of think time per logical step (a step is a button click, a page render).
+- **API simulating mobile background sync:** 30–300 seconds, modeled as a poisson process. Most "users" are idle; bursts happen on push notifications.
+
+Distribute think time, don't use a constant. `sleep(random.uniform(1, 4))` is closer to reality than `sleep(2.5)`.
+
+## Ramp-up and ramp-down — why a flat curve is unrealistic
+
+If you set "100 VUs for 30 minutes" with no ramp, all 100 VUs start at second zero. That's a spike test, not a load test, and your first 30 seconds of metrics are connection-pool warm-up noise.
+
+A realistic ramp pattern:
+
+- **Ramp up:** 5–10 minutes from 0 to target VUs
+- **Steady state:** the duration of the actual test (30 min – 2 hr)
+- **Ramp down:** 2–3 minutes to zero (so you observe drain behavior)
+
+Skipping the ramp-up makes p95 latency look 2–5× worse than it should because the cold-cache, cold-connection-pool transient dominates the early percentile bucket.
+
+## When to use VUs and when to use arrival-rate executors
+
+A quick decision table:
+
+| Your goal | Use |
+|---|---|
+| "We need to handle X requests per second at p95 < Y ms" | Arrival-rate / open model |
+| "We need to support X concurrent active users" | VU / closed model |
+| "What's our breaking point at increasing concurrency?" | VU with ramp-up |
+| "How does the system behave at a sudden 10× spike?" | Arrival-rate with sharp jump |
+| "Does the system leak under steady real-user load?" | VU with realistic think time, long duration |
+
+Most APIs should be load-tested with arrival-rate. Use VU-based execution when the workload itself is concurrency-bound (chat, presence, websockets) or when you're benchmarking against a specific population size.
+
+## Tool-specific notes
+
+Same math, different vocabulary.
+
+**k6** — `stages` ramps VUs in closed model; `scenarios` with `constant-arrival-rate` and `ramping-arrival-rate` give open model.
+
+```javascript
+export const options = {
+  scenarios: {
+    contacts: {
+      executor: 'ramping-arrival-rate',
+      startRate: 100,
+      timeUnit: '1s',
+      preAllocatedVUs: 200,
+      maxVUs: 1000,
+      stages: [
+        { target: 1000, duration: '5m' },
+        { target: 1000, duration: '30m' },
+        { target: 0, duration: '2m' },
+      ],
+    },
+  },
+};
+```
+
+**JMeter** — thread groups are VUs (closed model). The Concurrency Thread Group plugin and Throughput Shaping Timer together approximate open-model arrival rate.
+
+**Locust** — `--users` flag is VUs; `--spawn-rate` controls ramp. Open model requires `LoadTestShape` classes; default behavior is closed.
+
+**Artillery** — `arrivalRate` in `phases` is open model; `arrivalCount` is closed. Mix per scenario as needed.
+
+## A sizing table for common scenarios
+
+A starting point you can refine after a smoke test against your specific API.
+
+| Workload | Target RPS | Response time | Think time | VUs (approx.) |
+|---|---|---|---|---|
+| Public read API, peak | 10,000 | 20 ms | 0 | 200 |
+| Public read API, normal | 2,000 | 20 ms | 0 | 40 |
+| Internal API, peak | 1,000 | 100 ms | 0 | 100 |
+| UI-driven workflow, peak | 500 | 200 ms × 5 calls | 3 s | 2,000 |
+| Mobile background sync | 200 | 50 ms | 60 s | 12,000 (use open model) |
+| Webhook receiver, peak | 5,000 | 50 ms | 0 | 250 |
+
+The table is the right shape, not the right exact answer for your API. Always smoke-test first, measure actual response time at low load, then size up.
+
+## FAQ
+
+### What's the difference between virtual users and concurrent users?
+
+In load-testing terminology they're often used interchangeably, but precisely: a *concurrent user* is a real human currently using the system; a *virtual user* is a test-runner thread simulating one. The mapping is rarely 1:1 — one VU without think time generates the request rate of many real users.
+
+### How do I know if my VU count is too low?
+
+Two signs: the test runner reports requests being delayed (k6 calls this "dropped" iterations), or the achieved RPS is below your target despite the test running cleanly. Both mean VUs are saturated and queueing behind in-flight requests. In an open model, set `maxVUs` high enough to leave headroom.
+
+### Why does my VU calculation underestimate the load my API actually feels?
+
+Almost always: response time degrades under load. Your formula used the at-rest response time; the actual response time at target throughput is higher, which raises required VUs. Iterate: run the test, measure actual response time at load, recompute.
+
+### Does Little's Law apply to async/streaming APIs?
+
+Imperfectly. Little's Law assumes each "user" is doing one thing at a time. For long-lived connections (WebSockets, SSE, gRPC streaming), VU count maps to *concurrent connections*, not concurrent requests. Use connection-count metrics and don't try to back into RPS from VUs.
+
+### How many VUs can one load generator machine handle?
+
+Highly tool-dependent. k6 (Go) routinely runs 10,000+ VUs per generator; Locust (Python) caps lower, around 1,500–3,000 per worker before CPU becomes the bottleneck; JMeter (JVM) lands somewhere in between but memory-bound past 2,000. Always monitor the *generator* during a test — if its CPU exceeds 70%, you're testing the generator, not your API.
+
+### Should I include auth/login in my VU calculation?
+
+If your test re-authenticates every iteration, yes — auth response time adds to the iteration time. The better pattern is to authenticate once per VU at startup, cache the token, and exclude auth from the per-iteration measurement.
+
+---
+
+Once you've sized the test, the next decision is what *profile* to run — load, stress, spike, soak. See the [performance test types comparison](/blog/load-testing-vs-stress-testing-vs-performance-testing/). For an end-to-end tutorial that walks through a real API load test in k6, see [how to load test an API](/blog/how-to-load-test-an-api/).

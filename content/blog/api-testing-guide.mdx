@@ -1,0 +1,274 @@
+---
+title: "API Testing: The Complete Guide to Tools, Types, and Best Practices"
+date: "2026-05-09"
+slug: "api-testing-guide"
+id: "6a14cadc-08c6-4854-9e20-6d3d3cc2665b"
+image:
+  url: "https://dev-tools-blog-images.fly.storage.tigris.dev/blog/api-testing-guide.webp"
+  alt: "API Testing: The Complete Guide to Tools, Types, and Best Practices"
+author:
+  name: "DevTools Team"
+  avatar: "/logo.svg"
+tags: ["api-testing", "rest-api", "graphql", "grpc", "ci-cd", "contract-testing", "best-practices"]
+category: "Guides"
+summary: "The complete guide to API testing in 2026 — from REST and GraphQL to gRPC, with the tools, test types, and CI/CD patterns that actually work in practice."
+cta:
+  primary:
+    heading: "Run multi-step API tests as code"
+    body: "Chain requests into YAML flows with auto-mapped variables, assertions at every step, and JUnit reports in CI."
+    buttonText: "See multi-step API testing"
+    url: "https://dev.tools/features/multi-step-api-testing/"
+    secondaryText: "CI/CD integration"
+    secondaryUrl: "https://dev.tools/features/ci-cd-integration/"
+  secondary:
+    heading: "Start from real browser traffic"
+    body: "Capture a HAR file, convert it to a reviewable YAML flow, and run it as a required CI check."
+    buttonText: "HAR file API testing"
+    url: "https://dev.tools/blog/har-file-api-testing/"
+    secondaryText: "All Postman alternatives"
+    secondaryUrl: "https://dev.tools/postman-alternative/"
+  badge:
+    text: "Pillar guide"
+    variant: "neutral"
+---
+
+API testing is the practice of verifying an HTTP, GraphQL, or gRPC interface behaves correctly under expected and edge-case conditions — without going through a UI. It's the highest-leverage testing investment most teams can make in 2026: faster than UI E2E, more deterministic than integration tests, and the cheapest place to catch contract regressions before they reach production.
+
+This guide covers the categories of API tests that actually matter, the tool landscape as it stands today, how to build a test suite that doesn't rot, and the patterns that separate a green CI check from a meaningful one. It's the pillar — every linked sub-topic goes deeper.
+
+## What is API testing — and what it isn't
+
+API testing exercises the *interface* of a service: the HTTP requests it accepts, the responses it returns, and the state changes those produce. It does not click through a UI, render pages, or run JavaScript in a browser.
+
+Compared to its neighbors:
+
+- **vs. unit testing.** Unit tests verify internal functions in isolation, usually with mocks. API tests verify the assembled service end-to-end at its public surface. A unit test passes when the function returns the right value; an API test passes when the full request/response cycle produces the right state.
+- **vs. UI E2E testing.** UI E2E runs the full stack through a browser. API tests skip the browser and exercise the same backend logic directly. They run 5–20× faster, are far less flaky, and catch most of the same regressions.
+- **vs. integration testing.** Integration tests verify two or more components work together. API tests are a kind of integration test, but specifically scoped to the API contract — they don't necessarily exercise every internal component path.
+
+The right mental model: API tests sit in the middle of the testing pyramid, above unit tests and below UI E2E. They are where teams should be doing the bulk of their automated regression testing in 2026.
+
+## The seven categories of API tests
+
+Most discussions of "API testing" conflate these. They have different goals, different tooling, and different places in the CI pipeline.
+
+### Functional / contract
+
+Verifies that each endpoint returns the right shape and status for representative inputs. This is what most people mean when they say "API tests." Covers request/response validation, error cases, authentication, and basic happy paths. Should run on every PR.
+
+### Integration
+
+Verifies that workflows spanning multiple endpoints work end-to-end — create-then-read, login-then-fetch, the multi-step sequences that real clients execute. This is where the biggest classes of regressions hide and where [HAR-driven testing](/blog/har-file-api-testing/) shines.
+
+### End-to-end
+
+The full critical-path journey from auth through transaction completion. Often slow (10–30 seconds per test) and run nightly rather than per-PR.
+
+### Security
+
+OWASP API Top 10 coverage: BOLA, broken auth, excessive data exposure, injection, mass assignment. Tools: OWASP ZAP, StackHawk, Burp Suite. Usually a separate pipeline; not every PR needs a full security scan.
+
+### Performance / load
+
+Verifies the API meets its SLOs at expected traffic and characterizes behavior past it. See [Pillar 2: API Load Testing](/blog/api-load-testing-guide/).
+
+### Fuzz / chaos
+
+Sends malformed, oversized, or unexpected inputs to find crashes the test suite missed. Tools: Schemathesis (property-based, OpenAPI-driven), Restler. Usually nightly.
+
+### Visual contract / snapshot
+
+Records response shapes and fails when they change unexpectedly. Useful for catching accidental API drift; brittle if used everywhere. Best for the small set of endpoints you treat as a true public contract.
+
+## REST vs GraphQL vs gRPC — testing implications
+
+The transport matters more than people admit.
+
+**REST** is the easiest to test — every endpoint is a separate URL with a clear method. Tools are universal. Multi-step workflows mean chaining requests with token/ID passing; see [API chain testing patterns](/blog/api-chain-testing-how-to-test-multi-request-sequences-automatically/).
+
+**GraphQL** consolidates the surface to one or two endpoints, which simplifies routing but complicates assertions — every test now has a query shape to verify in addition to data. Variables are first-class, so parameterization is easier. Tools that understand GraphQL (Apollo, GraphQL Playground, dev.tools' GraphQL request type) handle this better than raw HTTP clients.
+
+**gRPC** requires schema-aware tooling — you can't construct a request from a string. Test runners need the `.proto` file at load time. Most general-purpose API testing tools have added gRPC support in 2025–2026; dev.tools, k6, and Postman all do now. The trade-off is faster wire format vs. tooling availability.
+
+**WebSocket / SSE** is awkward to test with request/response tools — the model is wrong. Use tools that understand bidirectional streams; assert on message sequences rather than individual frames.
+
+## The API testing tool landscape in 2026
+
+Categorized by what they're actually for, not by marketing.
+
+### Interactive API clients
+
+The "manually send a request, see what comes back" tools. All have CI runners as a secondary feature.
+
+- **Postman** — the incumbent. Mature, large team-collab features, paid. Recent free-tier changes pushed many teams to alternatives.
+- **Bruno** — file-based, Git-native, open source. The clearest Postman alternative for teams that want collections in version control.
+- **Insomnia** — middle ground, Kong-owned, plugin ecosystem.
+- **Hoppscotch** — open source, browser-first, lightweight.
+- **dev.tools** — record-from-HAR, multi-step YAML flows, CI-first.
+
+For a side-by-side comparison of the three most-asked-about: [Bruno vs Postman vs Insomnia](/blog/bruno-vs-postman-vs-insomnia/).
+
+### Code-based testing frameworks
+
+Tests live in the application's repo as code; engineers write them like unit tests.
+
+- **Rest Assured (Java)** — long-standing, fluent assertion API, dominant in JVM shops.
+- **Karate** — DSL on top of Cucumber-style syntax; mixes HTTP, assertions, and orchestration.
+- **Playwright `APIRequestContext`** — surprisingly capable; lets UI and API tests share fixtures and auth.
+- **Hurl** — plain-text format, CLI-only, great for shell-scripted CI.
+- **Pytest + httpx / requests** — for Python teams, often the lowest-friction option.
+
+### Contract testing
+
+Verifies producers and consumers agree on the API shape, separately from the data.
+
+- **Pact** — consumer-driven contracts, the de-facto standard for microservice contract testing.
+- **Schemathesis** — property-based testing from OpenAPI specs.
+- **Spectral** — OpenAPI linting and rules.
+- **Dredd** — older OpenAPI/API Blueprint test runner.
+
+Full treatment: [contract testing vs API testing](/blog/contract-testing-vs-api-testing/).
+
+### Security testing
+
+Specialized tools for the OWASP API Top 10.
+
+- **OWASP ZAP** — open source, scriptable, the standard.
+- **StackHawk** — commercial wrapper around ZAP with CI integrations.
+- **Burp Suite** — manual + automated, used heavily by pentesters.
+
+### Mocking
+
+When you need to test against a controlled response.
+
+- **WireMock** — JVM-based, dominant in enterprise.
+- **Mockoon** — desktop GUI, easy to spin up.
+- **Prism** — generates mocks from OpenAPI specs.
+
+## How to design an API test suite — what to test first
+
+Most teams over-test endpoints that don't matter and under-test the ones that do. A Pareto-style approach:
+
+1. **List your top 10 user-facing flows** — checkout, login, password reset, the three most common reads. Those generate 80% of customer-visible traffic.
+2. **Write integration tests for those flows first.** Each flow is one test, three to ten requests long. These are your gate.
+3. **Add functional tests for endpoints not covered by the flows** — admin endpoints, internal-only APIs, webhook receivers. One happy path and one error case each.
+4. **Add fuzz/security testing in a separate pipeline** when the suite is stable.
+5. **Add performance testing in a separate pipeline** when there's an SLO worth measuring against.
+
+The mistake is starting with functional unit-style tests for every endpoint. That generates a 500-test suite that takes 10 minutes and fails to catch the most important regressions because nothing exercises a real workflow.
+
+## API testing in CI/CD
+
+A test that doesn't run on every PR isn't a test, it's a wish. The four moving pieces of CI for APIs:
+
+- **Triggers** — pull request, push to main, nightly, manual.
+- **Environment** — staging, prod-clone, or ephemeral per-PR preview.
+- **Runner** — the binary that executes tests (Newman, Postman CLI, dev.tools, k6, Hurl).
+- **Reporting** — JUnit XML rendered inline on the PR.
+
+Full walkthrough with copy-paste workflow YAML: [API testing in CI/CD: GitHub Actions tutorial](/blog/api-testing-ci-cd-github-actions/).
+
+For getting off Newman specifically: [Newman alternative — 4 ways to run Postman collections in CI](/blog/newman-alternative/).
+
+## HAR-driven and traffic-replay testing
+
+The fastest path from "this worked when I clicked through the app" to "this is now a deterministic CI check" is to capture the browser's network traffic as a HAR file, sanitize it, and convert it into a runnable test.
+
+This sidesteps the most common reason API tests rot: hand-written tests are based on someone's mental model of the API. HAR-derived tests are based on what the frontend actually does. When the frontend changes, the test catches the drift.
+
+Detailed walkthrough: [HAR file API testing](/blog/har-file-api-testing/). For the full pipeline including CI gating: [API testing from real traffic — from HAR capture to CI gate](/blog/api-testing-from-real-traffic-from-har-capture-to-ci-gate/).
+
+## Common API testing pitfalls
+
+A short list of patterns that show up in almost every team's first API test suite and cause pain a quarter later.
+
+**Hard-coded IDs in fixtures.** "User 42 always exists in staging" works until staging gets reset. Use API calls to *create* the test data the test depends on.
+
+**Brittle string-equals assertions.** Asserting `body.created_at === "2026-01-01T00:00:00Z"` breaks on every run. Assert types and ranges, not literal values; see [deterministic API assertions](/blog/deterministic-api-assertions-stop-flaky-json-tests-in-ci/).
+
+**Secrets leaking into logs.** A test that prints request headers prints your auth token. Audit your logging before pushing.
+
+**No retries vs. infinite retries.** Both wrong. Use bounded retries (3 attempts with backoff) for known-flaky operations like eventual-consistency reads.
+
+**Tests that depend on order.** If test B requires test A's side effect, B fails when A is skipped. Each test should set up its own dependencies.
+
+**Coupling tests to environment.** Tests that only work in staging because they assume a specific seed are not tests, they're staging-specific scripts.
+
+## Data, fixtures, and parameterization
+
+Three approaches, each with its place.
+
+**Inline fixtures.** Test data hard-coded in the test. Fine for small tests, becomes unmaintainable past 20 entries.
+
+**Generated data per run.** Use a factory (`faker.email()`, UUID generation) to create fresh data each run. Cleanest approach; isolates tests from each other.
+
+**Shared seed data.** A seed script populates the test database before the suite runs. Useful for read-heavy tests that need realistic data volumes. Re-seed in CI; never share seeds across test runs without re-creating them.
+
+dev.tools' `faker` namespace (35 generators, available in expression editor) is designed for the second approach.
+
+## Authentication: OAuth, JWT, API keys — how to test each
+
+The pattern depends on the auth type, but the principle is the same: **authenticate once per test run, cache the credential, use it for every subsequent call.**
+
+- **API keys** — pass via header, store in a secret. No refresh logic.
+- **JWT (short-lived)** — call the issue endpoint at run start, parse the token, set it on subsequent requests. If the test run is longer than the token lifetime, refresh mid-run.
+- **OAuth client credentials** — same as JWT, but the issuer call uses the client ID/secret instead of user credentials. Suitable for service-to-service tests.
+- **OAuth user flows (authorization code)** — usually too complex to fully script. Use a service account with a pre-issued token, or a test-mode shortcut your backend supports.
+- **HttpOnly cookies** — capture the login response's `Set-Cookie` and propagate it. Most test runners do this automatically.
+
+For [API tokens in CI specifically](/blog/api-tokens-in-ci-scopes-rotation-and-secret-hygiene/) — scopes, rotation, and what to put in repo secrets vs environment secrets.
+
+## A 30-day plan to introduce API testing to a team
+
+If you're starting from zero:
+
+- **Week 1.** Pick the single highest-value workflow (login + checkout, usually). Capture a HAR. Convert to a runnable test. Get it green locally.
+- **Week 2.** Wire that one test into CI on `pull_request`. Add `dorny/test-reporter` for JUnit. Make the PR check required.
+- **Week 3.** Add two more critical flows the same way. Set up an environment secret for staging. Add a nightly run.
+- **Week 4.** Add a fourth flow. Backfill error-case tests for the four flows. Write the rotation/refresh logic for auth tokens. Document where tests live and how to add a new one.
+
+By day 30, the team has four meaningful tests that run on every PR, a documented pattern, and visible CI feedback. That's a healthier place to be than 200 functional tests that nobody trusts.
+
+## FAQ
+
+### What's the difference between API testing and integration testing?
+
+API testing is a kind of integration testing, specifically scoped to the public API surface. Integration testing more broadly includes any test that exercises multiple components together — including internal RPC, database integration, message queues. All API tests are integration tests; not all integration tests are API tests.
+
+### Do I need to test every endpoint?
+
+No. Test the workflows that produce customer value end-to-end; test critical error cases; test the security-sensitive endpoints. Endpoint-by-endpoint coverage is rarely the right goal — workflow coverage is.
+
+### What's the fastest API testing tool for CI?
+
+Among popular runners, dev.tools, k6, and Hurl have the lowest cold-start times (single binary, no npm) and the fastest per-test execution. Newman and Postman CLI have more overhead from npm installs and Postman API calls. For raw speed in CI, the single-binary tools win by 30–90 seconds per run.
+
+### Is Postman still a good choice for API testing in 2026?
+
+For interactive use, yes — Postman remains best-in-class for exploring an API by hand. For CI, the 2026 pricing changes and Newman's slowed maintenance have pushed many teams to alternatives. See [Newman alternative comparison](/blog/newman-alternative/) for the four most viable replacements.
+
+### How do I test an API I don't own (third-party)?
+
+Mock it for unit-style tests, hit the sandbox for integration tests, never hit the third-party's production from CI. Most major APIs (Stripe, Twilio, AWS) have stable sandbox environments specifically for this.
+
+### How is API testing different for microservices?
+
+Two additions: (1) you almost always need contract testing in addition to functional API testing, because you have multiple producers and multiple consumers — see [contract testing vs API testing](/blog/contract-testing-vs-api-testing/); and (2) integration tests need to span service boundaries with realistic data, which usually means ephemeral environments (per-PR previews, Tilt, Skaffold).
+
+### What about AI-assisted test generation?
+
+Tools like Postman's Postbot, Kusho, and Katalon's AI-assisted test generator can scaffold tests from an OpenAPI spec or a recorded session. The output is a good starting point, but you should expect to rewrite or prune most of it. The wins are larger for fuzz/security testing (where AI can generate edge cases humans miss) than for happy-path functional testing.
+
+### Should API tests run before or after deployment?
+
+Both, for different reasons. Pre-deployment tests gate the merge and catch regressions early. Post-deployment smoke tests against the deployed environment verify the deployment itself worked — that the new container started, env vars are right, the database migration succeeded. Both layers catch failures the other misses.
+
+---
+
+The next reads, depending on where you want to go:
+
+- For CI-specific patterns: [API testing in CI/CD with GitHub Actions](/blog/api-testing-ci-cd-github-actions/).
+- For traffic-driven testing: [HAR file API testing](/blog/har-file-api-testing/).
+- For load testing: [API Load Testing: the complete guide](/blog/api-load-testing-guide/) (Pillar 2).
+- For contract testing: [Contract testing vs API testing](/blog/contract-testing-vs-api-testing/).
+- For tool selection: [Newman alternative](/blog/newman-alternative/) and [Bruno vs Postman vs Insomnia](/blog/bruno-vs-postman-vs-insomnia/).

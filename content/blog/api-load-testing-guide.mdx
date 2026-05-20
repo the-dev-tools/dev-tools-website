@@ -1,0 +1,301 @@
+---
+title: "API Load Testing: The Complete Guide to Profiles, Metrics, and Tools"
+date: "2026-05-16"
+slug: "api-load-testing-guide"
+id: "bd388d31-040c-43a0-87d5-f6860b9b9b9e"
+image:
+  url: "https://dev-tools-blog-images.fly.storage.tigris.dev/blog/api-load-testing-guide.webp"
+  alt: "API Load Testing: The Complete Guide to Profiles, Metrics, and Tools"
+author:
+  name: "DevTools Team"
+  avatar: "/logo.svg"
+tags: ["api-load-testing", "performance", "k6", "jmeter", "ci-cd", "slo", "observability"]
+category: "Performance"
+summary: "Everything you need to load test an API: profiles, metrics, tools, CI/CD patterns, and how to read p95/p99 percentiles when results come back ugly."
+cta:
+  primary:
+    heading: "Run reviewable API flows in CI"
+    body: "Capture from HAR or OpenAPI, run as YAML, gate merges on the result. Layer load profiles when steady-state checks aren't enough."
+    buttonText: "Multi-step API testing"
+    url: "https://dev.tools/features/multi-step-api-testing/"
+    secondaryText: "CI/CD integration"
+    secondaryUrl: "https://dev.tools/features/ci-cd-integration/"
+  secondary:
+    heading: "Start with the right profile"
+    body: "Smoke, load, stress, spike, soak, breakpoint — six performance profiles with a decision tree."
+    buttonText: "Performance test types"
+    url: "https://dev.tools/blog/load-testing-vs-stress-testing-vs-performance-testing/"
+    secondaryText: "How to load test an API"
+    secondaryUrl: "https://dev.tools/blog/how-to-load-test-an-api/"
+  badge:
+    text: "Pillar guide"
+    variant: "neutral"
+---
+
+API load testing is the practice of generating controlled, realistic request traffic against an API to verify it meets service-level objectives (SLOs) and to characterize how it behaves at and past expected load. Done well, it answers concrete questions: "Can we serve our SLO at peak?" "How will the system degrade if peak doubles?" "Where will the first bottleneck surface?" Done poorly, it generates numbers nobody acts on.
+
+This is the pillar — the canonical reference covering profiles, metrics, tools, environment choices, CI/CD patterns, and how to read the percentiles when they come back ugly. Each section links to a focused deep-dive when there's one available.
+
+## API load testing vs functional API testing
+
+[API testing](/blog/api-testing-guide/) (Pillar 1) verifies the API does the right thing. API load testing verifies the API does the right thing *at scale, under sustained traffic*. They're complementary, not alternatives.
+
+A functional API test is happy at 1 RPS. A load test starts there and asks what happens at 1,000, 10,000, or 100,000. Different bugs surface at scale: connection-pool exhaustion, database lock contention, queue back-pressure, cache thrashing, autoscaler lag. None of these show up in a 5-request functional test.
+
+The two pyramids look like:
+
+- **Functional pyramid:** unit tests → integration tests → API tests → UI E2E
+- **Performance pyramid:** smoke → load → stress → spike → soak
+
+Most engineering teams have the functional pyramid working before they take on the performance one. That's the right order.
+
+## The six load test profiles
+
+The same six profiles introduced in the [load testing vs stress testing](/blog/load-testing-vs-stress-testing-vs-performance-testing/) glossary, recapped here because every other section of this pillar refers back to them.
+
+- **Smoke** — 5-minute, low-volume sanity check. Verifies the test setup works. Run before everything.
+- **Load** — sustained expected traffic for 30 minutes to 2 hours. The default test.
+- **Stress** — ramp past expected until something breaks. Quarterly.
+- **Spike** — sudden surge from baseline to multiple of normal. Before known events.
+- **Soak** — moderate load held for 8–72 hours. Pre-release.
+- **Breakpoint** — methodical ramp to find exact failure threshold. Capacity planning.
+
+The mistake most teams make is conflating "load testing" (one specific profile) with "performance testing" (the umbrella). The right cadence is: smoke before every test, load nightly or pre-merge, the others on appropriate triggers.
+
+## Metrics that matter
+
+Every load test produces a wall of numbers. Five matter; the rest are noise.
+
+**Requests per second (RPS / throughput).** What the API actually served. Compare to your target — if you targeted 5,000 RPS and got 2,500, the load generator or the API is the bottleneck.
+
+**Latency percentiles (p50, p95, p99).** Distribution of response times. p50 is the median; p95 is the 95th percentile (5% of requests were slower); p99 is the 99th (1% were slower). Never use average — it hides the tail.
+
+**Error rate.** Percentage of requests that returned an error (HTTP 5xx, connection failures, timeouts). Should be under your error budget — typically 0.1% to 1%.
+
+**Saturation signals.** CPU, memory, connection pool utilization on the server. These tell you *why* a degradation happened. Servers usually saturate before CPU hits 100% because the limit is elsewhere (DB connections, thread pool, upstream rate limit).
+
+**Concurrent connections / queue depth.** Especially for APIs with async backends. Rising queue depth without rising error rate is a warning sign — the API is buying time, but it can't buy it forever.
+
+What to *de-emphasize:*
+
+- **Average latency** — hides the tail. Use percentiles.
+- **Max latency** — a single outlier doesn't matter; consistent p99 does.
+- **Total requests** — derivable from RPS × duration; not its own metric.
+- **Bandwidth** — useful for some workloads but rarely the bottleneck.
+
+## SLOs and error budgets — testing against a real target
+
+A load test without an SLO is data without a question. Before designing the test, write down:
+
+- **Latency SLO**: p95 < N ms, p99 < M ms
+- **Throughput target**: peak expected RPS × 1.5 (buffer for growth)
+- **Error budget**: max error rate during normal operation (typically 0.1%)
+- **Test duration**: short for CI (3–5 min), longer for soak (8+ hr)
+
+These four numbers turn "is the API fast?" into "does the API meet p95 < 200ms at 5,000 RPS with < 0.1% errors?" The second is a question that has an answer.
+
+If your team doesn't have published SLOs, the load test is the wrong place to define them. Define SLOs first by looking at current production behavior, customer expectations, and downstream system requirements. Then load test against them.
+
+## Open vs closed workload models
+
+Two ways to drive load; they answer different questions.
+
+**Closed model (VU-based).** Maintain N concurrent virtual users. Each VU does one iteration, waits, does the next. Throughput is whatever falls out — slower API = less throughput.
+
+**Open model (arrival-rate).** Fire N requests per second. Use as many VUs as needed to maintain the rate. Faster API = fewer VUs; slower API = more.
+
+For SLO testing — "does the API meet p95 < X at Y RPS?" — open model is the right choice. Closed model under-tests because slow responses reduce the load the test generates.
+
+For population simulation — "how does the API behave with 5,000 active users?" — closed model is correct.
+
+For full sizing math: [how to calculate virtual users](/blog/how-to-calculate-virtual-users-load-testing/).
+
+## Tooling landscape
+
+Eight tools, the ones that actually show up in production load-testing programs:
+
+**k6 (Grafana, Go).** Single binary, JavaScript scripts, low VU memory footprint. The 2026 default for CI-first teams. Open source + commercial cloud.
+
+**JMeter (Apache, Java).** Mature, plugin-rich, GUI-driven. Best for legacy protocols (SOAP, JMS, JDBC) and dedicated performance-engineering teams. Free.
+
+**Locust (Python).** Code-defined tests in Python. Best for Python-first teams. Lower VU density than k6.
+
+**Gatling (Scala/Java).** Strong reports, Scala DSL. Strong but niche choice.
+
+**Artillery (Node).** YAML test definitions, good HTTP/WebSocket support. Lightweight; weaker reporting than k6.
+
+**BlazeMeter (Perforce, commercial).** Hosted JMeter + extensions. Enterprise-focused.
+
+**NeoLoad (Tricentis, commercial).** Enterprise load testing with strong protocol support and analytics. Pricey.
+
+**LoadRunner (OpenText, commercial).** The historical enterprise standard. Legacy choice.
+
+For the deepest comparison: [k6 vs JMeter](/blog/k6-vs-jmeter/). For functional testing in CI (not load), see [Newman alternative comparison](/blog/newman-alternative/).
+
+## Test environment — staging, prod-clone, prod
+
+The cheapest mistake to avoid is loading the wrong environment.
+
+**Staging.** Default and safe. Smaller than prod, often shared, results are *directional* — useful for catching regressions, less useful for absolute capacity numbers.
+
+**Prod-clone.** A dedicated environment that mirrors prod sizing. Most realistic, most expensive. Worth it for the highest-value teams (payment processing, anything with strict SLAs).
+
+**Production.** Sometimes necessary. Always communicated. Off-peak hours. Side-effect-free flows only, or use a flag your application respects to skip downstream effects (`X-Load-Test: true` header that the app honors). Rate-limit aggressively.
+
+**Per-PR ephemeral environments.** Pattern that's grown popular in 2025–2026. Each PR gets a deployed preview; CI loads against it. Catches deployment-time issues; isolates each test from concurrent PRs. Requires solid IaC.
+
+Pick one environment per test type and commit to it. Bouncing between staging and prod-clone makes results uncomparable.
+
+## Test data — anonymized fixtures, dynamic data, side effects
+
+Three approaches, three trade-offs.
+
+**Static fixtures.** Pre-seeded data the test reads. Cheapest. Risk: tests cache data the API caches, making cache layers look better than they are.
+
+**Per-VU generated data.** Each VU creates the data it needs (`POST /orders` then `GET /orders/{id}`). Most realistic. Risk: side effects pile up; need cleanup, or test environment fills up over months.
+
+**Anonymized prod copy.** Real data shape, PII scrubbed. Most realistic for reads. Risk: schema drift makes the copy stale; PII scrubbing is hard to get fully right.
+
+For most APIs: anonymized prod copy for reads, per-VU generated for writes, with a nightly cleanup job to drop anything the test created more than 24 hours ago.
+
+## Authentication under load
+
+Auth is where most load tests have a hidden bug.
+
+**The bad pattern:** every iteration calls `POST /auth/login`. This means your test traffic is 50% auth calls, your auth endpoint becomes the bottleneck, and the test results reflect auth performance, not the API you wanted to measure.
+
+**The right pattern:** authenticate once per VU at setup, cache the token, re-use across iterations. If the test duration exceeds token lifetime, refresh once (not every iteration).
+
+```javascript
+export function setup() {
+  const r = http.post(`${BASE_URL}/auth/login`, { ... });
+  return { token: r.json('access_token') };
+}
+
+export default function (data) {
+  // data.token shared across all VUs and iterations
+  http.get(`${BASE_URL}/orders`, {
+    headers: { Authorization: `Bearer ${data.token}` }
+  });
+}
+```
+
+For long tests with short tokens, use a refresh function that triggers every N minutes per VU.
+
+**Rate-limit interaction.** Auth endpoints often have aggressive rate limits. If your test does authenticate every iteration, you'll hit those limits and the test fails not on your API but on the auth provider. One more reason to authenticate once per VU.
+
+For broader patterns around CI tokens, scopes, and rotation: [API tokens in CI](/blog/api-tokens-in-ci-scopes-rotation-and-secret-hygiene/).
+
+## Geographic and regional load distribution
+
+For globally-distributed APIs, single-region load tests under-represent the real workload. Real users are split across continents; their latency includes the round-trip to the nearest edge.
+
+Options:
+
+- **Run generators from multiple regions** (k6 Cloud, BlazeMeter, locust workers in multiple AWS regions). Most realistic; most expensive.
+- **Add simulated network latency** to a single-region test using `tc netem` on the generator. Cheap; less accurate.
+- **Test each region independently** and aggregate. Practical middle ground.
+
+For most APIs serving one or two primary regions, single-region tests with a documented caveat are fine. Multi-region tests become valuable when latency is a competitive differentiator.
+
+## Reading a load test report — pass vs. fail criteria
+
+When the test completes, read in this order:
+
+1. **Was the load profile actually executed?** Confirm achieved RPS ≈ target RPS and VU count ramped as configured. If not, the test is invalid before you read any metric.
+2. **Error rate.** Above budget = stop, investigate before reading further.
+3. **Latency percentiles.** p95 and p99 against SLO. Inside SLO = pass for this run.
+4. **Saturation signals.** Server CPU, memory, connection-pool utilization. Even on a passing test, look for early warning signs.
+5. **Outlier patterns.** Histogram or HDR-style breakdowns reveal multimodal behavior (e.g., 95% fast + 5% extremely slow) that single percentiles hide.
+
+A test passes when (1) the load profile executed correctly, (2) errors stayed under budget, and (3) latency percentiles stayed inside SLO. Anything else is "we generated some numbers."
+
+## Load testing in CI/CD
+
+A tiered strategy that matches how teams actually use this:
+
+- **Pre-merge smoke (`pull_request`):** 3–5 minute test against staging. Catches gross regressions. Required check.
+- **Post-merge full (`push` to main):** 15–30 minute load test. Catches regressions that PR runs missed.
+- **Nightly (`schedule`):** Full suite at higher RPS. Trends visible in dashboards.
+- **Weekly soak:** 8–24 hour test. Catches memory leaks and slow drift.
+- **Pre-launch stress and spike:** triggered manually before major events.
+
+Full walkthrough for CI: [API testing in CI/CD with GitHub Actions](/blog/api-testing-ci-cd-github-actions/).
+
+## Load testing emerging workloads
+
+The traditional load-testing playbook assumes deterministic request-response APIs. Modern workloads break those assumptions.
+
+**LLM APIs.** Non-deterministic response sizes, streaming responses, token-based metrics. Standard percentiles miss the picture. Full treatment: [load testing LLM APIs](/blog/load-testing-llm-apis/) (forthcoming).
+
+**Serverless functions.** Cold starts dominate the tail. p99 is sometimes 10–100× p95 because of cold-start latency. Test with realistic concurrency patterns, not just steady state.
+
+**Edge functions (CDN-resident workers).** Latency is by-region, not by-server. Test from realistic geographies.
+
+**Event-driven / async APIs.** The API enqueues; work happens later. Measure end-to-end latency separately from API-call latency.
+
+**WebSocket / streaming APIs.** Concurrent-connection count matters more than RPS. Track time-to-first-message, message throughput per connection, and connection lifecycle metrics.
+
+## 30-day rollout plan for load testing
+
+If you're starting from zero:
+
+- **Week 1.** Define SLOs for the top three workflows. Pick a tool ([k6 vs JMeter](/blog/k6-vs-jmeter/) if you're undecided). Write and smoke-test one script locally.
+- **Week 2.** Wire the script into CI as a non-blocking job. Configure result archiving (k6 + InfluxDB, or commit `summary.json` to a results branch).
+- **Week 3.** Add a second workflow. Set up alerting on regression vs. baseline. Run a manual stress test to find current breaking point.
+- **Week 4.** Promote the load test to a required PR check (with sensible threshold). Document the runbook for "load test failed on my PR" so engineers know how to act.
+
+After day 30, the team has: two load tests gating PRs, a baseline they can regress against, a known breaking point for capacity planning, and a documented response process.
+
+## FAQ
+
+### What's the difference between load testing and stress testing?
+
+Load testing measures the system at expected traffic against SLOs; stress testing pushes past expected to find the breaking point. Both are kinds of performance testing. See [load testing vs stress testing](/blog/load-testing-vs-stress-testing-vs-performance-testing/) for the full comparison.
+
+### Should every PR run a load test?
+
+Yes — but a short one. 3–5 minute smoke against staging on every PR is realistic; full multi-hour tests stay on a nightly or weekly cadence. The discipline is to keep the PR-blocking test cheap enough that it doesn't slow down the team.
+
+### How is API load testing different from website / UI load testing?
+
+UI load testing includes browser render time, JavaScript execution, asset loading. API load testing measures only the HTTP cycle. API tests are 5–20× cheaper per VU; UI tests are more realistic for user-facing latency. Most teams should do both, but API tests on every PR and UI tests as a smaller, slower suite.
+
+### How do I run a load test against an authenticated endpoint?
+
+Authenticate once at test start in `setup()` (k6) or equivalent, cache the token, share across VUs. Don't re-authenticate every iteration — see Authentication section above.
+
+### What about load testing third-party APIs?
+
+Use the third-party's sandbox if they offer one. Never load test third-party production without explicit permission — you're paying for the requests and you may trigger their abuse mitigations. For Stripe/Twilio/AWS-class providers, all have load-test-friendly sandboxes.
+
+### How do I size the load test for a brand-new API with no production data?
+
+Estimate from comparable systems, then iterate. "Similar API at company X handles 500 RPS at peak" is a reasonable starting target. Run the test, observe behavior, adjust. The first six months of a new API's load testing is mostly calibration.
+
+### What's the cheapest way to start load testing?
+
+k6 + GitHub Actions runners. The k6 binary is free, GitHub-hosted runners are included in your existing CI minutes, and you can hold and trend the summary.json in a results branch with no extra infrastructure. The full enterprise stack (cloud generators, Grafana, dashboards) is nice but not necessary to start.
+
+### How is contract testing related to load testing?
+
+They're orthogonal. Contract tests verify producer/consumer agreement at the *interface* level; load tests verify the system meets SLOs at scale. A load test that passes proves nothing about contract correctness; a contract test that passes proves nothing about scalability. See [contract testing vs API testing](/blog/contract-testing-vs-api-testing/).
+
+### What's the relationship between load testing and observability?
+
+A load test is most useful when you can correlate its output to your production observability — same percentile bucketing, same metric names, same dashboards. The "if it's measured in prod, it should be measured in the load test" rule is a good default.
+
+### Should I use a hosted load testing service or self-host?
+
+Self-host (k6/JMeter on your own infrastructure) for everyday CI. Hosted (Grafana Cloud k6, BlazeMeter) for large distributed tests where you need geographic spread or VU counts beyond what your CI can handle. Most teams need both; the split is around test size.
+
+---
+
+If you've read this far, the next reads depend on your goal:
+
+- **Picking a profile:** [load vs stress vs performance vs spike vs soak](/blog/load-testing-vs-stress-testing-vs-performance-testing/).
+- **Sizing the test:** [how to calculate virtual users](/blog/how-to-calculate-virtual-users-load-testing/).
+- **Writing your first test:** [how to load test an API](/blog/how-to-load-test-an-api/).
+- **Choosing a tool:** [k6 vs JMeter](/blog/k6-vs-jmeter/).
+- **Running it in CI:** [API testing in CI/CD with GitHub Actions](/blog/api-testing-ci-cd-github-actions/).
+- **Cross-pillar:** [API testing: the complete guide](/blog/api-testing-guide/) for functional API testing that pairs with this performance pillar.

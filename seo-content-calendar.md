@@ -11,12 +11,12 @@
 | 2 | Wed | newman-alternative | published | 2026-05-02 |
 | 3 | Fri | load-testing-vs-stress-testing-vs-performance-testing | published | 2026-05-04 |
 | 4 | Mon | api-testing-ci-cd-github-actions | published | 2026-05-04 |
-| 5 | Wed | how-to-calculate-virtual-users-load-testing | pending | — |
-| 6 | Fri | api-testing-guide (PILLAR 1) | pending | — |
-| 7 | Mon | k6-vs-jmeter | pending | — |
-| 8 | Wed | how-to-load-test-an-api | pending | — |
-| 9 | Fri | api-load-testing-guide (PILLAR 2) | pending | — |
-| 10 | Mon | contract-testing-vs-api-testing | pending | — |
+| 5 | Wed | how-to-calculate-virtual-users-load-testing | published | 2026-05-20 |
+| 6 | Fri | api-testing-guide (PILLAR 1) | published | 2026-05-20 |
+| 7 | Mon | k6-vs-jmeter | published | 2026-05-20 |
+| 8 | Wed | how-to-load-test-an-api | published | 2026-05-20 |
+| 9 | Fri | api-load-testing-guide (PILLAR 2) | published | 2026-05-20 |
+| 10 | Mon | contract-testing-vs-api-testing | published | 2026-05-20 |
 | 11 | Wed | load-test-profiles | pending | — |
 | 12 | Fri | load-testing-llm-apis | pending | — |
 | 13 | Mon | bruno-vs-postman-vs-insomnia | pending | — |
